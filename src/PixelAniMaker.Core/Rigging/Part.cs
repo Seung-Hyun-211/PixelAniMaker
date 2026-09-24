@@ -16,6 +16,9 @@ public sealed record PartView(IndexedImage Image, Vector2 RestPosition, Vector2 
     /// <summary>Hand-drawn replacement images for 45° steps of rotation.</summary>
     public AngleVariants Variants { get; } = new();
 
+    /// <summary>Named points (weapon grip, effect origin …) in base-image pixels.</summary>
+    public AttachmentPoints Attachments { get; } = new();
+
     /// <summary>The image to draw at a rotation (radians): a variant near that angle, or the base image.</summary>
     public (IndexedImage Image, Vector2 Pivot, float Angle) Pick(float radians)
     {

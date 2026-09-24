@@ -7,9 +7,12 @@ namespace PixelAniMaker.Core.Rigging;
 /// <summary>An angle variant image of a part view.</summary>
 public sealed record VariantSpec(int Angle, float PivotX, float PivotY, string Image);
 
+/// <summary>A named attachment point in base-image pixels.</summary>
+public sealed record AttachmentSpec(string Name, float X, float Y);
+
 /// <summary>A part's look in one direction, as stored in skeleton.json.</summary>
 public sealed record PartViewSpec(int X, int Y, float JointX, float JointY, int Order, string Image,
-    IReadOnlyList<VariantSpec>? Variants = null);
+    IReadOnlyList<VariantSpec>? Variants = null, IReadOnlyList<AttachmentSpec>? Attachments = null);
 
 /// <summary>
 /// One part entry of skeleton.json. <see cref="Views"/> is keyed "front", "left", "back", plus "right"
@@ -61,8 +64,10 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
                 var v = p.View(d);
                 var variants = v.Variants.All.Select(kv => new VariantSpec(kv.Key, kv.Value.LocalPivot.X, kv.Value.LocalPivot.Y,
                     ImagePath(d, p.Name, kv.Key))).ToList();
+                var attachments = v.Attachments.All.Select(kv => new AttachmentSpec(kv.Key, kv.Value.X, kv.Value.Y)).ToList();
                 return new PartViewSpec((int)v.RestPosition.X, (int)v.RestPosition.Y, v.RestPivot.X, v.RestPivot.Y,
-                    v.DrawOrder, ImagePath(d, p.Name), variants.Count > 0 ? variants : null);
+                    v.DrawOrder, ImagePath(d, p.Name), variants.Count > 0 ? variants : null,
+                    attachments.Count > 0 ? attachments : null);
             }))).ToList());
 
     /// <summary>Builds the character; <paramref name="loadImage"/> decodes an image file named in the spec.</summary>
@@ -90,6 +95,8 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
         var view = new PartView(Load(v.Image), new Vector2(v.X, v.Y), new Vector2(v.JointX, v.JointY), v.Order);
         foreach (var variant in v.Variants ?? [])
             view.Variants.Set(variant.Angle, new PartVariant(Load(variant.Image), new Vector2(variant.PivotX, variant.PivotY)));
+        foreach (var a in v.Attachments ?? [])
+            view.Attachments.Set(a.Name, new Vector2(a.X, a.Y));
         return view;
 
         IndexedImage Load(string file)

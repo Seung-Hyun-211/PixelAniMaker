@@ -48,6 +48,9 @@ public sealed partial class PartsViewModel : Tool
 
     public ObservableCollection<PartItem> Items { get; } = [];
 
+    /// <summary>Attachment points of the active part in the current direction.</summary>
+    public ObservableCollection<AttachmentItem> Attachments { get; } = [];
+
     partial void OnSelectedChanged(PartItem? value)
     {
         if (!_syncing && value is not null)
@@ -81,6 +84,32 @@ public sealed partial class PartsViewModel : Tool
 
     [RelayCommand]
     private void ResetPose() => Session.ResetPose();
+
+    /// <summary>Adds a point at the part's joint; move it with the X/Y fields.</summary>
+    [RelayCommand]
+    private void AddAttachment()
+    {
+        var view = Session.ActiveTransform.View;
+        EditAttachments(points => points.Set(AttachmentChange.FreeName(points), view.LocalPivot));
+    }
+
+    private void EditAttachments(Action<AttachmentPoints> edit) =>
+        AttachmentChange.Apply(Session.ActiveTransform.View.Attachments, Session.Character.History, edit);
+
+    /// <summary>Rows follow the points; existing rows are updated in place so a field being edited keeps focus.</summary>
+    private void SyncAttachments()
+    {
+        var points = Session.ActiveTransform.View.Attachments.All;
+        if (Attachments.Select(a => a.Key).SequenceEqual(points.Keys))
+        {
+            foreach (var row in Attachments)
+                row.Show(points[row.Key]);
+            return;
+        }
+        Attachments.Clear();
+        foreach (var (name, p) in points)
+            Attachments.Add(new AttachmentItem(name, p, EditAttachments));
+    }
 
     [RelayCommand]
     private void AddVariant() => VariantMessage = Session.AddVariantAtCurrentAngle() ?? "";
@@ -125,6 +154,7 @@ public sealed partial class PartsViewModel : Tool
         IsRightView = Session.Direction.IsMirrored();
         OwnRight = Session.ActivePart.HasOwnRight;
         UpdateVariantStatus();
+        SyncAttachments();
         _syncing = false;
     }
 }

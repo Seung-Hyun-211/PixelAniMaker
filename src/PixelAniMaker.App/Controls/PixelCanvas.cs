@@ -29,6 +29,9 @@ public sealed class PixelCanvas : SessionControl
     private static readonly IPen PartBoundsPen = new Pen(new SolidColorBrush(Color.FromArgb(200, 77, 163, 255)), 1, DashStyle.Dash);
     private static readonly IPen SelectionPen = new Pen(Brushes.White, 1, DashStyle.Dash);
     private static readonly IPen SelectionShadowPen = new Pen(Brushes.Black, 1);
+    private static readonly IBrush AttachmentBrush = new SolidColorBrush(Color.FromRgb(255, 80, 200));
+    private static readonly IPen AttachmentPen = new Pen(AttachmentBrush, 2);
+    private static readonly IPen AttachmentDimPen = new Pen(new SolidColorBrush(Color.FromArgb(150, 255, 80, 200)), 1);
     private static readonly IPen BonePen = new Pen(new SolidColorBrush(Color.FromArgb(160, 255, 200, 60)), 2);
     private static readonly IBrush JointBrush = new SolidColorBrush(Color.FromRgb(255, 200, 60));
     private static readonly IBrush ActiveJointBrush = new SolidColorBrush(Color.FromRgb(77, 163, 255));
@@ -183,6 +186,8 @@ public sealed class PixelCanvas : SessionControl
         else if (!s.TouchupMode)
             DrawPartBounds(context, s.ActiveTransform);
         DrawSelection(context, s);
+        if (!s.TouchupMode)
+            DrawAttachments(context, s);
 
         if (_hover is var (hx, hy) && hx >= 0 && hy >= 0 && hx < w && hy < h)
             context.DrawRectangle(null, HoverPen, new Rect(ToScreen(hx, hy) + new Point(0.5, 0.5), new Size(z - 1, z - 1)));
@@ -242,6 +247,25 @@ public sealed class PixelCanvas : SessionControl
         var pts = corners.Select(c => SourceToScreen(t.ToCanvas(c))).ToArray();
         for (int i = 0; i < pts.Length; i++)
             context.DrawLine(PartBoundsPen, pts[i], pts[(i + 1) % pts.Length]);
+    }
+
+    /// <summary>Attachment points as crosses; the active part's are bold and labelled.</summary>
+    private void DrawAttachments(DrawingContext context, EditorSession s)
+    {
+        const double arm = 6;
+        foreach (var a in Core.Rigging.Attachments.Place(s.Character, s.Direction))
+        {
+            var c = ToScreen(a.Position.X, a.Position.Y);
+            bool active = a.Part == s.ActivePart;
+            var pen = active ? AttachmentPen : AttachmentDimPen;
+            context.DrawLine(pen, c - new Point(arm, 0), c + new Point(arm, 0));
+            context.DrawLine(pen, c - new Point(0, arm), c + new Point(0, arm));
+            if (!active)
+                continue;
+            var label = new FormattedText(a.Name, System.Globalization.CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,
+                Typeface.Default, 11, AttachmentBrush);
+            context.DrawText(label, c + new Point(arm + 2, -arm - label.Height / 2));
+        }
     }
 
     /// <summary>Marching-ants rectangle around the selection (on the part, following its rotation).</summary>

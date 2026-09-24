@@ -5,8 +5,11 @@ using PixelAniMaker.Core.Rigging;
 
 namespace PixelAniMaker.Core.Export;
 
-/// <summary>Where one frame sits on the sheet.</summary>
-public sealed record SheetFrame(int X, int Y, int DurationMs);
+/// <summary>An attachment point in one frame: position inside the cell and the part's rotation (degrees, clockwise).</summary>
+public sealed record SheetAttachment(string Part, string Name, float X, float Y, float Angle);
+
+/// <summary>Where one frame sits on the sheet, with its attachment points (omitted when there are none).</summary>
+public sealed record SheetFrame(int X, int Y, int DurationMs, IReadOnlyList<SheetAttachment>? Attachments = null);
 
 public sealed record SheetClip(string Name, int Fps, bool Loop, IReadOnlyDictionary<string, IReadOnlyList<SheetFrame>> Directions);
 
@@ -21,6 +24,7 @@ public sealed record SpriteSheet(RgbaImage Image, int CellWidth, int CellHeight,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
     public static SpriteSheet Build(Character character, IReadOnlyList<AnimationClip> clips, Compositor compositor)
@@ -42,7 +46,7 @@ public sealed record SpriteSheet(RgbaImage Image, int CellWidth, int CellHeight,
                 for (int f = 0; f < clip.FrameCount; f++)
                 {
                     Blit(baked[d][f], character.Palette, image, f * w, row * h);
-                    frames.Add(new SheetFrame(f * w, row * h, 1000 / clip.Fps));
+                    frames.Add(new SheetFrame(f * w, row * h, 1000 / clip.Fps, FrameAttachments(character, d, clip.Evaluate(d, f))));
                 }
                 directions[d.ToString().ToLowerInvariant()] = frames;
                 row++;
@@ -62,6 +66,16 @@ public sealed record SpriteSheet(RgbaImage Image, int CellWidth, int CellHeight,
         origin = new { x = OriginX, y = OriginY },
         animations = Clips,
     }, Json);
+
+    private static IReadOnlyList<SheetAttachment>? FrameAttachments(Character character, Direction direction, PoseData pose)
+    {
+        var list = Attachments.Place(character, direction, pose)
+            .Select(a => new SheetAttachment(a.Part.Name, a.Name, Round(a.Position.X), Round(a.Position.Y), Round(a.Degrees)))
+            .ToList();
+        return list.Count > 0 ? list : null;
+
+        static float Round(float v) => MathF.Round(v, 1);
+    }
 
     /// <summary>Horizontal centre and the row just below the lowest pixel of the rest pose.</summary>
     private static (int X, int Y) FeetOrigin(Character character, Compositor compositor)

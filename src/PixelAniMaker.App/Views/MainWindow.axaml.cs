@@ -44,6 +44,15 @@ public partial class MainWindow : Window, IFileDialogs
         RecentMenu.IsEnabled = vm.RecentFiles.Count > 0;
     }
 
+    /// <summary>
+    /// Plain-key shortcuts (B, E, Delete …) stay out of the way while a text box has focus, so typing a
+    /// name or a colour does not switch tools; Ctrl/Alt shortcuts always work.
+    /// </summary>
+    private System.Windows.Input.ICommand TypingSafe(KeyGesture gesture, System.Windows.Input.ICommand command) =>
+        (gesture.KeyModifiers & (KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Meta)) != 0
+            ? command
+            : new GuardedCommand(command, () => FocusManager?.GetFocusedElement() is not TextBox);
+
     /// <summary>Rebuilds the window's key bindings from the shortcut map.</summary>
     private void ApplyShortcuts(MainWindowViewModel vm)
     {
@@ -52,7 +61,7 @@ public partial class MainWindow : Window, IFileDialogs
         {
             if (vm.Shortcuts.Get(id) is not { } gesture)
                 continue;
-            var binding = new KeyBinding { Gesture = gesture, Command = command };
+            var binding = new KeyBinding { Gesture = gesture, Command = TypingSafe(gesture, command) };
             if (parameter is not null)
                 binding.CommandParameter = parameter;
             KeyBindings.Add(binding);
