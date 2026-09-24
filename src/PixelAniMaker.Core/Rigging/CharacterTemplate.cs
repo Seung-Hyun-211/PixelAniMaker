@@ -11,7 +11,11 @@ public sealed record VariantSpec(int Angle, float PivotX, float PivotY, string I
 public sealed record PartViewSpec(int X, int Y, float JointX, float JointY, int Order, string Image,
     IReadOnlyList<VariantSpec>? Variants = null);
 
-/// <summary>One part entry of skeleton.json. <see cref="Views"/> is keyed "front", "left", "back".</summary>
+/// <summary>
+/// One part entry of skeleton.json. <see cref="Views"/> is keyed "front", "left", "back", plus "right"
+/// when the part's right view is drawn separately. A right view is stored in the same orientation as
+/// the left view (the program mirrors it for display), so its joints and angles match the left view.
+/// </summary>
 public sealed record PartSpec(string Name, string Label, string? Parent, IReadOnlyDictionary<string, PartViewSpec> Views);
 
 /// <summary>Contents of skeleton.json: canvas size and the part list.</summary>
@@ -31,14 +35,20 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
 
     public string ToJson() => JsonSerializer.Serialize(this, Json);
 
+    private static string Key(Direction direction) => direction.ToString().ToLowerInvariant();
+
     /// <summary>File name used for a part's image in one direction.</summary>
     public static string ImagePath(Direction direction, string part, int? angle = null) =>
         $"{direction.ToString().ToLowerInvariant()}/{part}{(angle is { } a ? $"@{a}" : "")}.png";
 
+    /// <summary>Directions a part has its own data for (Right only when drawn separately).</summary>
+    private static IEnumerable<Direction> OwnDirections(Part part) =>
+        part.HasOwnRight ? DirectionExtensions.All : DirectionExtensions.Stored;
+
     /// <summary>Every image a character needs saved: path → image (base images and angle variants).</summary>
     public static IEnumerable<(string Path, IndexedImage Image)> Images(Character character) =>
         from p in character.Parts
-        from d in DirectionExtensions.Stored
+        from d in OwnDirections(p)
         let v = p.View(d)
         from item in v.Variants.All.Select(kv => (ImagePath(d, p.Name, kv.Key), kv.Value.Image)).Prepend((ImagePath(d, p.Name), v.Image))
         select item;
@@ -46,7 +56,7 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
     /// <summary>Describes an existing character; images are referenced by <see cref="ImagePath"/>.</summary>
     public static CharacterSpec From(Character character) => new(character.Width, character.Height,
         character.Parts.Select(p => new PartSpec(p.Name, p.Label, p.Parent?.Name,
-            DirectionExtensions.Stored.ToDictionary(d => d.ToString().ToLowerInvariant(), d =>
+            OwnDirections(p).ToDictionary(d => d.ToString().ToLowerInvariant(), d =>
             {
                 var v = p.View(d);
                 var variants = v.Variants.All.Select(kv => new VariantSpec(kv.Key, kv.Value.LocalPivot.X, kv.Value.LocalPivot.Y,
@@ -60,7 +70,9 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
     {
         var pal = palette ?? new Palette();
         var parts = Parts.ToDictionary(s => s.Name, s => new Part(s.Name, s.Label,
-            DirectionExtensions.Stored.ToDictionary(d => d, d => BuildView(s, d, loadImage, pal))));
+            DirectionExtensions.All
+                .Where(d => !d.IsMirrored() || s.Views.ContainsKey(Key(d)))
+                .ToDictionary(d => d, d => BuildView(s, d, loadImage, pal))));
         foreach (var spec in Parts.Where(s => s.Parent is not null))
         {
             if (!parts.TryGetValue(spec.Parent!, out var parent))
@@ -72,7 +84,7 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
 
     private static PartView BuildView(PartSpec part, Direction direction, Func<string, RgbaImage> loadImage, Palette palette)
     {
-        string key = direction.ToString().ToLowerInvariant();
+        string key = Key(direction);
         if (!part.Views.TryGetValue(key, out var v))
             throw new FormatException($"Part '{part.Name}' has no '{key}' view.");
         var view = new PartView(Load(v.Image), new Vector2(v.X, v.Y), new Vector2(v.JointX, v.JointY), v.Order);
