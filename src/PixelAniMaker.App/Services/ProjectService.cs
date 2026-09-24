@@ -36,7 +36,8 @@ public sealed partial class ProjectService : ObservableObject
         CurrentPath = null;
     }
 
-    public void Open(string path)
+    /// <param name="rememberRecent">False for batch runs, which must not touch the user's recent files.</param>
+    public void Open(string path, bool rememberRecent = true)
     {
         ProjectData data;
         using (var stream = File.OpenRead(path))
@@ -44,7 +45,8 @@ public sealed partial class ProjectService : ObservableObject
         _editor.LoadCharacter(data.Character);
         _animation.SetClips(data.Clips);
         CurrentPath = path;
-        Settings.AddRecent(path);
+        if (rememberRecent)
+            Settings.AddRecent(path);
     }
 
     /// <summary>Writes to a temporary file first so a failed save never destroys the previous file.</summary>

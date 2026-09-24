@@ -112,6 +112,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private Task ExportGif() => ExportAsync("GIF 내보내기", ProjectService.GifType,
         $"{Project.DocumentName}_{Animation.CurrentClip?.Name}", Project.ExportGif);
 
+    /// <summary>Opens a file given on the command line once the window is up.</summary>
+    public Task OpenAtStartupAsync(string path) => OpenPathAsync(path);
+
     /// <summary>Called by the window before it closes; false keeps it open.</summary>
     public Task<bool> CanCloseAsync() => ConfirmDiscardAsync();
 

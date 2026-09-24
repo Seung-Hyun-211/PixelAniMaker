@@ -16,6 +16,16 @@ C# .NET 8 + Avalonia UI로 만들며 윈도우·맥·리눅스를 지원한다.
 dotnet run --project src/PixelAniMaker.App
 ```
 
+저장한 프로젝트 열기, 창 없이 시트·GIF 일괄 내보내기:
+
+```bash
+dotnet run --project src/PixelAniMaker.App -- my_character.dotchar
+```
+
+```bash
+dotnet run --project src/PixelAniMaker.App -- --export my_character.dotchar --out export
+```
+
 ## 테스트
 
 ```bash

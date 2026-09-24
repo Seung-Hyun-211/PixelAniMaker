@@ -29,9 +29,26 @@ public sealed class AvaloniaImageCodec : IImageCodec
     }
 
     /// <summary>Decodes any PNG; alpha below 50% becomes fully transparent (pixel art has no soft edges).</summary>
-    public unsafe RgbaImage DecodePng(Stream stream)
+    /// <exception cref="InvalidDataException">The data is not a readable image.</exception>
+    public RgbaImage DecodePng(Stream stream)
     {
-        using var bitmap = new Bitmap(stream);
+        // Skia needs a seekable stream; zip entries are not
+        using var buffer = new MemoryStream();
+        stream.CopyTo(buffer);
+        buffer.Position = 0;
+        try
+        {
+            using var bitmap = new Bitmap(buffer);
+            return ToRgba(bitmap);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new InvalidDataException("PNG 이미지를 읽을 수 없습니다.", ex);
+        }
+    }
+
+    private static unsafe RgbaImage ToRgba(Bitmap bitmap)
+    {
         var size = bitmap.PixelSize;
         var raw = new uint[size.Width * size.Height];
         fixed (uint* p = raw)
