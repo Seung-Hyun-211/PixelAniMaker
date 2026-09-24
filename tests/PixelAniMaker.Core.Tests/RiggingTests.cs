@@ -146,9 +146,9 @@ public class RiggingTests
     public void Pose_changes_are_undoable()
     {
         var c = TwoParts();
-        PoseChange.Apply(c.PoseFor(F), c.History, "arm", 30);
-        PoseChange.Apply(c.PoseFor(F), c.History, "body", -10);
-        PoseChange.ResetAll(c.PoseFor(F), c.History);
+        PoseChange.Apply(c.PoseFor(F), c.History, p => p.Set("arm", 30));
+        PoseChange.Apply(c.PoseFor(F), c.History, p => p.Set("body", -10));
+        PoseChange.Apply(c.PoseFor(F), c.History, p => p.Restore(PoseData.Rest));
         Assert.Equal(0, c.PoseFor(F).Get("arm"));
 
         c.History.Undo();
@@ -262,5 +262,61 @@ public class RiggingTests
         var up = Scale2x.Upscale8(img);
         Assert.Equal((16, 16), (up.Width, up.Height));
         Assert.All(up.Pixels.ToArray(), i => Assert.InRange(i, 1, 2));
+    }
+}
+
+public class OutlineTests
+{
+    private static readonly Rgba Red = new(255, 0, 0);
+    private static readonly Rgba Blue = new(0, 0, 255);
+    private static readonly Rgba Ink = new(10, 10, 10);
+    private static readonly Rgba Line = new(90, 90, 90);
+
+    private static PartSpec Spec(string name, string? parent, int x, int y, float jx, float jy, int order)
+    {
+        var view = new PartViewSpec(x, y, jx, jy, order, name);
+        return new(name, name, parent, new Dictionary<string, PartViewSpec> { ["front"] = view, ["left"] = view, ["back"] = view });
+    }
+
+    /// <summary>6x6 red body at (5,5); 2x6 blue arm on top of it at (7,8).</summary>
+    private static Character Build(bool outline)
+    {
+        var spec = new CharacterSpec(16, 16,
+            [Spec("body", null, 5, 5, 8, 8, 0), Spec("arm", "body", 7, 8, 8, 8, 1)]);
+        var c = spec.Build(n => new RgbaImage(n == "body" ? 6 : 2, 6,
+            Enumerable.Repeat(n == "body" ? Red : Blue, n == "body" ? 36 : 12).ToArray()));
+        c.Outline.OutlineIndex = c.Palette.GetOrAdd(Ink);
+        c.Outline.InnerIndex = c.Palette.GetOrAdd(Line);
+        c.Outline.Enabled = outline;
+        return c;
+    }
+
+    [Fact]
+    public void Silhouette_edge_gets_outline_colour()
+    {
+        var c = Build(outline: true);
+        var r = new Compositor().Compose(c, Direction.Front);
+        int ink = c.Palette.IndexOf(Ink);
+        Assert.Equal(ink, r.Indices[5 * 16 + 5]);    // body corner
+        Assert.Equal(ink, r.Indices[13 * 16 + 7]);   // arm bottom, outside the body
+        Assert.NotEqual(ink, r.Indices[7 * 16 + 6]); // body interior
+    }
+
+    [Fact]
+    public void Front_part_edge_inside_silhouette_gets_inner_line()
+    {
+        var c = Build(outline: true);
+        var r = new Compositor().Compose(c, Direction.Front);
+        Assert.Equal(c.Palette.IndexOf(Line), r.Indices[9 * 16 + 7]); // arm edge over the body
+        Assert.Equal(c.Palette.IndexOf(Red), r.Indices[9 * 16 + 6]);  // body pixel next to it stays
+    }
+
+    [Fact]
+    public void Disabled_outline_keeps_pixels_as_drawn()
+    {
+        var c = Build(outline: false);
+        var r = new Compositor().Compose(c, Direction.Front);
+        Assert.Equal(c.Palette.IndexOf(Red), r.Indices[5 * 16 + 5]);
+        Assert.DoesNotContain(r.Indices, i => i == c.Palette.IndexOf(Ink));
     }
 }

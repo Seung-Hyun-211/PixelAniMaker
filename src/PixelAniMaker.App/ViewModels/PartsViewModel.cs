@@ -20,6 +20,8 @@ public sealed partial class PartsViewModel : Tool
 
     [ObservableProperty] private PartItem? _selected;
     [ObservableProperty] private decimal? _rotation;
+    [ObservableProperty] private decimal? _offsetX;
+    [ObservableProperty] private decimal? _offsetY;
 
     public PartsViewModel(EditorSession session)
     {
@@ -53,6 +55,16 @@ public sealed partial class PartsViewModel : Tool
             Session.SetRotation(Session.ActivePart, (double)degrees);
     }
 
+    partial void OnOffsetXChanged(decimal? value) => ApplyOffset();
+
+    partial void OnOffsetYChanged(decimal? value) => ApplyOffset();
+
+    private void ApplyOffset()
+    {
+        if (!_syncing && OffsetX is { } x && OffsetY is { } y)
+            Session.SetOffset(new System.Numerics.Vector2((float)x, (float)y));
+    }
+
     [RelayCommand]
     private void ResetPart() => Session.SetRotation(Session.ActivePart, 0);
 
@@ -80,6 +92,8 @@ public sealed partial class PartsViewModel : Tool
         _syncing = true;
         Selected = Items.FirstOrDefault(i => i.Part == Session.ActivePart);
         Rotation = (decimal)Math.Round(Session.CurrentPose.Get(Session.ActivePart.Name), 1);
+        OffsetX = (decimal)Math.Round(Session.CurrentPose.Offset.X);
+        OffsetY = (decimal)Math.Round(Session.CurrentPose.Offset.Y);
         _syncing = false;
     }
 }

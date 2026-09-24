@@ -11,6 +11,12 @@
                        FormatString="0.#" Width="120" />
         <TextBlock Text="°" VerticalAlignment="Center" />
       </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="몸 전체 위치 (px). 점프·숨쉬기 등에 사용">
+        <TextBlock Text="몸 X" VerticalAlignment="Center" />
+        <NumericUpDown Value="{Binding OffsetX}" Minimum="-64" Maximum="64" Increment="1" FormatString="0" Width="95" />
+        <TextBlock Text="Y" VerticalAlignment="Center" />
+        <NumericUpDown Value="{Binding OffsetY}" Minimum="-64" Maximum="64" Increment="1" FormatString="0" Width="95" />
+      </StackPanel>
       <StackPanel Orientation="Horizontal" Spacing="6">
         <Button Content="이 파츠 0°" Command="{Binding ResetPartCommand}" />
         <Button Content="포즈 초기화" Command="{Binding ResetPoseCommand}" />

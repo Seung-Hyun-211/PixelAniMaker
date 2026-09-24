@@ -1,0 +1,773 @@
+{
+ "animations": [
+  {
+   "name": "대기",
+   "frames": 4,
+   "fps": 6,
+   "loop": true,
+   "tracks": {
+    "front": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "upper_arm_r": 3,
+       "upper_arm_l": -3
+      },
+      "offset": [
+       0,
+       1
+      ]
+     }
+    ],
+    "left": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "upper_arm_l": 2,
+       "upper_arm_r": 2
+      },
+      "offset": [
+       0,
+       1
+      ]
+     }
+    ],
+    "back": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "upper_arm_r": -3,
+       "upper_arm_l": 3
+      },
+      "offset": [
+       0,
+       1
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "걷기",
+   "frames": 8,
+   "fps": 10,
+   "loop": true,
+   "tracks": {
+    "front": [
+     {
+      "frame": 0,
+      "rotations": {
+       "upper_arm_r": 4,
+       "upper_arm_l": 4,
+       "thigh_r": -2,
+       "thigh_l": -2
+      }
+     },
+     {
+      "frame": 2,
+      "rotations": {},
+      "offset": [
+       0,
+       -1
+      ]
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "upper_arm_r": -4,
+       "upper_arm_l": -4,
+       "thigh_r": 2,
+       "thigh_l": 2
+      }
+     },
+     {
+      "frame": 6,
+      "rotations": {},
+      "offset": [
+       0,
+       -1
+      ]
+     }
+    ],
+    "left": [
+     {
+      "frame": 0,
+      "rotations": {
+       "thigh_l": 25,
+       "shin_l": -5,
+       "thigh_r": -25,
+       "shin_r": -15,
+       "upper_arm_l": -25,
+       "forearm_l": 10,
+       "upper_arm_r": 25,
+       "forearm_r": 15
+      }
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "thigh_l": -3,
+       "shin_l": -5,
+       "thigh_r": 8,
+       "shin_r": -35,
+       "forearm_l": 8,
+       "forearm_r": 8
+      },
+      "offset": [
+       0,
+       -1
+      ]
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "thigh_r": 25,
+       "shin_r": -5,
+       "thigh_l": -25,
+       "shin_l": -15,
+       "upper_arm_r": -25,
+       "forearm_r": 10,
+       "upper_arm_l": 25,
+       "forearm_l": 15
+      }
+     },
+     {
+      "frame": 6,
+      "rotations": {
+       "thigh_r": -3,
+       "shin_r": -5,
+       "thigh_l": 8,
+       "shin_l": -35,
+       "forearm_r": 8,
+       "forearm_l": 8
+      },
+      "offset": [
+       0,
+       -1
+      ]
+     }
+    ],
+    "back": [
+     {
+      "frame": 0,
+      "rotations": {
+       "upper_arm_r": -4,
+       "upper_arm_l": -4,
+       "thigh_r": 2,
+       "thigh_l": 2
+      }
+     },
+     {
+      "frame": 2,
+      "rotations": {},
+      "offset": [
+       0,
+       -1
+      ]
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "upper_arm_r": 4,
+       "upper_arm_l": 4,
+       "thigh_r": -2,
+       "thigh_l": -2
+      }
+     },
+     {
+      "frame": 6,
+      "rotations": {},
+      "offset": [
+       0,
+       -1
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "달리기",
+   "frames": 6,
+   "fps": 12,
+   "loop": true,
+   "tracks": {
+    "front": [
+     {
+      "frame": 0,
+      "rotations": {
+       "upper_arm_r": 10,
+       "forearm_r": -30,
+       "upper_arm_l": -10,
+       "forearm_l": 30
+      }
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "upper_arm_r": 12,
+       "forearm_r": -35,
+       "upper_arm_l": -12,
+       "forearm_l": 35
+      },
+      "offset": [
+       0,
+       -2
+      ]
+     },
+     {
+      "frame": 3,
+      "rotations": {
+       "upper_arm_r": 10,
+       "forearm_r": -30,
+       "upper_arm_l": -10,
+       "forearm_l": 30
+      }
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "upper_arm_r": 12,
+       "forearm_r": -35,
+       "upper_arm_l": -12,
+       "forearm_l": 35
+      },
+      "offset": [
+       0,
+       -2
+      ]
+     }
+    ],
+    "left": [
+     {
+      "frame": 0,
+      "rotations": {
+       "waist": -8,
+       "thigh_l": 45,
+       "shin_l": -25,
+       "thigh_r": -35,
+       "shin_r": -60,
+       "upper_arm_l": -45,
+       "forearm_l": 70,
+       "upper_arm_r": 45,
+       "forearm_r": 80
+      }
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "waist": -8,
+       "thigh_l": 10,
+       "shin_l": -40,
+       "thigh_r": -5,
+       "shin_r": -80,
+       "forearm_l": 75,
+       "forearm_r": 75
+      },
+      "offset": [
+       0,
+       -2
+      ]
+     },
+     {
+      "frame": 3,
+      "rotations": {
+       "waist": -8,
+       "thigh_r": 45,
+       "shin_r": -25,
+       "thigh_l": -35,
+       "shin_l": -60,
+       "upper_arm_r": -45,
+       "forearm_r": 70,
+       "upper_arm_l": 45,
+       "forearm_l": 80
+      }
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "waist": -8,
+       "thigh_r": 10,
+       "shin_r": -40,
+       "thigh_l": -5,
+       "shin_l": -80,
+       "forearm_r": 75,
+       "forearm_l": 75
+      },
+      "offset": [
+       0,
+       -2
+      ]
+     }
+    ],
+    "back": [
+     {
+      "frame": 0,
+      "rotations": {
+       "upper_arm_r": -10,
+       "forearm_r": 30,
+       "upper_arm_l": 10,
+       "forearm_l": -30
+      }
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "upper_arm_r": -12,
+       "forearm_r": 35,
+       "upper_arm_l": 12,
+       "forearm_l": -35
+      },
+      "offset": [
+       0,
+       -2
+      ]
+     },
+     {
+      "frame": 3,
+      "rotations": {
+       "upper_arm_r": -10,
+       "forearm_r": 30,
+       "upper_arm_l": 10,
+       "forearm_l": -30
+      }
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "upper_arm_r": -12,
+       "forearm_r": 35,
+       "upper_arm_l": 12,
+       "forearm_l": -35
+      },
+      "offset": [
+       0,
+       -2
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "점프",
+   "frames": 5,
+   "fps": 8,
+   "loop": false,
+   "tracks": {
+    "front": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "upper_arm_r": 25,
+       "upper_arm_l": -25,
+       "thigh_r": 8,
+       "shin_r": -8,
+       "thigh_l": -8,
+       "shin_l": 8
+      },
+      "offset": [
+       0,
+       6
+      ]
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "upper_arm_r": 150,
+       "upper_arm_l": -150
+      },
+      "offset": [
+       0,
+       -14
+      ],
+      "easing": "Linear"
+     },
+     {
+      "frame": 3,
+      "rotations": {
+       "upper_arm_r": 80,
+       "upper_arm_l": -80
+      },
+      "offset": [
+       0,
+       -10
+      ]
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "upper_arm_r": 15,
+       "upper_arm_l": -15,
+       "thigh_r": 5,
+       "shin_r": -5,
+       "thigh_l": -5,
+       "shin_l": 5
+      },
+      "offset": [
+       0,
+       3
+      ]
+     }
+    ],
+    "left": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "waist": -15,
+       "thigh_l": 50,
+       "shin_l": -75,
+       "foot_l": 25,
+       "thigh_r": 45,
+       "shin_r": -70,
+       "foot_r": 25,
+       "upper_arm_l": -35,
+       "upper_arm_r": -40
+      },
+      "offset": [
+       0,
+       6
+      ]
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "waist": -5,
+       "thigh_l": 25,
+       "shin_l": -40,
+       "thigh_r": 15,
+       "shin_r": -30,
+       "upper_arm_l": 150,
+       "upper_arm_r": 140
+      },
+      "offset": [
+       0,
+       -14
+      ],
+      "easing": "Linear"
+     },
+     {
+      "frame": 3,
+      "rotations": {
+       "waist": -3,
+       "thigh_l": 20,
+       "shin_l": -30,
+       "thigh_r": 15,
+       "shin_r": -25,
+       "upper_arm_l": 60,
+       "upper_arm_r": 50
+      },
+      "offset": [
+       0,
+       -10
+      ]
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "waist": -10,
+       "thigh_l": 30,
+       "shin_l": -45,
+       "foot_l": 15,
+       "thigh_r": 25,
+       "shin_r": -40,
+       "foot_r": 15
+      },
+      "offset": [
+       0,
+       3
+      ]
+     }
+    ],
+    "back": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "upper_arm_r": -25,
+       "upper_arm_l": 25,
+       "thigh_r": -8,
+       "shin_r": 8,
+       "thigh_l": 8,
+       "shin_l": -8
+      },
+      "offset": [
+       0,
+       6
+      ]
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "upper_arm_r": -150,
+       "upper_arm_l": 150
+      },
+      "offset": [
+       0,
+       -14
+      ],
+      "easing": "Linear"
+     },
+     {
+      "frame": 3,
+      "rotations": {
+       "upper_arm_r": -80,
+       "upper_arm_l": 80
+      },
+      "offset": [
+       0,
+       -10
+      ]
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "upper_arm_r": -15,
+       "upper_arm_l": 15,
+       "thigh_r": -5,
+       "shin_r": 5,
+       "thigh_l": 5,
+       "shin_l": -5
+      },
+      "offset": [
+       0,
+       3
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "name": "공격",
+   "frames": 5,
+   "fps": 10,
+   "loop": false,
+   "tracks": {
+    "front": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "chest": -5,
+       "upper_arm_r": 130,
+       "forearm_r": 20
+      }
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "chest": 6,
+       "upper_arm_r": -45,
+       "forearm_r": -20
+      },
+      "easing": "Linear"
+     },
+     {
+      "frame": 3,
+      "rotations": {
+       "chest": 4,
+       "upper_arm_r": -30,
+       "forearm_r": -10
+      }
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "upper_arm_r": 5
+      }
+     }
+    ],
+    "left": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "chest": 12,
+       "upper_arm_l": -70,
+       "forearm_l": -40
+      }
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "waist": -12,
+       "upper_arm_l": 110,
+       "forearm_l": 15
+      },
+      "easing": "Linear"
+     },
+     {
+      "frame": 3,
+      "rotations": {
+       "waist": -8,
+       "upper_arm_l": 80,
+       "forearm_l": 10
+      }
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "upper_arm_l": 10
+      }
+     }
+    ],
+    "back": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "chest": 5,
+       "upper_arm_r": -130,
+       "forearm_r": -20
+      }
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "chest": -6,
+       "upper_arm_r": 45,
+       "forearm_r": 20
+      },
+      "easing": "Linear"
+     },
+     {
+      "frame": 3,
+      "rotations": {
+       "chest": -4,
+       "upper_arm_r": 30,
+       "forearm_r": 10
+      }
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "upper_arm_r": -5
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "피격",
+   "frames": 3,
+   "fps": 10,
+   "loop": false,
+   "tracks": {
+    "front": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "head": 10,
+       "upper_arm_r": 20,
+       "upper_arm_l": -20
+      },
+      "offset": [
+       0,
+       1
+      ]
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "head": 3,
+       "upper_arm_r": 6,
+       "upper_arm_l": -6
+      }
+     }
+    ],
+    "left": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "waist": 15,
+       "head": 15,
+       "upper_arm_l": 25,
+       "upper_arm_r": 20
+      },
+      "offset": [
+       3,
+       0
+      ]
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "waist": 5,
+       "head": 5,
+       "upper_arm_l": 8,
+       "upper_arm_r": 6
+      },
+      "offset": [
+       1,
+       0
+      ]
+     }
+    ],
+    "back": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "head": -10,
+       "upper_arm_r": -20,
+       "upper_arm_l": 20
+      },
+      "offset": [
+       0,
+       1
+      ]
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "head": -3,
+       "upper_arm_r": -6,
+       "upper_arm_l": 6
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

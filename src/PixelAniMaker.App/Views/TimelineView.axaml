@@ -1,0 +1,82 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PixelAniMaker.App.ViewModels"
+             xmlns:anim="using:PixelAniMaker.Core.Animation"
+             xmlns:conv="using:PixelAniMaker.App.Converters"
+             x:Class="PixelAniMaker.App.Views.TimelineView"
+             x:DataType="vm:TimelineViewModel">
+  <DockPanel Margin="8">
+    <!-- clip row -->
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="0,0,0,6">
+      <ComboBox ItemsSource="{Binding Animation.Clips}" SelectedItem="{Binding Animation.CurrentClip}" Width="140">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="anim:AnimationClip">
+            <TextBlock Text="{Binding Name}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+      <TextBox Text="{Binding Animation.CurrentClip.Name, FallbackValue=''}" Width="120" ToolTip.Tip="동작 이름" />
+      <Button Content="새 동작" Command="{Binding NewClipCommand}" />
+      <Button Content="복제" Command="{Binding DuplicateClipCommand}" />
+      <Button Content="삭제" Command="{Binding DeleteClipCommand}" />
+      <TextBlock Text="프레임" VerticalAlignment="Center" Margin="10,0,0,0" />
+      <NumericUpDown Value="{Binding Animation.CurrentClip.FrameCount, FallbackValue=1}" Minimum="1" Maximum="64" Increment="1" FormatString="0" Width="100" />
+      <TextBlock Text="fps" VerticalAlignment="Center" />
+      <NumericUpDown Value="{Binding Animation.CurrentClip.Fps, FallbackValue=10}" Minimum="1" Maximum="60" Increment="1" FormatString="0" Width="100" />
+      <CheckBox Content="반복" IsChecked="{Binding Animation.CurrentClip.Loop, FallbackValue=False}" />
+    </StackPanel>
+
+    <!-- key row -->
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="0,0,0,6">
+      <Button Content="◀" Command="{Binding PreviousFrameCommand}" ToolTip.Tip="이전 프레임 (,)" />
+      <TextBlock VerticalAlignment="Center" MinWidth="60" HorizontalAlignment="Center">
+        <Run Text="{Binding Animation.CurrentFrame, Converter={x:Static conv:FrameNumberConverter.Instance}}" />
+        <Run Text="/" />
+        <Run Text="{Binding Animation.CurrentClip.FrameCount, FallbackValue=0}" />
+      </TextBlock>
+      <Button Content="▶" Command="{Binding NextFrameCommand}" ToolTip.Tip="다음 프레임 (.)" />
+      <Button Content="키 저장 (K)" Command="{Binding SaveKeyCommand}" Margin="10,0,0,0" />
+      <Button Content="키 삭제" Command="{Binding DeleteKeyCommand}" />
+      <TextBlock Text="보간" VerticalAlignment="Center" Margin="10,0,0,0" />
+      <ComboBox ItemsSource="{Binding EasingOptions}" SelectedItem="{Binding CurrentEasing}" Width="90"
+                IsEnabled="{Binding Animation.CurrentKey, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <ComboBox.ItemTemplate>
+          <DataTemplate>
+            <TextBlock Text="{Binding Converter={x:Static conv:EasingLabelConverter.Instance}}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+      <CheckBox Content="어니언 스킨" IsChecked="{Binding Animation.OnionSkin}" Margin="10,0,0,0" />
+      <ToggleButton Content="미리보기 재생" IsChecked="{Binding Animation.IsPlaying}" />
+      <TextBlock Text="{Binding KeyStatus}" VerticalAlignment="Center" Foreground="#E0B060" Margin="10,0,0,0" />
+    </StackPanel>
+
+    <!-- frame bar -->
+    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+      <ItemsControl ItemsSource="{Binding Frames}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <StackPanel Orientation="Horizontal" Spacing="4" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:FrameCellViewModel">
+            <Button Padding="2" Background="#2A2A2E"
+                    Command="{Binding $parent[ItemsControl].((vm:TimelineViewModel)DataContext).SelectFrameCommand}"
+                    CommandParameter="{Binding Index}">
+              <Border BorderThickness="2" BorderBrush="{Binding IsCurrent, Converter={x:Static conv:BoolBrushConverter.Current}}">
+                <StackPanel>
+                  <Image Source="{Binding Thumbnail}" Width="48" Height="64" RenderOptions.BitmapInterpolationMode="None" />
+                  <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="3">
+                    <TextBlock Text="◆" Foreground="#E0B060" FontSize="10" IsVisible="{Binding HasKey}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Label}" FontSize="11" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </DockPanel>
+</UserControl>

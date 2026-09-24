@@ -4,5 +4,5 @@
              xmlns:c="using:PixelAniMaker.App.Controls"
              x:Class="PixelAniMaker.App.Views.CanvasDocumentView"
              x:DataType="vm:CanvasDocumentViewModel">
-  <c:PixelCanvas Session="{Binding Session}" />
+  <c:PixelCanvas Session="{Binding Session}" Animation="{Binding Animation}" />
 </UserControl>

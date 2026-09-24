@@ -13,7 +13,11 @@ namespace PixelAniMaker.App.Controls;
 /// </summary>
 public sealed class PixelCanvas : SessionControl
 {
+    public static readonly StyledProperty<AnimationSession?> AnimationProperty =
+        AvaloniaProperty.Register<PixelCanvas, AnimationSession?>(nameof(Animation));
+
     private const int MinZoomForGrid = 6;
+    private const double OnionOpacity = 0.3;
 
     private static readonly IBrush Background = new SolidColorBrush(Color.FromRgb(37, 37, 40));
     private static readonly IPen GridPen = new Pen(new SolidColorBrush(Color.FromArgb(40, 255, 255, 255)), 1);
@@ -40,6 +44,32 @@ public sealed class PixelCanvas : SessionControl
         FocusableProperty.OverrideDefaultValue<PixelCanvas>(true);
         ClipToBoundsProperty.OverrideDefaultValue<PixelCanvas>(true);
     }
+
+    /// <summary>Source of the neighbouring frames drawn as onion skin.</summary>
+    public AnimationSession? Animation
+    {
+        get => GetValue(AnimationProperty);
+        set => SetValue(AnimationProperty, value);
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property != AnimationProperty)
+            return;
+        if (change.OldValue is AnimationSession old)
+        {
+            old.FramesUpdated -= OnAnimationChanged;
+            old.PropertyChanged -= OnAnimationChanged;
+        }
+        if (change.NewValue is AnimationSession a)
+        {
+            a.FramesUpdated += OnAnimationChanged;
+            a.PropertyChanged += OnAnimationChanged;
+        }
+    }
+
+    private void OnAnimationChanged(object? sender, EventArgs e) => InvalidateVisual();
 
     protected override void OnSessionAttached() => PlaceImage(Bounds.Size);
 
@@ -115,7 +145,9 @@ public sealed class PixelCanvas : SessionControl
 
         int w = s.Character.Width, h = s.Character.Height, z = s.Zoom;
         var dest = new Rect(_origin.X, _origin.Y, w * z, h * z);
-        DrawImage(context, s.CanvasBitmap, w, h, dest);
+        context.FillRectangle(CheckerBrushes.Large, dest);
+        DrawOnionSkin(context, s, dest);
+        context.DrawImage(s.CanvasBitmap, new Rect(0, 0, w, h), dest);
 
         if (s.ShowGrid && z >= MinZoomForGrid)
             DrawGrid(context, dest, w, h, z);
@@ -128,6 +160,24 @@ public sealed class PixelCanvas : SessionControl
 
         if (_hover is var (hx, hy) && hx >= 0 && hy >= 0 && hx < w && hy < h)
             context.DrawRectangle(null, HoverPen, new Rect(ToScreen(hx, hy) + new Point(0.5, 0.5), new Size(z - 1, z - 1)));
+    }
+
+    /// <summary>Previous and next baked frames, faded, under the current image.</summary>
+    private void DrawOnionSkin(DrawingContext context, EditorSession s, Rect dest)
+    {
+        if (Animation is not { OnionSkin: true, CurrentClip: { } clip } a)
+            return;
+        using (context.PushOpacity(OnionOpacity))
+        {
+            foreach (int delta in (int[])[-1, 1])
+            {
+                int frame = a.CurrentFrame + delta;
+                if (clip.Loop)
+                    frame = (frame + clip.FrameCount) % clip.FrameCount;
+                if (frame != a.CurrentFrame && a.Frame(s.Direction, frame) is { } bitmap)
+                    context.DrawImage(bitmap, new Rect(bitmap.Size), dest);
+            }
+        }
     }
 
     private static void DrawGrid(DrawingContext context, Rect dest, int w, int h, int z)

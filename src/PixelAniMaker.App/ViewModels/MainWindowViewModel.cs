@@ -16,7 +16,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public MainWindowViewModel()
     {
         Session = new EditorSession();
-        _factory = new DockFactory(Session);
+        Animation = new AnimationSession(Session);
+        _factory = new DockFactory(Session, Animation);
         ResetLayout();
         Session.HistoryChanged += (_, _) => OnHistoryChanged();
         Session.PropertyChanged += (_, e) =>
@@ -29,6 +30,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 
     public EditorSession Session { get; }
+    public AnimationSession Animation { get; }
 
     public string StatusText =>
         $"{Session.Direction.Label()}   ·   {(Session.PoseMode ? "포즈" : Session.CurrentTool.Label)}   ·   {Session.ActivePart.Label}   ·   " +
@@ -63,6 +65,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     [RelayCommand]
     private void SetDirection(Direction direction) => Session.Direction = direction;
+
+    [RelayCommand] private void SaveKey() => Animation.SaveKey();
+    [RelayCommand] private void DeleteKey() => Animation.DeleteKey();
+    [RelayCommand] private void PreviousFrame() => Animation.Step(-1);
+    [RelayCommand] private void NextFrame() => Animation.Step(1);
+    [RelayCommand] private void ToggleOnionSkin() => Animation.OnionSkin = !Animation.OnionSkin;
 
     [RelayCommand]
     private void ToggleGrid() => Session.ShowGrid = !Session.ShowGrid;

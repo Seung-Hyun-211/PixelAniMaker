@@ -1,3 +1,4 @@
+using System.Numerics;
 using PixelAniMaker.Core.Editing;
 using PixelAniMaker.Core.History;
 using PixelAniMaker.Core.Imaging;
@@ -27,6 +28,7 @@ public sealed class Character
     public Palette Palette { get; }
     public UndoHistory History { get; } = new();
     public ColorSelection Colors { get; }
+    public OutlineSettings Outline { get; } = new();
 
     /// <summary>All parts in a fixed order; indices into this list identify parts in composites.</summary>
     public IReadOnlyList<Part> Parts { get; }
@@ -74,12 +76,14 @@ public sealed class Character
         new(part.View(direction).Image, Palette, History, Colors);
 
     /// <summary>
-    /// Canvas placement of every part for the direction's pose (forward kinematics), in the
-    /// coordinates of the stored source direction — mirroring for Right is left to the renderer.
+    /// Canvas placement of every part (forward kinematics) for <paramref name="pose"/>, or the
+    /// direction's current pose, in the coordinates of the stored source direction — mirroring for
+    /// Right is left to the renderer. The body offset is rounded to whole pixels.
     /// </summary>
-    public IReadOnlyDictionary<Part, PartTransform> ComputeTransforms(Direction direction)
+    public IReadOnlyDictionary<Part, PartTransform> ComputeTransforms(Direction direction, PoseData? pose = null)
     {
-        var pose = PoseFor(direction);
+        pose ??= PoseFor(direction).Snapshot();
+        var bodyOffset = new Vector2(MathF.Round(pose.Offset.X), MathF.Round(pose.Offset.Y));
         var result = new Dictionary<Part, PartTransform>(Parts.Count);
         foreach (var part in Hierarchy())
         {
@@ -87,7 +91,7 @@ public sealed class Character
             float angle = (float)(pose.Get(part.Name) * Math.PI / 180);
             if (part.Parent is null)
             {
-                result[part] = new PartTransform(part, view, view.RestPivot, angle);
+                result[part] = new PartTransform(part, view, view.RestPivot + bodyOffset, angle);
                 continue;
             }
             var parent = result[part.Parent];
