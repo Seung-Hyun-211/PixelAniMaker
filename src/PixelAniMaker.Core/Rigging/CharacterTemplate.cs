@@ -4,9 +4,6 @@ using PixelAniMaker.Core.Imaging;
 
 namespace PixelAniMaker.Core.Rigging;
 
-/// <summary>An RGBA image as decoded by the UI layer.</summary>
-public sealed record RgbaImage(int Width, int Height, Rgba[] Pixels);
-
 /// <summary>A part's look in one direction, as stored in skeleton.json.</summary>
 public sealed record PartViewSpec(int X, int Y, float JointX, float JointY, int Order, string Image);
 
@@ -16,10 +13,31 @@ public sealed record PartSpec(string Name, string Label, string? Parent, IReadOn
 /// <summary>Contents of skeleton.json: canvas size and the part list.</summary>
 public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec> Parts)
 {
-    private static readonly JsonSerializerOptions Json = new() { PropertyNameCaseInsensitive = true };
+    private static readonly JsonSerializerOptions Json = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
 
     public static CharacterSpec Parse(string json) =>
         JsonSerializer.Deserialize<CharacterSpec>(json, Json) ?? throw new FormatException("Empty skeleton spec.");
+
+    public string ToJson() => JsonSerializer.Serialize(this, Json);
+
+    /// <summary>File name used for a part's image in one direction.</summary>
+    public static string ImagePath(Direction direction, string part) => $"{direction.ToString().ToLowerInvariant()}/{part}.png";
+
+    /// <summary>Describes an existing character; images are referenced by <see cref="ImagePath"/>.</summary>
+    public static CharacterSpec From(Character character) => new(character.Width, character.Height,
+        character.Parts.Select(p => new PartSpec(p.Name, p.Label, p.Parent?.Name,
+            DirectionExtensions.Stored.ToDictionary(d => d.ToString().ToLowerInvariant(), d =>
+            {
+                var v = p.View(d);
+                return new PartViewSpec((int)v.RestPosition.X, (int)v.RestPosition.Y, v.RestPivot.X, v.RestPivot.Y,
+                    v.DrawOrder, ImagePath(d, p.Name));
+            }))).ToList());
 
     /// <summary>Builds the character; <paramref name="loadImage"/> decodes an image file named in the spec.</summary>
     public Character Build(Func<string, RgbaImage> loadImage, Palette? palette = null)

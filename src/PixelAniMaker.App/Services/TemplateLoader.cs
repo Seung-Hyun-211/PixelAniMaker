@@ -1,5 +1,3 @@
-using Avalonia;
-using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using PixelAniMaker.Core.Animation;
 using PixelAniMaker.Core.Imaging;
@@ -37,25 +35,10 @@ public static class TemplateLoader
         return reader.ReadToEnd();
     }
 
-    private static unsafe RgbaImage LoadRgba(Uri uri)
+    private static RgbaImage LoadRgba(Uri uri)
     {
         using var stream = AssetLoader.Open(uri);
-        using var bitmap = new Bitmap(stream);
-        var size = bitmap.PixelSize;
-        var raw = new uint[size.Width * size.Height];
-        fixed (uint* p = raw)
-            bitmap.CopyPixels(new PixelRect(size), (nint)p, raw.Length * 4, size.Width * 4);
-
-        bool rgbaOrder = bitmap.Format == PixelFormat.Rgba8888;
-        var pixels = new Rgba[raw.Length];
-        for (int i = 0; i < raw.Length; i++)
-        {
-            var c = Rgba.FromBgra32(raw[i]);
-            pixels[i] = rgbaOrder ? new Rgba(c.B, c.G, c.R, c.A) : c;
-            if (pixels[i].A < 128)
-                pixels[i] = Rgba.Transparent;
-        }
-        return new RgbaImage(size.Width, size.Height, pixels);
+        return AvaloniaImageCodec.Instance.DecodePng(stream);
     }
 
     /// <summary>Adds a few basic colours after the mannequin colours.</summary>

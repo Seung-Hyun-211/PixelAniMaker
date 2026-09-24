@@ -41,13 +41,18 @@ public sealed partial class AnimationSession : ObservableObject
         editor.ContentChanged += (_, _) => ScheduleBake();
         editor.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(EditorSession.Character))
-                LoadDefaults();
-            else if (e.PropertyName == nameof(EditorSession.Direction))
+            if (e.PropertyName == nameof(EditorSession.Direction))
                 OnPropertyChanged(nameof(CurrentKey));
         };
-        LoadDefaults();
+        Clips.CollectionChanged += (_, _) => HasUnsavedClipChanges = true;
+        SetClips(TemplateLoader.LoadDefaultAnimations());
     }
+
+    /// <summary>
+    /// True after clip-level edits that the undo history does not record (adding/removing clips,
+    /// renaming, frame count, fps, loop). Cleared by <see cref="MarkSaved"/>.
+    /// </summary>
+    [ObservableProperty] private bool _hasUnsavedClipChanges;
 
     public ObservableCollection<AnimationClip> Clips { get; } = [];
 
@@ -99,6 +104,7 @@ public sealed partial class AnimationSession : ObservableObject
 
     public void AddClip(AnimationClip clip)
     {
+        clip.PropertyChanged += OnClipSettingChanged;
         Clips.Add(clip);
         CurrentClip = clip;
     }
@@ -108,6 +114,7 @@ public sealed partial class AnimationSession : ObservableObject
         if (CurrentClip is not { } clip || Clips.Count <= 1)
             return;
         int i = Clips.IndexOf(clip);
+        clip.PropertyChanged -= OnClipSettingChanged;
         Clips.Remove(clip);
         CurrentClip = Clips[Math.Min(i, Clips.Count - 1)];
     }
@@ -124,13 +131,25 @@ public sealed partial class AnimationSession : ObservableObject
         return copy;
     }
 
-    private void LoadDefaults()
+    /// <summary>Replaces the clip list (new project or a loaded file).</summary>
+    public void SetClips(IEnumerable<AnimationClip> clips)
     {
+        foreach (var clip in Clips)
+            clip.PropertyChanged -= OnClipSettingChanged;
         Clips.Clear();
-        foreach (var clip in TemplateLoader.LoadDefaultAnimations())
+        foreach (var clip in clips)
+        {
+            clip.PropertyChanged += OnClipSettingChanged;
             Clips.Add(clip);
+        }
         CurrentClip = Clips.FirstOrDefault();
+        HasUnsavedClipChanges = false;
     }
+
+    public void MarkSaved() => HasUnsavedClipChanges = false;
+
+    private void OnClipSettingChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) =>
+        HasUnsavedClipChanges = true;
 
     partial void OnCurrentClipChanged(AnimationClip? oldValue, AnimationClip? newValue)
     {

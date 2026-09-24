@@ -53,6 +53,14 @@ public sealed class IndexedImage
             destination[i] = palette[_pixels[i]].ToBgra32();
     }
 
+    public RgbaImage ToRgba(Palette palette)
+    {
+        var pixels = new Rgba[_pixels.Length];
+        for (int i = 0; i < pixels.Length; i++)
+            pixels[i] = palette[_pixels[i]];
+        return new RgbaImage(Width, Height, pixels);
+    }
+
     /// <summary>Builds an indexed image from RGBA pixels, adding unseen colours to <paramref name="palette"/>.</summary>
     public static IndexedImage FromRgba(int width, int height, ReadOnlySpan<Rgba> pixels, Palette palette)
     {

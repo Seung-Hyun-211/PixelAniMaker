@@ -12,6 +12,10 @@
 
   <Window.KeyBindings>
     <KeyBinding Gesture="Ctrl+N" Command="{Binding NewDocumentCommand}" />
+    <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenCommand}" />
+    <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}" />
+    <KeyBinding Gesture="Ctrl+E" Command="{Binding ExportCurrentSheetCommand}" />
     <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
     <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
     <KeyBinding Gesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}" />
@@ -38,6 +42,28 @@
     <Menu DockPanel.Dock="Top">
       <MenuItem Header="파일(_F)">
         <MenuItem Header="새로 만들기" InputGesture="Ctrl+N" Command="{Binding NewDocumentCommand}" />
+        <MenuItem Header="열기..." InputGesture="Ctrl+O" Command="{Binding OpenCommand}" />
+        <MenuItem Header="최근 파일" ItemsSource="{Binding RecentFiles}">
+          <MenuItem.Styles>
+            <Style Selector="MenuItem > MenuItem" x:DataType="x:String">
+              <Setter Property="Header" Value="{Binding}" />
+              <Setter Property="Command" Value="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenRecentCommand}" />
+              <Setter Property="CommandParameter" Value="{Binding}" />
+            </Style>
+          </MenuItem.Styles>
+        </MenuItem>
+        <Separator />
+        <MenuItem Header="저장" InputGesture="Ctrl+S" Command="{Binding SaveCommand}" />
+        <MenuItem Header="다른 이름으로 저장..." InputGesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}" />
+        <Separator />
+        <MenuItem Header="내보내기">
+          <MenuItem Header="현재 동작 시트 PNG..." InputGesture="Ctrl+E" Command="{Binding ExportCurrentSheetCommand}" />
+          <MenuItem Header="전체 동작 통합 시트 PNG..." Command="{Binding ExportAllSheetCommand}" />
+          <MenuItem Header="현재 동작 GIF..." Command="{Binding ExportGifCommand}" />
+          <Separator />
+          <MenuItem Header="시트와 함께 JSON 메타데이터 저장" ToggleType="CheckBox"
+                    IsChecked="{Binding WriteSheetMetadata, Mode=TwoWay}" />
+        </MenuItem>
         <Separator />
         <MenuItem Header="종료" Click="OnExitClick" />
       </MenuItem>

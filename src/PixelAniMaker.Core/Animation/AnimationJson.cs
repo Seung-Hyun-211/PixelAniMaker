@@ -1,10 +1,11 @@
 using System.Numerics;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using PixelAniMaker.Core.Rigging;
 
 namespace PixelAniMaker.Core.Animation;
 
-/// <summary>Reads animation clips from JSON (the template's animations.json).</summary>
+/// <summary>Reads and writes animation clips as JSON (template animations.json and project files).</summary>
 public static class AnimationJson
 {
     private sealed record KeySpec(int Frame, string? Easing, float[]? Offset, Dictionary<string, double>? Rotations);
@@ -13,13 +14,22 @@ public static class AnimationJson
 
     private sealed record FileSpec(List<ClipSpec> Animations);
 
-    private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
+    private static readonly JsonSerializerOptions Options = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
 
     public static IReadOnlyList<AnimationClip> Parse(string json)
     {
         var file = JsonSerializer.Deserialize<FileSpec>(json, Options) ?? throw new FormatException("Empty animation file.");
         return file.Animations.Select(ToClip).ToList();
     }
+
+    public static string Serialize(IEnumerable<AnimationClip> clips) =>
+        JsonSerializer.Serialize(new FileSpec(clips.Select(ToSpec).ToList()), Options);
 
     private static AnimationClip ToClip(ClipSpec spec)
     {
@@ -33,6 +43,15 @@ public static class AnimationJson
         }
         return clip;
     }
+
+    private static ClipSpec ToSpec(AnimationClip clip) => new(clip.Name, clip.FrameCount, clip.Fps, clip.Loop,
+        DirectionExtensions.Stored.ToDictionary(
+            d => d.ToString().ToLowerInvariant(),
+            d => clip.Keys(d).Select(k => new KeySpec(
+                k.Frame,
+                k.Easing.ToString(),
+                k.Pose.Offset == Vector2.Zero ? null : [k.Pose.Offset.X, k.Pose.Offset.Y],
+                k.Pose.Rotations.Where(r => r.Value != 0).ToDictionary(r => r.Key, r => r.Value))).ToList()));
 
     private static PoseData ToPose(KeySpec k) =>
         new(k.Rotations ?? [], k.Offset is [var x, var y] ? new Vector2(x, y) : Vector2.Zero);
