@@ -4,53 +4,37 @@ using PixelAniMaker.Core.Imaging;
 namespace PixelAniMaker.Core.Editing;
 
 /// <summary>
-/// One editable pixel image with its palette, colour selection and undo history.
-/// Input comes in image pixel coordinates; the UI layer converts from screen space.
+/// Drawing target: one pixel image plus the palette, undo history and colour selection it shares with
+/// the rest of the project. Input comes in image pixel coordinates.
 /// </summary>
 public sealed class EditorDocument
 {
     private IStroke? _stroke;
-    private int _primaryIndex;
-    private int _secondaryIndex = Palette.TransparentIndex;
 
-    public EditorDocument(IndexedImage image, Palette palette)
+    public EditorDocument(IndexedImage image, Palette palette, UndoHistory history, ColorSelection colors)
     {
         Image = image;
         Palette = palette;
-        _primaryIndex = palette.Count > 1 ? 1 : Palette.TransparentIndex;
+        History = history;
+        Colors = colors;
     }
 
+    /// <summary>A standalone document with its own palette (black, white) and history.</summary>
     public static EditorDocument CreateBlank(int width, int height)
     {
         var palette = new Palette();
         palette.GetOrAdd(new Rgba(0, 0, 0));
         palette.GetOrAdd(new Rgba(255, 255, 255));
-        return new EditorDocument(new IndexedImage(width, height), palette);
+        return new EditorDocument(new IndexedImage(width, height), palette, new UndoHistory(), new ColorSelection(palette));
     }
 
     public IndexedImage Image { get; }
     public Palette Palette { get; }
-    public UndoHistory History { get; } = new();
+    public UndoHistory History { get; }
+    public ColorSelection Colors { get; }
 
-    /// <summary>Raised whenever pixels change (drawing, undo, redo).</summary>
+    /// <summary>Raised while a stroke changes pixels. Undo/redo are reported through <see cref="History"/>.</summary>
     public event EventHandler? PixelsChanged;
-
-    /// <summary>Raised when the primary or secondary colour changes.</summary>
-    public event EventHandler? ColorSelectionChanged;
-
-    public int PrimaryIndex
-    {
-        get => _primaryIndex;
-        set => SetColor(ref _primaryIndex, value);
-    }
-
-    public int SecondaryIndex
-    {
-        get => _secondaryIndex;
-        set => SetColor(ref _secondaryIndex, value);
-    }
-
-    public int ColorIndex(bool secondary) => secondary ? _secondaryIndex : _primaryIndex;
 
     // ------------------------------------------------------------------ strokes
 
@@ -96,14 +80,4 @@ public sealed class EditorDocument
     }
 
     public void NotifyPixelsChanged() => PixelsChanged?.Invoke(this, EventArgs.Empty);
-
-    private void SetColor(ref int field, int value)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegative(value);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(value, Palette.Count);
-        if (field == value)
-            return;
-        field = value;
-        ColorSelectionChanged?.Invoke(this, EventArgs.Empty);
-    }
 }

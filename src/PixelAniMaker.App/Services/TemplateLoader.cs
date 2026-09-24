@@ -1,35 +1,54 @@
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using PixelAniMaker.Core.Imaging;
+using PixelAniMaker.Core.Rigging;
 
 namespace PixelAniMaker.App.Services;
 
-/// <summary>Loads the built-in mannequin template and its colours.</summary>
+/// <summary>Loads the built-in 4-head mannequin (16 parts) from the app assets.</summary>
 public static class TemplateLoader
 {
-    private static readonly Uri FrontUri = new("avares://PixelAniMaker/Assets/Templates/chibi_front_64x128.png");
+    private const string Folder = "avares://PixelAniMaker/Assets/Templates/chibi64/";
 
-    public static Bitmap? LoadFront64x128()
+    public static Character LoadChibi64()
     {
-        try
-        {
-            using var stream = AssetLoader.Open(FrontUri);
-            return new Bitmap(stream);
-        }
-        catch (Exception ex) when (ex is FileNotFoundException or IOException)
-        {
-            return null;
-        }
+        using var reader = new StreamReader(AssetLoader.Open(new Uri(Folder + "skeleton.json")));
+        var spec = CharacterSpec.Parse(reader.ReadToEnd());
+        var palette = new Palette();
+        var character = spec.Build(file => LoadRgba(new Uri(Folder + file)), palette);
+        SeedPalette(palette);
+        return character;
     }
 
-    /// <summary>Adds the mannequin colours plus a few basics to a new palette.</summary>
-    public static void SeedPalette(Palette palette)
+    private static unsafe RgbaImage LoadRgba(Uri uri)
+    {
+        using var stream = AssetLoader.Open(uri);
+        using var bitmap = new Bitmap(stream);
+        var size = bitmap.PixelSize;
+        var raw = new uint[size.Width * size.Height];
+        fixed (uint* p = raw)
+            bitmap.CopyPixels(new PixelRect(size), (nint)p, raw.Length * 4, size.Width * 4);
+
+        bool rgbaOrder = bitmap.Format == PixelFormat.Rgba8888;
+        var pixels = new Rgba[raw.Length];
+        for (int i = 0; i < raw.Length; i++)
+        {
+            var c = Rgba.FromBgra32(raw[i]);
+            pixels[i] = rgbaOrder ? new Rgba(c.B, c.G, c.R, c.A) : c;
+            if (pixels[i].A < 128)
+                pixels[i] = Rgba.Transparent;
+        }
+        return new RgbaImage(size.Width, size.Height, pixels);
+    }
+
+    /// <summary>Adds a few basic colours after the mannequin colours.</summary>
+    private static void SeedPalette(Palette palette)
     {
         Rgba[] colors =
         [
-            new(52, 40, 34), new(120, 96, 74), new(150, 126, 98), new(176, 150, 120),
-            new(190, 170, 146), new(222, 206, 184),
+            new(0, 0, 0), new(255, 255, 255),
             new(170, 40, 50), new(230, 120, 60), new(240, 200, 80), new(80, 160, 80),
             new(60, 110, 180), new(120, 80, 160),
         ];

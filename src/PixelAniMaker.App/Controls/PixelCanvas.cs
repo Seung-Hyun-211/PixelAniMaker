@@ -3,33 +3,37 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
 using PixelAniMaker.App.Services;
+using PixelAniMaker.Core.Rigging;
 
 namespace PixelAniMaker.App.Controls;
 
 /// <summary>
-/// Zoomable pixel editing surface. Left button draws with the primary colour, right button with the
-/// secondary colour, middle button or Space+drag pans, the wheel zooms around the cursor.
+/// Zoomable view of the posed character. Draw mode edits the active part, pose mode rotates joints.
+/// Middle button or Space+drag pans, the wheel zooms around the cursor.
 /// </summary>
 public sealed class PixelCanvas : SessionControl
 {
-    private const double TemplateOpacity = 0.35;
     private const int MinZoomForGrid = 6;
 
     private static readonly IBrush Background = new SolidColorBrush(Color.FromRgb(37, 37, 40));
     private static readonly IPen GridPen = new Pen(new SolidColorBrush(Color.FromArgb(40, 255, 255, 255)), 1);
     private static readonly IPen BorderPen = new Pen(new SolidColorBrush(Color.FromArgb(160, 0, 0, 0)), 1);
     private static readonly IPen HoverPen = new Pen(new SolidColorBrush(Color.FromArgb(200, 255, 255, 255)), 1);
+    private static readonly IPen PartBoundsPen = new Pen(new SolidColorBrush(Color.FromArgb(200, 77, 163, 255)), 1, DashStyle.Dash);
+    private static readonly IPen BonePen = new Pen(new SolidColorBrush(Color.FromArgb(160, 255, 200, 60)), 2);
+    private static readonly IBrush JointBrush = new SolidColorBrush(Color.FromRgb(255, 200, 60));
+    private static readonly IBrush ActiveJointBrush = new SolidColorBrush(Color.FromRgb(77, 163, 255));
 
-    private Point _origin;          // screen position of the image's top-left corner
+    private Point _origin;          // screen position of the canvas's top-left corner
     private bool _placed;
     private bool _panning;
-    private bool _drawing;
     private bool _spaceDown;
     private Point _panStart;
     private Point _originAtPanStart;
     private (int X, int Y)? _hover;
-    private Point? _zoomAnchor;     // set during wheel zoom so the image zooms around the cursor
+    private Point? _zoomAnchor;     // set during wheel zoom so the view zooms around the cursor
     private int _lastZoom = 4;
+    private ICanvasInteraction? _interaction;
 
     static PixelCanvas()
     {
@@ -41,7 +45,7 @@ public sealed class PixelCanvas : SessionControl
 
     protected override void OnSessionPropertyChanged(string? propertyName)
     {
-        if (propertyName == nameof(EditorSession.Document))
+        if (propertyName == nameof(EditorSession.Character))
             PlaceImage(Bounds.Size);
         else if (propertyName == nameof(EditorSession.Zoom) && Session is { } s)
         {
@@ -59,18 +63,18 @@ public sealed class PixelCanvas : SessionControl
             PlaceImage(e.NewSize);
     }
 
-    /// <summary>Centres the image and picks the largest zoom step that fits.</summary>
+    /// <summary>Centres the canvas and picks the largest zoom step that fits.</summary>
     private void PlaceImage(Size size)
     {
         _placed = false;
         if (Session is not { } s || size.Width <= 0 || size.Height <= 0)
             return;
-        var img = s.Document.Image;
-        double fit = Math.Min(size.Width / img.Width, size.Height / img.Height) * 0.9;
+        var c = s.Character;
+        double fit = Math.Min(size.Width / c.Width, size.Height / c.Height) * 0.9;
         int zoom = EditorSession.ZoomSteps.LastOrDefault(z => z <= fit, 1);
         _lastZoom = zoom;
         s.Zoom = zoom;
-        _origin = new Point(Math.Round((size.Width - img.Width * zoom) / 2), Math.Round((size.Height - img.Height * zoom) / 2));
+        _origin = new Point(Math.Round((size.Width - c.Width * zoom) / 2), Math.Round((size.Height - c.Height * zoom) / 2));
         _placed = true;
         InvalidateVisual();
     }
@@ -79,10 +83,13 @@ public sealed class PixelCanvas : SessionControl
     {
         if (Session is not { } s || oldZoom == s.Zoom)
             return;
-        // keep the image point under the anchor fixed
-        var imagePoint = (anchor - _origin) / oldZoom;
-        _origin = new Point(Math.Round(anchor.X - imagePoint.X * s.Zoom), Math.Round(anchor.Y - imagePoint.Y * s.Zoom));
+        var canvasPoint = (anchor - _origin) / oldZoom;   // keep the canvas point under the anchor fixed
+        _origin = new Point(Math.Round(anchor.X - canvasPoint.X * s.Zoom), Math.Round(anchor.Y - canvasPoint.Y * s.Zoom));
     }
+
+    private Point ToScreen(double x, double y) => new(_origin.X + x * Session!.Zoom, _origin.Y + y * Session.Zoom);
+
+    private Point ToCanvas(Point screen) => (screen - _origin) / Session!.Zoom;
 
     // ------------------------------------------------------------------ rendering
 
@@ -92,38 +99,66 @@ public sealed class PixelCanvas : SessionControl
         if (Session is not { } s || !_placed)
             return;
 
-        var img = s.Document.Image;
-        int z = s.Zoom;
-        var dest = new Rect(_origin.X, _origin.Y, img.Width * z, img.Height * z);
-
-        DrawImage(context, s, dest, s.ShowTemplate ? s.Template : null, TemplateOpacity);
+        int w = s.Character.Width, h = s.Character.Height, z = s.Zoom;
+        var dest = new Rect(_origin.X, _origin.Y, w * z, h * z);
+        DrawImage(context, s.CanvasBitmap, w, h, dest);
 
         if (s.ShowGrid && z >= MinZoomForGrid)
-        {
-            for (int x = 1; x < img.Width; x++)
-            {
-                double px = dest.X + x * z + 0.5;
-                context.DrawLine(GridPen, new Point(px, dest.Top), new Point(px, dest.Bottom));
-            }
-            for (int y = 1; y < img.Height; y++)
-            {
-                double py = dest.Y + y * z + 0.5;
-                context.DrawLine(GridPen, new Point(dest.Left, py), new Point(dest.Right, py));
-            }
-        }
+            DrawGrid(context, dest, w, h, z);
         context.DrawRectangle(null, BorderPen, dest.Inflate(0.5));
 
-        if (_hover is var (hx, hy) && img.InBounds(hx, hy))
-            context.DrawRectangle(null, HoverPen, new Rect(dest.X + hx * z + 0.5, dest.Y + hy * z + 0.5, z - 1, z - 1));
+        if (s.PoseMode)
+            DrawSkeleton(context, s);
+        else
+            DrawPartBounds(context, s.ActiveTransform);
+
+        if (_hover is var (hx, hy) && hx >= 0 && hy >= 0 && hx < w && hy < h)
+            context.DrawRectangle(null, HoverPen, new Rect(ToScreen(hx, hy) + new Point(0.5, 0.5), new Size(z - 1, z - 1)));
+    }
+
+    private static void DrawGrid(DrawingContext context, Rect dest, int w, int h, int z)
+    {
+        for (int x = 1; x < w; x++)
+        {
+            double px = dest.X + x * z + 0.5;
+            context.DrawLine(GridPen, new Point(px, dest.Top), new Point(px, dest.Bottom));
+        }
+        for (int y = 1; y < h; y++)
+        {
+            double py = dest.Y + y * z + 0.5;
+            context.DrawLine(GridPen, new Point(dest.Left, py), new Point(dest.Right, py));
+        }
+    }
+
+    /// <summary>Dashed outline of the active part's image, following its rotation.</summary>
+    private void DrawPartBounds(DrawingContext context, PartTransform t)
+    {
+        var img = t.Part.Image;
+        System.Numerics.Vector2[] corners = [new(0, 0), new(img.Width, 0), new(img.Width, img.Height), new(0, img.Height)];
+        var pts = corners.Select(c => t.ToCanvas(c)).Select(p => ToScreen(p.X, p.Y)).ToArray();
+        for (int i = 0; i < pts.Length; i++)
+            context.DrawLine(PartBoundsPen, pts[i], pts[(i + 1) % pts.Length]);
+    }
+
+    /// <summary>Bones between joints and a dot on every joint (the active one highlighted).</summary>
+    private void DrawSkeleton(DrawingContext context, EditorSession s)
+    {
+        foreach (var (part, t) in s.Transforms)
+        {
+            if (part.Parent is not null)
+            {
+                var parent = s.Transforms[part.Parent].Pivot;
+                context.DrawLine(BonePen, ToScreen(parent.X, parent.Y), ToScreen(t.Pivot.X, t.Pivot.Y));
+            }
+        }
+        foreach (var (part, t) in s.Transforms)
+        {
+            var brush = part == s.ActivePart ? ActiveJointBrush : JointBrush;
+            context.DrawEllipse(brush, null, ToScreen(t.Pivot.X, t.Pivot.Y), 4, 4);
+        }
     }
 
     // ------------------------------------------------------------------ input
-
-    private (int X, int Y) ToPixel(Point p)
-    {
-        int z = Session!.Zoom;
-        return ((int)Math.Floor((p.X - _origin.X) / z), (int)Math.Floor((p.Y - _origin.Y) / z));
-    }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
@@ -142,9 +177,8 @@ public sealed class PixelCanvas : SessionControl
         }
         else if (props.IsLeftButtonPressed || props.IsRightButtonPressed)
         {
-            var (x, y) = ToPixel(point.Position);
-            _drawing = true;
-            s.Document.BeginStroke(s.CurrentTool.Tool, x, y, secondary: props.IsRightButtonPressed);
+            _interaction = s.PoseMode ? new PoseInteraction(s) : new DrawInteraction(s);
+            _interaction.Begin(ToCanvas(point.Position), props.IsRightButtonPressed, IsSnap(e));
         }
         else
         {
@@ -168,14 +202,15 @@ public sealed class PixelCanvas : SessionControl
             return;
         }
 
-        var (x, y) = ToPixel(pos);
-        if (_drawing)
-            s.Document.ContinueStroke(x, y);
+        var canvas = ToCanvas(pos);
+        _interaction?.Move(canvas, IsSnap(e));
 
-        if (_hover != (x, y))
+        var pixel = ((int)Math.Floor(canvas.X), (int)Math.Floor(canvas.Y));
+        if (_hover != pixel)
         {
-            _hover = (x, y);
-            s.CursorText = s.Document.Image.InBounds(x, y) ? $"{x}, {y}" : "";
+            _hover = pixel;
+            bool inside = pixel.Item1 >= 0 && pixel.Item2 >= 0 && pixel.Item1 < s.Character.Width && pixel.Item2 < s.Character.Height;
+            s.CursorText = inside ? $"{pixel.Item1}, {pixel.Item2}" : "";
             InvalidateVisual();
         }
     }
@@ -183,12 +218,8 @@ public sealed class PixelCanvas : SessionControl
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
-        // the last move events can be coalesced away, so finish the stroke at the release point
-        if (_drawing && Session is { } s)
-        {
-            var (x, y) = ToPixel(e.GetPosition(this));
-            s.Document.ContinueStroke(x, y);
-        }
+        // the last move events can be coalesced away, so finish at the release point
+        _interaction?.Move(ToCanvas(e.GetPosition(this)), IsSnap(e));
         EndInteraction();
         e.Pointer.Capture(null);
     }
@@ -210,11 +241,12 @@ public sealed class PixelCanvas : SessionControl
 
     private void EndInteraction()
     {
-        if (_drawing)
-            Session?.Document.EndStroke();
-        _drawing = false;
+        _interaction?.End();
+        _interaction = null;
         _panning = false;
     }
+
+    private static bool IsSnap(PointerEventArgs e) => e.KeyModifiers.HasFlag(KeyModifiers.Shift);
 
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {
@@ -248,7 +280,4 @@ public sealed class PixelCanvas : SessionControl
             e.Handled = true;
         }
     }
-
-    /// <summary>Re-centres the image and picks a zoom that fits the view.</summary>
-    public void FitToView() => PlaceImage(Bounds.Size);
 }

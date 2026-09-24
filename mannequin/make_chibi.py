@@ -122,33 +122,38 @@ def chibi_front(w, h):
     return f
 
 
-# Individual textures + a comparison sheet (each upscaled to 512 px tall, 4-head guides).
-DISPLAY_H = 512
-panels = []
-for w, h in SIZES:
-    img = chibi_front(w, h).render()
-    img.save(OUT / f"chibi_front_{w}x{h}.png")
-    k = DISPLAY_H // h
-    panel = Image.new("RGBA", (w * k, DISPLAY_H), (245, 245, 245, 255))
-    g = ImageDraw.Draw(panel)
-    for i in range(5):                                   # head divisions
-        y = round((8 + i * 60.25) / BASE_H * DISPLAY_H)
-        g.line([(0, y), (w * k, y)], fill=(200, 215, 235, 255))
-    for x in range(0, w * k, k):                         # pixel grid
-        g.line([(x, 0), (x, DISPLAY_H)], fill=(236, 236, 236, 255))
-    for y in range(0, DISPLAY_H, k):
-        g.line([(0, y), (w * k, y)], fill=(236, 236, 236, 255))
-    panel.alpha_composite(img.resize((w * k, DISPLAY_H), Image.NEAREST))
-    panels.append((panel, f"{w}x{h}  (x{k})"))
+def main():
+    # Individual textures + a comparison sheet (each upscaled to 512 px tall, 4-head guides).
+    DISPLAY_H = 512
+    panels = []
+    for w, h in SIZES:
+        img = chibi_front(w, h).render()
+        img.save(OUT / f"chibi_front_{w}x{h}.png")
+        k = DISPLAY_H // h
+        panel = Image.new("RGBA", (w * k, DISPLAY_H), (245, 245, 245, 255))
+        g = ImageDraw.Draw(panel)
+        for i in range(5):                                   # head divisions
+            y = round((8 + i * 60.25) / BASE_H * DISPLAY_H)
+            g.line([(0, y), (w * k, y)], fill=(200, 215, 235, 255))
+        for x in range(0, w * k, k):                         # pixel grid
+            g.line([(x, 0), (x, DISPLAY_H)], fill=(236, 236, 236, 255))
+        for y in range(0, DISPLAY_H, k):
+            g.line([(0, y), (w * k, y)], fill=(236, 236, 236, 255))
+        panel.alpha_composite(img.resize((w * k, DISPLAY_H), Image.NEAREST))
+        panels.append((panel, f"{w}x{h}  (x{k})"))
 
-gap, label_h = 24, 24
-sheet = Image.new("RGBA", (sum(p.width for p, _ in panels) + gap * (len(panels) + 1),
-                           DISPLAY_H + label_h + gap), (255, 255, 255, 255))
-d = ImageDraw.Draw(sheet)
-x = gap
-for panel, label in panels:
-    sheet.paste(panel, (x, label_h))
-    d.text((x, 6), label, fill=(60, 60, 60, 255))
-    x += panel.width + gap
-sheet.save(OUT / "chibi_size_compare.png")
-print("done")
+    gap, label_h = 24, 24
+    sheet = Image.new("RGBA", (sum(p.width for p, _ in panels) + gap * (len(panels) + 1),
+                               DISPLAY_H + label_h + gap), (255, 255, 255, 255))
+    d = ImageDraw.Draw(sheet)
+    x = gap
+    for panel, label in panels:
+        sheet.paste(panel, (x, label_h))
+        d.text((x, 6), label, fill=(60, 60, 60, 255))
+        x += panel.width + gap
+    sheet.save(OUT / "chibi_size_compare.png")
+    print("done")
+
+
+if __name__ == "__main__":
+    main()

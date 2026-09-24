@@ -18,7 +18,8 @@
     <KeyBinding Gesture="G" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static svc:ToolCatalog.Fill}" />
     <KeyBinding Gesture="I" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static svc:ToolCatalog.Eyedropper}" />
     <KeyBinding Gesture="Ctrl+OemQuotes" Command="{Binding ToggleGridCommand}" />
-    <KeyBinding Gesture="T" Command="{Binding ToggleTemplateCommand}" />
+    <KeyBinding Gesture="P" Command="{Binding TogglePoseModeCommand}" />
+    <KeyBinding Gesture="H" Command="{Binding ToggleDimOtherPartsCommand}" />
     <KeyBinding Gesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}" />
     <KeyBinding Gesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}" />
   </Window.KeyBindings>
@@ -37,8 +38,10 @@
       <MenuItem Header="보기(_V)">
         <MenuItem Header="픽셀 격자" InputGesture="Ctrl+OemQuotes" Command="{Binding ToggleGridCommand}"
                   ToggleType="CheckBox" IsChecked="{Binding Session.ShowGrid, Mode=OneWay}" />
-        <MenuItem Header="템플릿 표시" InputGesture="T" Command="{Binding ToggleTemplateCommand}"
-                  ToggleType="CheckBox" IsChecked="{Binding Session.ShowTemplate, Mode=OneWay}" />
+        <MenuItem Header="다른 파츠 흐리게" InputGesture="H" Command="{Binding ToggleDimOtherPartsCommand}"
+                  ToggleType="CheckBox" IsChecked="{Binding Session.DimOtherParts, Mode=OneWay}" />
+        <MenuItem Header="포즈 모드" InputGesture="P" Command="{Binding TogglePoseModeCommand}"
+                  ToggleType="CheckBox" IsChecked="{Binding Session.PoseMode, Mode=OneWay}" />
         <Separator />
         <MenuItem Header="확대" InputGesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}" />
         <MenuItem Header="축소" InputGesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}" />

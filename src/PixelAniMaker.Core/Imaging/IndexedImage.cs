@@ -19,6 +19,9 @@ public sealed class IndexedImage
 
     public ReadOnlySpan<ushort> Pixels => _pixels;
 
+    /// <summary>Incremented on every pixel change; lets caches detect edits.</summary>
+    public int Version { get; private set; }
+
     public bool InBounds(int x, int y) => (uint)x < (uint)Width && (uint)y < (uint)Height;
 
     public int this[int x, int y] => _pixels[y * Width + x];
@@ -32,6 +35,7 @@ public sealed class IndexedImage
         if (p == index)
             return false;
         p = (ushort)index;
+        Version++;
         return true;
     }
 
