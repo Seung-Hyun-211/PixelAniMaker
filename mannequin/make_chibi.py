@@ -43,6 +43,15 @@ class Figure:
     def poly(self, pts, kind="body"):
         self.draw.polygon(self._p(pts), fill=self._new(kind))
 
+    def smooth_poly(self, pts, kind="body", ss=8):
+        """Polygon rasterised at ss× and kept where at least half of a pixel is covered — no stray
+        one-pixel spikes on curved outlines."""
+        n = self._new(kind)
+        big = Image.new("L", (self.w * ss, self.h * ss), 0)
+        ImageDraw.Draw(big).polygon([(x * self.s * ss, y * self.s * ss) for x, y in pts], fill=255)
+        mask = big.resize((self.w, self.h), Image.BOX).point(lambda v: 255 if v >= 128 else 0)
+        self.labels.paste(n, (0, 0), mask)
+
     def ellipse(self, box, kind="body"):
         x0, y0, x1, y1 = box
         s = self.s
@@ -96,6 +105,46 @@ def m(x):
     return BASE_W - 1 - x
 
 
+# ---------------------------------------------------------------- head
+# Head = 60 design px tall (top y 8, chin y 68), 4-head proportions.
+# Round skull, cheeks tapering to a soft chin, ears at eye level (after the chibi reference sheet).
+
+def smooth_closed(pts, steps=8):
+    """Closed Catmull-Rom curve through the control points (for organic outlines)."""
+    out, n = [], len(pts)
+    for i in range(n):
+        p0, p1, p2, p3 = pts[i - 1], pts[i], pts[(i + 1) % n], pts[(i + 2) % n]
+        for k in range(steps):
+            t = k / steps
+            out.append(tuple(0.5 * (2 * p1[j] + (-p0[j] + p2[j]) * t + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * t * t
+                                    + (-p0[j] + 3 * p1[j] - 3 * p2[j] + p3[j]) * t ** 3) for j in (0, 1)))
+    return out
+
+
+# front: (half width, y) from the crown down to the chin — round skull widest at ear level, jaw narrowing
+HEAD_FRONT = [(0, 8), (14.5, 11.9), (25.1, 22.5), (29, 37), (27.5, 46), (23.5, 54.5), (17, 61.5), (9, 66.5), (0, 68)]
+
+# side, facing screen-left: (dx, y) clockwise from the chin — nose/mouth in front, skull bulging to the back
+HEAD_SIDE = [(-20, 65), (-24, 61.5), (-25, 57), (-26.5, 53), (-26, 49), (-29, 46), (-27, 41.5), (-27.5, 34),
+             (-25.5, 24), (-20, 15.5), (-11, 9.5), (0, 7.5), (11, 8.5), (21, 14), (27.5, 24), (30, 36), (28, 46.5),
+             (22, 55), (11, 60.5), (-4, 62.5), (-12, 64.5)]
+
+
+def head_front(f, cx, ears=True):
+    """Front (or back) head; ears are drawn first so the head's edge draws the line between them."""
+    if ears:
+        for s in (-1, 1):
+            f.ellipse((cx + s * 29 - 5, 36, cx + s * 29 + 5, 50))
+    half = [(cx + dx, y) for dx, y in HEAD_FRONT]
+    f.smooth_poly(smooth_closed(half + [(cx - dx, y) for dx, y in reversed(HEAD_FRONT[1:-1])]))
+
+
+def head_side(f, cx):
+    """Head facing screen-left, with the ear drawn over it so it shows as an inner line."""
+    f.smooth_poly(smooth_closed([(cx + dx, y) for dx, y in HEAD_SIDE]))
+    f.ellipse((cx + 3, 36, cx + 12, 50))
+
+
 def chibi_front(w, h):
     """Head = 60 design px; figure spans y 8..249 (4 heads)."""
     f = Figure(w, h)
@@ -109,14 +158,14 @@ def chibi_front(w, h):
     f.poly([(47, 110), (80, 110), (81, 126), (46, 126)])                                  # waist
     f.poly([(44, 74), (83, 74), (85, 86), (81, 112), (46, 112), (42, 86)])                # chest
     f.capsule((64, 62), 6, (64, 76), 6)                                                   # neck
-    f.ellipse((35, 8, 92, 68))                                                            # head
+    head_front(f, 63.5)                                                                   # head
     for s in (lambda x: x, m):                                   # arms
         f.capsule((s(41), 84), 6, (s(37), 118), 5)
-        f.capsule((s(37), 126), 5, (s(34), 148), 4)
-        f.poly([(s(29), 152), (s(39), 152), (s(41), 162), (s(38), 170), (s(31), 171), (s(27), 164)])
+        f.capsule((s(37), 126), 5, (s(35), 141), 4)
+        f.poly([(s(30), 145), (s(40), 145), (s(42), 155), (s(39), 163), (s(32), 164), (s(28), 157)])
         f.circle((s(43), 80), 7)
         f.circle((s(37), 122), 5)
-        f.circle((s(34), 151), 3)
+        f.circle((s(35), 144), 3)
     f.line([(63, 12), (63, 64)], min_scale=0.5)                  # face guide: centre
     f.line([(37, 42), (90, 42)], min_scale=0.5)                  # eye line (lower half for chibi)
     f.line([(63, 128), (63, 134)], min_scale=1)                  # navel

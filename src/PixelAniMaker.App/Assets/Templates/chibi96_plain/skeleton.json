@@ -287,7 +287,7 @@
       "parent": "chest",
       "views": {
         "front": {
-          "x": 27,
+          "x": 24,
           "y": 0,
           "jointX": 48.0,
           "jointY": 37.0,
@@ -295,7 +295,7 @@
           "image": "front/head.png"
         },
         "left": {
-          "x": 27,
+          "x": 28,
           "y": 0,
           "jointX": 48.0,
           "jointY": 37.0,
@@ -303,7 +303,7 @@
           "image": "left/head.png"
         },
         "back": {
-          "x": 27,
+          "x": 24,
           "y": 0,
           "jointX": 48.0,
           "jointY": 37.0,
@@ -380,26 +380,26 @@
       "parent": "forearm_r",
       "views": {
         "front": {
-          "x": 27,
-          "y": 74,
-          "jointX": 33.0,
-          "jointY": 75.5,
+          "x": 28,
+          "y": 70,
+          "jointX": 33.5,
+          "jointY": 72.0,
           "order": 12,
           "image": "front/hand_r.png"
         },
         "left": {
           "x": 44,
-          "y": 74,
+          "y": 70,
           "jointX": 49.5,
-          "jointY": 75.5,
+          "jointY": 72.0,
           "order": 2,
           "image": "left/hand_r.png"
         },
         "back": {
-          "x": 57,
-          "y": 74,
-          "jointX": 62.5,
-          "jointY": 75.5,
+          "x": 56,
+          "y": 70,
+          "jointX": 62.0,
+          "jointY": 72.0,
           "order": 12,
           "image": "back/hand_r.png"
         }
@@ -473,26 +473,26 @@
       "parent": "forearm_l",
       "views": {
         "front": {
-          "x": 57,
-          "y": 74,
-          "jointX": 62.5,
-          "jointY": 75.5,
+          "x": 56,
+          "y": 70,
+          "jointX": 62.0,
+          "jointY": 72.0,
           "order": 15,
           "image": "front/hand_l.png"
         },
         "left": {
           "x": 43,
-          "y": 74,
+          "y": 70,
           "jointX": 48.0,
-          "jointY": 75.5,
+          "jointY": 72.0,
           "order": 15,
           "image": "left/hand_l.png"
         },
         "back": {
-          "x": 27,
-          "y": 74,
-          "jointX": 33.0,
-          "jointY": 75.5,
+          "x": 28,
+          "y": 70,
+          "jointX": 33.5,
+          "jointY": 72.0,
           "order": 15,
           "image": "back/hand_l.png"
         }
