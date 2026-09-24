@@ -66,7 +66,8 @@ public sealed class AnimationClip : INotifyPropertyChanged
     public int Fps { get => _fps; set => Set(ref _fps, Math.Max(1, value)); }
     public bool Loop { get => _loop; set => Set(ref _loop, value); }
 
-    public IReadOnlyList<Keyframe> Keys(Direction direction) => (IReadOnlyList<Keyframe>)_tracks[direction.Source()].Values;
+    /// <summary>The direction's keys in frame order (a copy).</summary>
+    public IReadOnlyList<Keyframe> Keys(Direction direction) => [.. _tracks[direction.Source()].Values];
 
     public Keyframe? KeyAt(Direction direction, int frame) => _tracks[direction.Source()].GetValueOrDefault(frame);
 

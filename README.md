@@ -5,6 +5,7 @@ C# .NET 8 + Avalonia UI로 만들며 윈도우·맥·리눅스를 지원한다.
 
 - 설계 문서: [doc/design.md](doc/design.md)
 - 패치노트: [doc/patchnotes/](doc/patchnotes/README.md)
+- 진행 상황과 다음 루트: [doc/progress.md](doc/progress.md)
 - 프로토타입 스크립트: [mannequin/](mannequin/) (템플릿 생성, 팔 흔들기 회전 보정 테스트)
 
 ## 실행

@@ -79,6 +79,15 @@ public class AnimationTests
     }
 
     [Fact]
+    public void Keys_are_listed_in_frame_order()
+    {
+        var clip = Clip();
+        clip.SetKey(Direction.Front, new Keyframe(2, P(10)));
+        Assert.Equal([0, 2, 4], clip.Keys(Direction.Front).Select(k => k.Frame));
+        Assert.Empty(clip.Keys(Direction.Back));
+    }
+
+    [Fact]
     public void Json_clips_parse()
     {
         var clips = AnimationJson.Parse("""

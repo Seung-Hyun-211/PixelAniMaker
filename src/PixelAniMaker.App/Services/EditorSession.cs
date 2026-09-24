@@ -34,7 +34,7 @@ public sealed partial class EditorSession : ObservableObject
     [ObservableProperty] private bool _showGrid = true;
     [ObservableProperty] private string _cursorText = "";
 
-    public EditorSession() => NewCharacter();
+    public EditorSession() => LoadCharacter(TemplateLoader.LoadChibi96());
 
     /// <summary>Composite of the current direction's source view (for hit-testing in source coordinates).</summary>
     public CompositeResult SourceComposite { get; private set; } = null!;
@@ -71,7 +71,8 @@ public sealed partial class EditorSession : ObservableObject
     /// <summary>Raised when anything that changes rendered frames changes: pixels, palette, outline, undo/redo.</summary>
     public event EventHandler? ContentChanged;
 
-    public void NewCharacter()
+    /// <summary>Replaces the character being edited (new template or a loaded project).</summary>
+    public void LoadCharacter(Character character)
     {
         if (Character is not null)
         {
@@ -81,7 +82,6 @@ public sealed partial class EditorSession : ObservableObject
             Character.PoseChanged -= OnPoseChanged;
         }
 
-        var character = TemplateLoader.LoadChibi96();
         character.History.Changed += OnHistoryChanged;
         character.Palette.Changed += OnContentChanged;
         character.Outline.Changed += OnContentChanged;
