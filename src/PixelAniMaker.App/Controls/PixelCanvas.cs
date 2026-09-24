@@ -91,6 +91,20 @@ public sealed class PixelCanvas : SessionControl
 
     private Point ToCanvas(Point screen) => (screen - _origin) / Session!.Zoom;
 
+    /// <summary>Screen point → source-view canvas point (what interactions work in).</summary>
+    private System.Numerics.Vector2 ToSource(Point screen)
+    {
+        var c = ToCanvas(screen);
+        return Session!.ToSource(c.X, c.Y);
+    }
+
+    /// <summary>Source-view canvas point → screen point.</summary>
+    private Point SourceToScreen(System.Numerics.Vector2 p)
+    {
+        var d = Session!.FromSource(p);
+        return ToScreen(d.X, d.Y);
+    }
+
     // ------------------------------------------------------------------ rendering
 
     public override void Render(DrawingContext context)
@@ -133,9 +147,9 @@ public sealed class PixelCanvas : SessionControl
     /// <summary>Dashed outline of the active part's image, following its rotation.</summary>
     private void DrawPartBounds(DrawingContext context, PartTransform t)
     {
-        var img = t.Part.Image;
+        var img = t.View.Image;
         System.Numerics.Vector2[] corners = [new(0, 0), new(img.Width, 0), new(img.Width, img.Height), new(0, img.Height)];
-        var pts = corners.Select(c => t.ToCanvas(c)).Select(p => ToScreen(p.X, p.Y)).ToArray();
+        var pts = corners.Select(c => SourceToScreen(t.ToCanvas(c))).ToArray();
         for (int i = 0; i < pts.Length; i++)
             context.DrawLine(PartBoundsPen, pts[i], pts[(i + 1) % pts.Length]);
     }
@@ -147,14 +161,13 @@ public sealed class PixelCanvas : SessionControl
         {
             if (part.Parent is not null)
             {
-                var parent = s.Transforms[part.Parent].Pivot;
-                context.DrawLine(BonePen, ToScreen(parent.X, parent.Y), ToScreen(t.Pivot.X, t.Pivot.Y));
+                context.DrawLine(BonePen, SourceToScreen(s.Transforms[part.Parent].Pivot), SourceToScreen(t.Pivot));
             }
         }
         foreach (var (part, t) in s.Transforms)
         {
             var brush = part == s.ActivePart ? ActiveJointBrush : JointBrush;
-            context.DrawEllipse(brush, null, ToScreen(t.Pivot.X, t.Pivot.Y), 4, 4);
+            context.DrawEllipse(brush, null, SourceToScreen(t.Pivot), 4, 4);
         }
     }
 
@@ -178,7 +191,7 @@ public sealed class PixelCanvas : SessionControl
         else if (props.IsLeftButtonPressed || props.IsRightButtonPressed)
         {
             _interaction = s.PoseMode ? new PoseInteraction(s) : new DrawInteraction(s);
-            _interaction.Begin(ToCanvas(point.Position), props.IsRightButtonPressed, IsSnap(e));
+            _interaction.Begin(Input(point.Position, e, props.IsRightButtonPressed));
         }
         else
         {
@@ -202,8 +215,8 @@ public sealed class PixelCanvas : SessionControl
             return;
         }
 
+        _interaction?.Move(Input(pos, e));
         var canvas = ToCanvas(pos);
-        _interaction?.Move(canvas, IsSnap(e));
 
         var pixel = ((int)Math.Floor(canvas.X), (int)Math.Floor(canvas.Y));
         if (_hover != pixel)
@@ -219,7 +232,7 @@ public sealed class PixelCanvas : SessionControl
     {
         base.OnPointerReleased(e);
         // the last move events can be coalesced away, so finish at the release point
-        _interaction?.Move(ToCanvas(e.GetPosition(this)), IsSnap(e));
+        _interaction?.Move(Input(e.GetPosition(this), e));
         EndInteraction();
         e.Pointer.Capture(null);
     }
@@ -246,7 +259,8 @@ public sealed class PixelCanvas : SessionControl
         _panning = false;
     }
 
-    private static bool IsSnap(PointerEventArgs e) => e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+    private CanvasInput Input(Point screen, PointerEventArgs e, bool secondary = false) =>
+        new(ToSource(screen), secondary, e.KeyModifiers.HasFlag(KeyModifiers.Shift), e.KeyModifiers.HasFlag(KeyModifiers.Alt));
 
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {

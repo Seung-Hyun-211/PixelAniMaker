@@ -17,30 +17,41 @@ public sealed class CompositeResult(int width, int height)
 
     public short OwnerAt(int x, int y) =>
         (uint)x < (uint)Width && (uint)y < (uint)Height ? Owners[y * Width + x] : NoPart;
+
+    internal void MirrorHorizontally()
+    {
+        for (int y = 0; y < Height; y++)
+        {
+            Array.Reverse(Indices, y * Width, Width);
+            Array.Reverse(Owners, y * Width, Width);
+        }
+    }
 }
 
 /// <summary>
-/// Renders a posed character onto the canvas. Rotated parts are resampled RotSprite-style from an
+/// Renders a posed character in one direction. Rotated parts are resampled RotSprite-style from an
 /// 8x Scale2x image so edges stay clean and only palette colours are used.
 /// </summary>
 public sealed class Compositor
 {
-    private readonly Dictionary<Part, (int Version, IndexedImage Image)> _upscaled = [];
+    private readonly Dictionary<IndexedImage, (int Version, IndexedImage Image)> _upscaled = [];
 
-    public CompositeResult Compose(Character character)
+    public CompositeResult Compose(Character character, Direction direction)
     {
         var result = new CompositeResult(character.Width, character.Height);
-        var transforms = character.ComputeTransforms();
-        for (short i = 0; i < character.Parts.Count; i++)
-            Draw(result, transforms[character.Parts[i]], i);
+        var transforms = character.ComputeTransforms(direction);
+        foreach (var part in character.DrawOrder(direction))
+            Draw(result, transforms[part], (short)character.IndexOf(part));
+        if (direction.IsMirrored())
+            result.MirrorHorizontally();
         return result;
     }
 
     private void Draw(CompositeResult target, PartTransform t, short owner)
     {
-        var image = t.Part.Image;
         var (x0, y0, x1, y1) = CanvasBounds(t, target.Width, target.Height);
-        Func<Vector2, int> sample = t.IsGridAligned ? p => SampleNearest(image, p) : Sampler8x(t.Part);
+        var image = t.View.Image;
+        Func<Vector2, int> sample = t.IsGridAligned ? p => SampleNearest(image, p) : Sampler8x(image);
 
         for (int y = y0; y < y1; y++)
         {
@@ -58,7 +69,7 @@ public sealed class Compositor
 
     private static (int X0, int Y0, int X1, int Y1) CanvasBounds(PartTransform t, int width, int height)
     {
-        var img = t.Part.Image;
+        var img = t.View.Image;
         Vector2[] corners = [new(0, 0), new(img.Width, 0), new(0, img.Height), new(img.Width, img.Height)];
         var pts = corners.Select(t.ToCanvas).ToArray();
         return (
@@ -74,12 +85,12 @@ public sealed class Compositor
         return image.InBounds(x, y) ? image[x, y] : Palette.TransparentIndex;
     }
 
-    private Func<Vector2, int> Sampler8x(Part part)
+    private Func<Vector2, int> Sampler8x(IndexedImage image)
     {
-        if (!_upscaled.TryGetValue(part, out var cached) || cached.Version != part.Image.Version)
+        if (!_upscaled.TryGetValue(image, out var cached) || cached.Version != image.Version)
         {
-            cached = (part.Image.Version, Scale2x.Upscale8(part.Image));
-            _upscaled[part] = cached;
+            cached = (image.Version, Scale2x.Upscale8(image));
+            _upscaled[image] = cached;
         }
         var up = cached.Image;
         return p => SampleNearest(up, p * 8);

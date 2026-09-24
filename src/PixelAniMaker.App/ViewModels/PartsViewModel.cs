@@ -12,10 +12,10 @@ public sealed record PartItem(Part Part)
     public string Display => new string(' ', Part.Depth * 3) + Part.Label;
 }
 
-/// <summary>Skeleton hierarchy: pick the part to edit and set its joint rotation.</summary>
+/// <summary>Skeleton hierarchy: pick the part to edit and set its joint rotation in the current direction.</summary>
 public sealed partial class PartsViewModel : Tool
 {
-    private Pose? _pose;
+    private Character? _character;
     private bool _syncing;
 
     [ObservableProperty] private PartItem? _selected;
@@ -31,7 +31,7 @@ public sealed partial class PartsViewModel : Tool
         {
             if (e.PropertyName == nameof(EditorSession.Character))
                 Attach();
-            else if (e.PropertyName == nameof(EditorSession.ActivePart))
+            else if (e.PropertyName is nameof(EditorSession.ActivePart) or nameof(EditorSession.Direction))
                 Sync();
         };
         Attach();
@@ -57,14 +57,14 @@ public sealed partial class PartsViewModel : Tool
     private void ResetPart() => Session.SetRotation(Session.ActivePart, 0);
 
     [RelayCommand]
-    private void ResetPose() => PoseChange.ResetAll(Session.Character.Pose, Session.Character.History);
+    private void ResetPose() => Session.ResetPose();
 
     private void Attach()
     {
-        if (_pose is not null)
-            _pose.Changed -= OnPoseChanged;
-        _pose = Session.Character.Pose;
-        _pose.Changed += OnPoseChanged;
+        if (_character is not null)
+            _character.PoseChanged -= OnPoseChanged;
+        _character = Session.Character;
+        _character.PoseChanged += OnPoseChanged;
 
         Items.Clear();
         foreach (var part in Session.Character.Hierarchy())
@@ -79,7 +79,7 @@ public sealed partial class PartsViewModel : Tool
     {
         _syncing = true;
         Selected = Items.FirstOrDefault(i => i.Part == Session.ActivePart);
-        Rotation = (decimal)Math.Round(Session.Character.Pose.Get(Session.ActivePart.Name), 1);
+        Rotation = (decimal)Math.Round(Session.CurrentPose.Get(Session.ActivePart.Name), 1);
         _syncing = false;
     }
 }

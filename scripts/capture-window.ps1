@@ -30,6 +30,9 @@ do {
     if (-not $proc) { Start-Sleep -Milliseconds 500 }
 } while (-not $proc -and (Get-Date) -lt $deadline)
 if (-not $proc) { throw "No window titled '$TitlePrefix*' found within $TimeoutSeconds s." }
+# a freshly started app shows its window before the docked panels are laid out
+$age = (Get-Date) - $proc.StartTime
+if ($age.TotalSeconds -lt 10) { Start-Sleep -Seconds (10 - [int]$age.TotalSeconds) }
 $rect = New-Object CaptureNative+RECT
 [CaptureNative]::GetWindowRect($proc.MainWindowHandle, [ref]$rect) | Out-Null
 $w = $rect.R - $rect.L; $h = $rect.B - $rect.T

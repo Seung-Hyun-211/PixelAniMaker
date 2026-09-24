@@ -1,25 +1,40 @@
 using Avalonia;
+using Avalonia.Input;
 using Avalonia.Media;
 using PixelAniMaker.App.Services;
+using PixelAniMaker.Core.Rigging;
 
 namespace PixelAniMaker.App.Controls;
 
-/// <summary>Shows the current image at a fixed integer scale (actual size preview).</summary>
+/// <summary>Shows one direction of the posed character at a fixed integer scale. Clicking it switches to that direction.</summary>
 public sealed class PixelPreview : SessionControl
 {
     public static readonly StyledProperty<int> ScaleProperty =
         AvaloniaProperty.Register<PixelPreview, int>(nameof(Scale), 1);
 
+    public static readonly StyledProperty<Direction> DirectionProperty =
+        AvaloniaProperty.Register<PixelPreview, Direction>(nameof(Direction));
+
+    private static readonly IPen CurrentPen = new Pen(new SolidColorBrush(Color.FromRgb(77, 163, 255)), 2);
+
     static PixelPreview()
     {
         AffectsMeasure<PixelPreview>(SessionProperty, ScaleProperty);
-        AffectsRender<PixelPreview>(ScaleProperty);
+        AffectsRender<PixelPreview>(ScaleProperty, DirectionProperty);
     }
+
+    public PixelPreview() => Cursor = new Cursor(StandardCursorType.Hand);
 
     public int Scale
     {
         get => GetValue(ScaleProperty);
         set => SetValue(ScaleProperty, value);
+    }
+
+    public Direction Direction
+    {
+        get => GetValue(DirectionProperty);
+        set => SetValue(DirectionProperty, value);
     }
 
     protected override void OnSessionPropertyChanged(string? propertyName)
@@ -36,6 +51,17 @@ public sealed class PixelPreview : SessionControl
         if (Session is not { } s)
             return;
         int w = s.Character.Width, h = s.Character.Height;
-        DrawImage(context, s.PreviewBitmap, w, h, new Rect(0, 0, w * Scale, h * Scale));
+        var dest = new Rect(0, 0, w * Scale, h * Scale);
+        DrawImage(context, s.PreviewBitmap(Direction), w, h, dest);
+        if (s.Direction == Direction)
+            context.DrawRectangle(null, CurrentPen, dest.Deflate(1));
+    }
+
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    {
+        base.OnPointerPressed(e);
+        if (Session is { } s)
+            s.Direction = Direction;
+        e.Handled = true;
     }
 }

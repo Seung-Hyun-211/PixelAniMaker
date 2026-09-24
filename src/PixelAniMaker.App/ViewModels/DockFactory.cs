@@ -25,7 +25,7 @@ public sealed class DockFactory : Factory
         var leftTop = new ToolDock
         {
             Id = "LeftTopDock",
-            Proportion = 0.4,
+            Proportion = 0.55,
             Alignment = Alignment.Left,
             VisibleDockables = CreateList<IDockable>(toolbox),
             ActiveDockable = toolbox,
@@ -34,7 +34,7 @@ public sealed class DockFactory : Factory
         var leftBottom = new ToolDock
         {
             Id = "LeftBottomDock",
-            Proportion = 0.6,
+            Proportion = 0.45,
             Alignment = Alignment.Left,
             VisibleDockables = CreateList<IDockable>(parts),
             ActiveDockable = parts,
@@ -60,7 +60,7 @@ public sealed class DockFactory : Factory
         var rightTop = new ToolDock
         {
             Id = "RightTopDock",
-            Proportion = 0.45,
+            Proportion = 0.6,
             Alignment = Alignment.Right,
             VisibleDockables = CreateList<IDockable>(preview),
             ActiveDockable = preview,
@@ -69,7 +69,7 @@ public sealed class DockFactory : Factory
         var rightBottom = new ToolDock
         {
             Id = "RightBottomDock",
-            Proportion = 0.55,
+            Proportion = 0.4,
             Alignment = Alignment.Right,
             VisibleDockables = CreateList<IDockable>(palette),
             ActiveDockable = palette,
