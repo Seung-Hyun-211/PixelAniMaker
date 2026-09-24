@@ -87,7 +87,7 @@ public sealed partial class TimelineViewModel : Tool
     [RelayCommand] private void ClearTouchup() => Animation.ClearTouchup();
 
     [RelayCommand]
-    private void NewClip() => Animation.AddClip(new AnimationClip($"새 동작 {++_newClipCount}", 8));
+    private void NewClip() => Animation.AddClip(new AnimationClip(Localizer.T($"새 동작 {++_newClipCount}"), 8));
 
     [RelayCommand]
     private void DuplicateClip()

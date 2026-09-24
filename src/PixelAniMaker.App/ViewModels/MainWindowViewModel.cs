@@ -93,6 +93,24 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     private Dictionary<string, (System.Windows.Input.ICommand, object?)>? _shortcutCommands;
 
+    public bool IsKorean => Project.Settings.Language != Localizer.English;
+
+    public bool IsEnglish => Project.Settings.Language == Localizer.English;
+
+    /// <summary>Saves the UI language; the running program keeps its language until restarted.</summary>
+    [RelayCommand]
+    private async Task SetLanguage(string language)
+    {
+        if (Project.Settings.Language == language)
+            return;
+        Project.Settings.Language = language;
+        Project.Settings.Save();
+        OnPropertyChanged(nameof(IsKorean));
+        OnPropertyChanged(nameof(IsEnglish));
+        if (Dialogs is not null)
+            await Dialogs.ShowMessageAsync("언어를 바꿨습니다. 프로그램을 다시 시작하면 적용됩니다.");
+    }
+
     [RelayCommand]
     private async Task EditShortcuts()
     {

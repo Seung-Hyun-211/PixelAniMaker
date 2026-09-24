@@ -108,7 +108,7 @@ public partial class MainWindow : Window, IFileDialogs
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = title,
+            Title = Localizer.T(title),
             AllowMultiple = false,
             FileTypeFilter = [ToFilter(type)],
         });
@@ -119,12 +119,12 @@ public partial class MainWindow : Window, IFileDialogs
     {
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = title,
+            Title = Localizer.T(title),
             SuggestedFileName = suggestedName + type.Extension,
             DefaultExtension = type.Extension.TrimStart('.'),
             FileTypeChoices = type.Extensions.Length == 1
                 ? [ToFilter(type)]
-                : type.Extensions.Select(e => ToFilter(type with { Name = $"{type.Name} ({e})", Extensions = [e] })).ToList(),
+                : type.Extensions.Select(e => ToFilter(type with { Name = $"{Localizer.T(type.Name)} ({e})", Extensions = [e] })).ToList(),
             ShowOverwritePrompt = true,
         });
         return file?.TryGetLocalPath();
@@ -141,6 +141,8 @@ public partial class MainWindow : Window, IFileDialogs
         };
 
     public Task ShowErrorAsync(string message) => MessageDialog.ShowAsync(this, "오류", message, "확인");
+
+    public Task ShowMessageAsync(string message) => MessageDialog.ShowAsync(this, "알림", message, "확인");
 
     public Task EditShortcutsAsync(ShortcutMap shortcuts) => new ShortcutsWindow(shortcuts).ShowDialog(this);
 
@@ -183,5 +185,5 @@ public partial class MainWindow : Window, IFileDialogs
         await MessageDialog.ShowAsync(this, "작업 복구", message, "복구", "버리기") == 0;
 
     private static FilePickerFileType ToFilter(FileType type) =>
-        new(type.Name) { Patterns = type.Extensions.Select(e => "*" + e).ToList() };
+        new(Localizer.T(type.Name)) { Patterns = type.Extensions.Select(e => "*" + e).ToList() };
 }

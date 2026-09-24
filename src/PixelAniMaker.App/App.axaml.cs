@@ -17,6 +17,7 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var args = CommandLine.Parse(desktop.Args ?? []);
+            Localizer.Initialize(AppSettings.Load().Language);
             if (args.IsExport)
                 Dispatcher.UIThread.Post(() => desktop.Shutdown(BatchExporter.Run(args.ExportPath!, args.OutputFolder, Console.Out)));
             else

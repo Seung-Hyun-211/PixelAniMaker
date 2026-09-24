@@ -69,6 +69,12 @@
       <MenuItem Header="창(_W)">
         <MenuItem Header="창 배치 초기화" Command="{Binding ResetLayoutCommand}" />
         <MenuItem Header="단축키 설정..." Command="{Binding EditShortcutsCommand}" />
+        <MenuItem Header="언어 / Language">
+          <MenuItem Header="한국어" ToggleType="Radio" IsChecked="{Binding IsKorean, Mode=OneWay}"
+                    Command="{Binding SetLanguageCommand}" CommandParameter="ko" />
+          <MenuItem Header="English" ToggleType="Radio" IsChecked="{Binding IsEnglish, Mode=OneWay}"
+                    Command="{Binding SetLanguageCommand}" CommandParameter="en" />
+        </MenuItem>
       </MenuItem>
     </Menu>
 

@@ -132,7 +132,7 @@ public sealed partial class AnimationSession : ObservableObject
     }
 
     /// <summary>A copy of the current clip (settings and every direction's keys).</summary>
-    public AnimationClip? DuplicateCurrent() => CurrentClip?.CopyAs(CurrentClip.Name + " 복사본");
+    public AnimationClip? DuplicateCurrent() => CurrentClip?.CopyAs(Localizer.T(CurrentClip.Name + " 복사본"));
 
     /// <summary>Replaces the clip list (new project or a loaded file).</summary>
     public void SetClips(IEnumerable<AnimationClip> clips)

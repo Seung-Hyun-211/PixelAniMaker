@@ -34,6 +34,8 @@ public interface IFileDialogs
 
     Task ShowErrorAsync(string message);
 
+    Task ShowMessageAsync(string message);
+
     /// <summary>Lets the user view and change keyboard shortcuts.</summary>
     Task EditShortcutsAsync(ShortcutMap shortcuts);
 
