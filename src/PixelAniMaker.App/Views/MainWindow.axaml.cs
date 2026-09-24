@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
@@ -16,9 +17,30 @@ public partial class MainWindow : Window, IFileDialogs
         DataContextChanged += (_, _) =>
         {
             if (DataContext is MainWindowViewModel vm)
+            {
                 vm.Dialogs = this;
+                RestorePlacement(vm.Project.Settings.Window);
+            }
         };
     }
+
+    /// <summary>Puts the window where it was last time (maximized when nothing was saved).</summary>
+    private void RestorePlacement(WindowPlacement? p)
+    {
+        if (p is null || p.Maximized)
+        {
+            WindowState = WindowState.Maximized;
+            return;
+        }
+        WindowState = WindowState.Normal;
+        WindowStartupLocation = WindowStartupLocation.Manual;
+        Position = new PixelPoint(p.X, p.Y);
+        Width = p.Width;
+        Height = p.Height;
+    }
+
+    private WindowPlacement CurrentPlacement() =>
+        new(Position.X, Position.Y, Width, Height, WindowState == WindowState.Maximized);
 
     protected override async void OnClosing(WindowClosingEventArgs e)
     {
@@ -29,7 +51,7 @@ public partial class MainWindow : Window, IFileDialogs
         if (await vm.CanCloseAsync())
         {
             _closeConfirmed = true;
-            vm.OnClosed();
+            vm.OnClosed(CurrentPlacement());
             Close();
         }
     }
