@@ -7,7 +7,7 @@ using PixelAniMaker.App.Services;
 
 namespace PixelAniMaker.App.ViewModels;
 
-/// <summary>Builds the default window layout: tools | canvas | palette + preview.</summary>
+/// <summary>Builds the default window layout: tools + parts | canvas | preview + palette.</summary>
 public sealed class DockFactory : Factory
 {
     private readonly EditorSession _session;
@@ -20,14 +20,32 @@ public sealed class DockFactory : Factory
         var toolbox = new ToolboxViewModel(_session);
         var palette = new PaletteViewModel(_session);
         var preview = new PreviewViewModel(_session);
+        var parts = new PartsViewModel(_session);
 
-        var left = new ToolDock
+        var leftTop = new ToolDock
         {
-            Id = "LeftDock",
-            Proportion = 0.16,
+            Id = "LeftTopDock",
+            Proportion = 0.4,
             Alignment = Alignment.Left,
             VisibleDockables = CreateList<IDockable>(toolbox),
             ActiveDockable = toolbox,
+        };
+
+        var leftBottom = new ToolDock
+        {
+            Id = "LeftBottomDock",
+            Proportion = 0.6,
+            Alignment = Alignment.Left,
+            VisibleDockables = CreateList<IDockable>(parts),
+            ActiveDockable = parts,
+        };
+
+        var left = new ProportionalDock
+        {
+            Id = "LeftColumn",
+            Proportion = 0.18,
+            Orientation = Orientation.Vertical,
+            VisibleDockables = CreateList<IDockable>(leftTop, new ProportionalDockSplitter(), leftBottom),
         };
 
         var documents = new DocumentDock

@@ -13,8 +13,9 @@
       </ListBox.ItemTemplate>
     </ListBox>
     <CheckBox Content="픽셀 격자 (Ctrl+')" IsChecked="{Binding Session.ShowGrid}" />
-    <CheckBox Content="템플릿 표시 (T)" IsChecked="{Binding Session.ShowTemplate}" />
+    <CheckBox Content="다른 파츠 흐리게 (H)" IsChecked="{Binding Session.DimOtherParts}" />
+    <ToggleButton Content="포즈 모드 (P)" IsChecked="{Binding Session.PoseMode}" HorizontalAlignment="Stretch" />
     <TextBlock Foreground="#999999" TextWrapping="Wrap" FontSize="12"
-               Text="왼쪽 클릭: 주 색 · 오른쪽 클릭: 보조 색&#10;휠: 확대/축소 · 휠 클릭 또는 Space+드래그: 이동" />
+               Text="그리기: 선택한 파츠에만 찍힘 · 왼쪽 클릭 주 색, 오른쪽 클릭 보조 색&#10;포즈: 파츠를 끌어서 관절 기준 회전, Shift로 15° 단위&#10;휠: 확대/축소 · 휠 클릭 또는 Space+드래그: 이동" />
   </StackPanel>
 </UserControl>

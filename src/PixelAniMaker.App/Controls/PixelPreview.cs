@@ -24,20 +24,18 @@ public sealed class PixelPreview : SessionControl
 
     protected override void OnSessionPropertyChanged(string? propertyName)
     {
-        if (propertyName == nameof(EditorSession.Document))
+        if (propertyName == nameof(EditorSession.Character))
             InvalidateMeasure();
     }
 
     protected override Size MeasureOverride(Size availableSize) =>
-        Session is { } s
-            ? new Size(s.Document.Image.Width * Scale, s.Document.Image.Height * Scale)
-            : default;
+        Session is { } s ? new Size(s.Character.Width * Scale, s.Character.Height * Scale) : default;
 
     public override void Render(DrawingContext context)
     {
         if (Session is not { } s)
             return;
-        var img = s.Document.Image;
-        DrawImage(context, s, new Rect(0, 0, img.Width * Scale, img.Height * Scale));
+        int w = s.Character.Width, h = s.Character.Height;
+        DrawImage(context, s.PreviewBitmap, w, h, new Rect(0, 0, w * Scale, h * Scale));
     }
 }

@@ -1,0 +1,32 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PixelAniMaker.App.ViewModels"
+             x:Class="PixelAniMaker.App.Views.PartsView"
+             x:DataType="vm:PartsViewModel">
+  <DockPanel Margin="8">
+    <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,8,0,0">
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <TextBlock Text="회전" VerticalAlignment="Center" />
+        <NumericUpDown Value="{Binding Rotation}" Minimum="-180" Maximum="180" Increment="5"
+                       FormatString="0.#" Width="120" />
+        <TextBlock Text="°" VerticalAlignment="Center" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <Button Content="이 파츠 0°" Command="{Binding ResetPartCommand}" />
+        <Button Content="포즈 초기화" Command="{Binding ResetPoseCommand}" />
+      </StackPanel>
+    </StackPanel>
+    <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:PartItem">
+          <TextBlock Text="{Binding Display}" xml:space="preserve" />
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+      <ListBox.Styles>
+        <Style Selector="ListBoxItem">
+          <Setter Property="Padding" Value="8,3" />
+        </Style>
+      </ListBox.Styles>
+    </ListBox>
+  </DockPanel>
+</UserControl>

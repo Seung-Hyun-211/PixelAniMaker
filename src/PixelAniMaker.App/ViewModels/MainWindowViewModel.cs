@@ -20,7 +20,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Session.HistoryChanged += (_, _) => OnHistoryChanged();
         Session.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName is nameof(EditorSession.Zoom) or nameof(EditorSession.CurrentTool))
+            if (e.PropertyName is nameof(EditorSession.Zoom) or nameof(EditorSession.CurrentTool)
+                or nameof(EditorSession.PoseMode) or nameof(EditorSession.ActivePart))
                 OnPropertyChanged(nameof(StatusText));
         };
         OnHistoryChanged();
@@ -29,8 +30,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public EditorSession Session { get; }
 
     public string StatusText =>
-        $"{Session.CurrentTool.Label}   ·   " +
-        $"{Session.Document.Image.Width}×{Session.Document.Image.Height}   ·   ×{Session.Zoom}";
+        $"{(Session.PoseMode ? "포즈" : Session.CurrentTool.Label)}   ·   {Session.ActivePart.Label}   ·   " +
+        $"{Session.Character.Width}×{Session.Character.Height}   ·   ×{Session.Zoom}";
 
     [RelayCommand]
     private void ResetLayout()
@@ -43,27 +44,30 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void NewDocument()
     {
-        Session.NewDocument(64, 128);
+        Session.NewCharacter();
         OnPropertyChanged(nameof(StatusText));
     }
 
     [RelayCommand(CanExecute = nameof(CanUndo))]
-    private void Undo() => Session.Document.Undo();
+    private void Undo() => Session.Undo();
 
     [RelayCommand(CanExecute = nameof(CanRedo))]
-    private void Redo() => Session.Document.Redo();
+    private void Redo() => Session.Redo();
 
-    private bool CanUndo() => Session.Document.History.CanUndo;
-    private bool CanRedo() => Session.Document.History.CanRedo;
+    private bool CanUndo() => Session.Character.History.CanUndo;
+    private bool CanRedo() => Session.Character.History.CanRedo;
 
     [RelayCommand]
-    private void SelectTool(ToolItem tool) => Session.CurrentTool = tool;
+    private void SelectTool(ToolItem tool) => Session.SelectTool(tool);
 
     [RelayCommand]
     private void ToggleGrid() => Session.ShowGrid = !Session.ShowGrid;
 
     [RelayCommand]
-    private void ToggleTemplate() => Session.ShowTemplate = !Session.ShowTemplate;
+    private void TogglePoseMode() => Session.PoseMode = !Session.PoseMode;
+
+    [RelayCommand]
+    private void ToggleDimOtherParts() => Session.DimOtherParts = !Session.DimOtherParts;
 
     [RelayCommand]
     private void ZoomIn() => Session.ZoomBy(1);
@@ -75,6 +79,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         UndoCommand.NotifyCanExecuteChanged();
         RedoCommand.NotifyCanExecuteChanged();
-        Title = $"PixelAniMaker - 제목 없음{(Session.Document.History.IsDirty ? " *" : "")}";
+        Title = $"PixelAniMaker - 제목 없음{(Session.Character.History.IsDirty ? " *" : "")}";
     }
 }

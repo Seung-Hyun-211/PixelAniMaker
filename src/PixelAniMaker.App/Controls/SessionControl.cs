@@ -50,17 +50,11 @@ public abstract class SessionControl : Control
     /// <summary>Called when a session property changes; the control is repainted afterwards.</summary>
     protected virtual void OnSessionPropertyChanged(string? propertyName) { }
 
-    /// <summary>Draws the checkerboard and the image into <paramref name="dest"/>.</summary>
-    protected static void DrawImage(DrawingContext context, EditorSession session, Rect dest, Bitmap? underlay = null, double underlayOpacity = 1)
+    /// <summary>Draws the checkerboard and a <paramref name="width"/>×<paramref name="height"/> bitmap into <paramref name="dest"/>.</summary>
+    protected static void DrawImage(DrawingContext context, Bitmap bitmap, int width, int height, Rect dest)
     {
-        var img = session.Document.Image;
         context.FillRectangle(CheckerBrushes.Large, dest);
-        if (underlay is not null)
-        {
-            using (context.PushOpacity(underlayOpacity))
-                context.DrawImage(underlay, new Rect(underlay.Size), dest);
-        }
-        context.DrawImage(session.Bitmap, new Rect(0, 0, img.Width, img.Height), dest);
+        context.DrawImage(bitmap, new Rect(0, 0, width, height), dest);
     }
 
     private void OnImageUpdated(object? sender, EventArgs e) => InvalidateVisual();

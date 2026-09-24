@@ -24,7 +24,7 @@ public sealed class PencilTool(string name, int? fixedIndex = null) : ITool
     public static PencilTool Eraser { get; } = new("지우개", Palette.TransparentIndex);
 
     public IStroke Begin(EditorDocument document, int x, int y, bool secondary) =>
-        new Stroke(document, document.BeginEdit(name), fixedIndex ?? document.ColorIndex(secondary), x, y);
+        new Stroke(document, document.BeginEdit(name), fixedIndex ?? document.Colors.Get(secondary), x, y);
 
     private sealed class Stroke : IStroke
     {
@@ -66,7 +66,7 @@ public sealed class FillTool : ITool
     public IStroke? Begin(EditorDocument document, int x, int y, bool secondary)
     {
         var edit = document.BeginEdit("채우기");
-        int index = document.ColorIndex(secondary);
+        int index = document.Colors.Get(secondary);
         foreach (var (px, py) in Raster.FloodRegion(document.Image, x, y).ToList())
             edit.Set(px, py, index);
         document.Commit(edit);
@@ -90,12 +90,8 @@ public sealed class EyedropperTool : ITool
     {
         public void Move(int x, int y)
         {
-            if (!document.Image.InBounds(x, y))
-                return;
-            if (secondary)
-                document.SecondaryIndex = document.Image[x, y];
-            else
-                document.PrimaryIndex = document.Image[x, y];
+            if (document.Image.InBounds(x, y))
+                document.Colors.Set(secondary, document.Image[x, y]);
         }
 
         public void End() { }

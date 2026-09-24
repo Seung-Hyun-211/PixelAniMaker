@@ -16,7 +16,7 @@ public class EditorDocumentTests
         doc.EndStroke();
 
         foreach (var (x, y) in Raster.Line(0, 0, 7, 3))
-            Assert.Equal(doc.PrimaryIndex, doc.Image[x, y]);
+            Assert.Equal(doc.Colors.Primary, doc.Image[x, y]);
         Assert.Single(doc.History.Done);
     }
 
@@ -24,7 +24,7 @@ public class EditorDocumentTests
     public void Right_button_uses_secondary_colour()
     {
         var doc = Doc();
-        doc.SecondaryIndex = 2;
+        doc.Colors.Secondary = 2;
         doc.BeginStroke(PencilTool.Pencil, 1, 1, secondary: true);
         doc.EndStroke();
         Assert.Equal(2, doc.Image[1, 1]);
@@ -50,7 +50,7 @@ public class EditorDocumentTests
         doc.ContinueStroke(3, 7);
         doc.EndStroke();
 
-        doc.PrimaryIndex = 2;
+        doc.Colors.Primary = 2;
         doc.BeginStroke(FillTool.Instance, 0, 0);
 
         Assert.Equal(2, doc.Image[0, 7]);
@@ -100,14 +100,14 @@ public class EditorDocumentTests
     public void Eyedropper_selects_colour_under_cursor()
     {
         var doc = Doc();
-        doc.PrimaryIndex = 2;
+        doc.Colors.Primary = 2;
         doc.BeginStroke(PencilTool.Pencil, 5, 5);
         doc.EndStroke();
-        doc.PrimaryIndex = 1;
+        doc.Colors.Primary = 1;
 
         doc.BeginStroke(EyedropperTool.Instance, 5, 5);
         doc.EndStroke();
-        Assert.Equal(2, doc.PrimaryIndex);
+        Assert.Equal(2, doc.Colors.Primary);
     }
 
     [Fact]

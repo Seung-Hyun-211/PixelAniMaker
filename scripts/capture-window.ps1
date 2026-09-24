@@ -6,7 +6,8 @@
 #>
 param(
     [Parameter(Mandatory)] [string] $Out,
-    [string] $ProcessName = "PixelAniMaker",
+    [string] $TitlePrefix = "PixelAniMaker",
+    [int] $TimeoutSeconds = 30,
     [double] $Scale = 0.75
 )
 
@@ -22,7 +23,13 @@ public static class CaptureNative {
 "@
 [CaptureNative]::SetProcessDPIAware() | Out-Null
 
-$proc = Get-Process $ProcessName -ErrorAction Stop | Where-Object MainWindowHandle -ne 0 | Select-Object -First 1
+# wait for the main window (the app may still be starting)
+$deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+do {
+    $proc = Get-Process | Where-Object { $_.MainWindowHandle -ne 0 -and $_.MainWindowTitle.StartsWith($TitlePrefix) } | Select-Object -First 1
+    if (-not $proc) { Start-Sleep -Milliseconds 500 }
+} while (-not $proc -and (Get-Date) -lt $deadline)
+if (-not $proc) { throw "No window titled '$TitlePrefix*' found within $TimeoutSeconds s." }
 $rect = New-Object CaptureNative+RECT
 [CaptureNative]::GetWindowRect($proc.MainWindowHandle, [ref]$rect) | Out-Null
 $w = $rect.R - $rect.L; $h = $rect.B - $rect.T

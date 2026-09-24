@@ -4,5 +4,6 @@
 
 | 날짜 | 내용 |
 | --- | --- |
+| 2026-09-24 | [2단계: 파츠·스켈레톤](2026-09-24-stage2-parts-skeleton.md) — 16개 파츠, 관절 회전, 포즈 모드, 돌아간 파츠에 그리기, 도트 회전 합성 |
 | 2026-09-24 | [1단계 정리: SOLID·KISS·DRY 적용](2026-09-24-stage1-refactor.md) — 도구를 `ITool`로 분리, `ToolCatalog`, `SessionControl`, `Raster` |
 | 2026-09-24 | [1단계: 도트 편집기 기초](2026-09-24-stage1-pixel-editor.md) — Avalonia 프로젝트, 도킹 창, 캔버스, 연필·지우개·채우기·스포이드, 팔레트, 되돌리기 |

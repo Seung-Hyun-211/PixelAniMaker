@@ -68,7 +68,7 @@ public sealed partial class SwatchViewModel : ObservableObject
 public sealed partial class PaletteViewModel : Tool
 {
     private Palette? _palette;
-    private EditorDocument? _document;
+    private ColorSelection? _colors;
 
     [ObservableProperty] private string _hexInput = "#000000";
     [ObservableProperty] private string _message = "";
@@ -83,7 +83,7 @@ public sealed partial class PaletteViewModel : Tool
         CanClose = false;
         session.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(EditorSession.Document))
+            if (e.PropertyName == nameof(EditorSession.Character))
                 Attach();
         };
         Attach();
@@ -95,19 +95,14 @@ public sealed partial class PaletteViewModel : Tool
 
     public void Select(SwatchViewModel swatch, bool secondary)
     {
-        if (_document is null)
-            return;
-        if (secondary)
-            _document.SecondaryIndex = swatch.Index;
-        else
-            _document.PrimaryIndex = swatch.Index;
+        _colors?.Set(secondary, swatch.Index);
     }
 
     [RelayCommand]
     private void AddColor()
     {
         if (TryReadInput(out var color))
-            _document!.PrimaryIndex = _document.Palette.GetOrAdd(color);
+            _colors!.Primary = _palette!.GetOrAdd(color);
     }
 
     /// <summary>Replaces the primary colour; every pixel using it changes too.</summary>
@@ -116,25 +111,25 @@ public sealed partial class PaletteViewModel : Tool
     {
         if (!TryReadInput(out var color))
             return;
-        if (_document!.PrimaryIndex == Palette.TransparentIndex)
+        if (_colors!.Primary == Palette.TransparentIndex)
             Message = "투명은 바꿀 수 없습니다";
-        else if (_document.Palette.IndexOf(color) >= 0)
+        else if (_palette!.IndexOf(color) >= 0)
             Message = "이미 팔레트에 있는 색입니다";
         else
-            _document.Palette.Set(_document.PrimaryIndex, color);
+            _palette.Set(_colors.Primary, color);
     }
 
     private void Attach()
     {
         if (_palette is not null)
             _palette.Changed -= OnPaletteChanged;
-        if (_document is not null)
-            _document.ColorSelectionChanged -= OnSelectionChanged;
+        if (_colors is not null)
+            _colors.Changed -= OnSelectionChanged;
 
-        _document = Session.Document;
-        _palette = _document.Palette;
+        _palette = Session.Character.Palette;
+        _colors = Session.Character.Colors;
         _palette.Changed += OnPaletteChanged;
-        _document.ColorSelectionChanged += OnSelectionChanged;
+        _colors.Changed += OnSelectionChanged;
         Rebuild();
     }
 
@@ -160,15 +155,15 @@ public sealed partial class PaletteViewModel : Tool
 
     private void UpdateSelection()
     {
-        if (_document is null)
+        if (_colors is null)
             return;
         foreach (var s in Swatches)
         {
-            s.IsPrimary = s.Index == _document.PrimaryIndex;
-            s.IsSecondary = s.Index == _document.SecondaryIndex;
+            s.IsPrimary = s.Index == _colors.Primary;
+            s.IsSecondary = s.Index == _colors.Secondary;
         }
-        Primary = Swatches.ElementAtOrDefault(_document.PrimaryIndex);
-        Secondary = Swatches.ElementAtOrDefault(_document.SecondaryIndex);
+        Primary = Swatches.ElementAtOrDefault(_colors.Primary);
+        Secondary = Swatches.ElementAtOrDefault(_colors.Secondary);
         if (Primary is { IsTransparent: false })
             HexInput = Primary.Hex;
     }
@@ -177,7 +172,7 @@ public sealed partial class PaletteViewModel : Tool
     private bool TryReadInput(out Rgba color)
     {
         color = default;
-        bool ok = _document is not null && Rgba.TryParseHex(HexInput, out color);
+        bool ok = _palette is not null && Rgba.TryParseHex(HexInput, out color);
         Message = ok ? "" : "#RRGGBB 형식으로 입력하세요";
         return ok;
     }

@@ -1,0 +1,182 @@
+{
+  "width": 64,
+  "height": 128,
+  "parts": [
+    {
+      "name": "thigh_r",
+      "label": "허벅지 R",
+      "parent": "pelvis",
+      "order": 0,
+      "x": 19,
+      "y": 63,
+      "jointX": 26.5,
+      "jointY": 69.0,
+      "image": "thigh_r.png"
+    },
+    {
+      "name": "thigh_l",
+      "label": "허벅지 L",
+      "parent": "pelvis",
+      "order": 1,
+      "x": 30,
+      "y": 63,
+      "jointX": 37.0,
+      "jointY": 69.0,
+      "image": "thigh_l.png"
+    },
+    {
+      "name": "shin_r",
+      "label": "종아리 R",
+      "parent": "thigh_r",
+      "order": 2,
+      "x": 21,
+      "y": 92,
+      "jointX": 27.0,
+      "jointY": 97.5,
+      "image": "shin_r.png"
+    },
+    {
+      "name": "shin_l",
+      "label": "종아리 L",
+      "parent": "thigh_l",
+      "order": 3,
+      "x": 30,
+      "y": 92,
+      "jointX": 36.5,
+      "jointY": 97.5,
+      "image": "shin_l.png"
+    },
+    {
+      "name": "foot_r",
+      "label": "발 R",
+      "parent": "shin_r",
+      "order": 4,
+      "x": 20,
+      "y": 115,
+      "jointX": 27.5,
+      "jointY": 119.0,
+      "image": "foot_r.png"
+    },
+    {
+      "name": "foot_l",
+      "label": "발 L",
+      "parent": "shin_l",
+      "order": 5,
+      "x": 29,
+      "y": 115,
+      "jointX": 36.0,
+      "jointY": 119.0,
+      "image": "foot_l.png"
+    },
+    {
+      "name": "pelvis",
+      "label": "골반",
+      "parent": null,
+      "order": 6,
+      "x": 19,
+      "y": 60,
+      "jointX": 32.0,
+      "jointY": 65.0,
+      "image": "pelvis.png"
+    },
+    {
+      "name": "waist",
+      "label": "허리",
+      "parent": "pelvis",
+      "order": 7,
+      "x": 21,
+      "y": 53,
+      "jointX": 32.0,
+      "jointY": 62.5,
+      "image": "waist.png"
+    },
+    {
+      "name": "chest",
+      "label": "가슴",
+      "parent": "waist",
+      "order": 8,
+      "x": 19,
+      "y": 35,
+      "jointX": 32.0,
+      "jointY": 55.5,
+      "image": "chest.png"
+    },
+    {
+      "name": "head",
+      "label": "머리",
+      "parent": "chest",
+      "order": 9,
+      "x": 11,
+      "y": 0,
+      "jointX": 32.0,
+      "jointY": 37.0,
+      "image": "head.png"
+    },
+    {
+      "name": "upper_arm_r",
+      "label": "상완 R",
+      "parent": "chest",
+      "order": 10,
+      "x": 14,
+      "y": 34,
+      "jointX": 21.5,
+      "jointY": 40.0,
+      "image": "upper_arm_r.png"
+    },
+    {
+      "name": "forearm_r",
+      "label": "전완 R",
+      "parent": "upper_arm_r",
+      "order": 11,
+      "x": 13,
+      "y": 56,
+      "jointX": 18.5,
+      "jointY": 61.0,
+      "image": "forearm_r.png"
+    },
+    {
+      "name": "hand_r",
+      "label": "손 R",
+      "parent": "forearm_r",
+      "order": 12,
+      "x": 11,
+      "y": 72,
+      "jointX": 17.0,
+      "jointY": 75.5,
+      "image": "hand_r.png"
+    },
+    {
+      "name": "upper_arm_l",
+      "label": "상완 L",
+      "parent": "chest",
+      "order": 13,
+      "x": 36,
+      "y": 34,
+      "jointX": 42.0,
+      "jointY": 40.0,
+      "image": "upper_arm_l.png"
+    },
+    {
+      "name": "forearm_l",
+      "label": "전완 L",
+      "parent": "upper_arm_l",
+      "order": 14,
+      "x": 40,
+      "y": 56,
+      "jointX": 45.0,
+      "jointY": 61.0,
+      "image": "forearm_l.png"
+    },
+    {
+      "name": "hand_l",
+      "label": "손 L",
+      "parent": "forearm_l",
+      "order": 15,
+      "x": 41,
+      "y": 72,
+      "jointX": 46.5,
+      "jointY": 75.5,
+      "image": "hand_l.png"
+    }
+  ]
+}
