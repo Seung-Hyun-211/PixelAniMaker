@@ -2,7 +2,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Controls;
 using PixelAniMaker.App.Services;
-using PixelAniMaker.Core.Editing;
 
 namespace PixelAniMaker.App.ViewModels;
 
@@ -30,7 +29,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public EditorSession Session { get; }
 
     public string StatusText =>
-        $"{ToolboxViewModel.AllTools.First(t => t.Kind == Session.CurrentTool).Label}   ·   " +
+        $"{Session.CurrentTool.Label}   ·   " +
         $"{Session.Document.Image.Width}×{Session.Document.Image.Height}   ·   ×{Session.Zoom}";
 
     [RelayCommand]
@@ -58,7 +57,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private bool CanRedo() => Session.Document.History.CanRedo;
 
     [RelayCommand]
-    private void SelectTool(ToolKind tool) => Session.CurrentTool = tool;
+    private void SelectTool(ToolItem tool) => Session.CurrentTool = tool;
 
     [RelayCommand]
     private void ToggleGrid() => Session.ShowGrid = !Session.ShowGrid;

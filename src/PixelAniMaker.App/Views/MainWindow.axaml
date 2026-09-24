@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:PixelAniMaker.App.ViewModels"
-        xmlns:core="using:PixelAniMaker.Core.Editing"
+        xmlns:svc="using:PixelAniMaker.App.Services"
         x:Class="PixelAniMaker.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{Binding Title}"
@@ -13,10 +13,10 @@
     <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
     <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
     <KeyBinding Gesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}" />
-    <KeyBinding Gesture="B" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static core:ToolKind.Pencil}" />
-    <KeyBinding Gesture="E" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static core:ToolKind.Eraser}" />
-    <KeyBinding Gesture="G" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static core:ToolKind.Fill}" />
-    <KeyBinding Gesture="I" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static core:ToolKind.Eyedropper}" />
+    <KeyBinding Gesture="B" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static svc:ToolCatalog.Pencil}" />
+    <KeyBinding Gesture="E" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static svc:ToolCatalog.Eraser}" />
+    <KeyBinding Gesture="G" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static svc:ToolCatalog.Fill}" />
+    <KeyBinding Gesture="I" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static svc:ToolCatalog.Eyedropper}" />
     <KeyBinding Gesture="Ctrl+OemQuotes" Command="{Binding ToggleGridCommand}" />
     <KeyBinding Gesture="T" Command="{Binding ToggleTemplateCommand}" />
     <KeyBinding Gesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}" />

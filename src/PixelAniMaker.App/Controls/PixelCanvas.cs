@@ -2,7 +2,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
-using Avalonia.Media.Imaging;
 using PixelAniMaker.App.Services;
 
 namespace PixelAniMaker.App.Controls;
@@ -11,10 +10,10 @@ namespace PixelAniMaker.App.Controls;
 /// Zoomable pixel editing surface. Left button draws with the primary colour, right button with the
 /// secondary colour, middle button or Space+drag pans, the wheel zooms around the cursor.
 /// </summary>
-public sealed class PixelCanvas : Control
+public sealed class PixelCanvas : SessionControl
 {
-    public static readonly StyledProperty<EditorSession?> SessionProperty =
-        AvaloniaProperty.Register<PixelCanvas, EditorSession?>(nameof(Session));
+    private const double TemplateOpacity = 0.35;
+    private const int MinZoomForGrid = 6;
 
     private static readonly IBrush Background = new SolidColorBrush(Color.FromRgb(37, 37, 40));
     private static readonly IPen GridPen = new Pen(new SolidColorBrush(Color.FromArgb(40, 255, 255, 255)), 1);
@@ -29,58 +28,27 @@ public sealed class PixelCanvas : Control
     private Point _panStart;
     private Point _originAtPanStart;
     private (int X, int Y)? _hover;
+    private Point? _zoomAnchor;     // set during wheel zoom so the image zooms around the cursor
+    private int _lastZoom = 4;
 
     static PixelCanvas()
     {
         FocusableProperty.OverrideDefaultValue<PixelCanvas>(true);
         ClipToBoundsProperty.OverrideDefaultValue<PixelCanvas>(true);
-        AffectsRender<PixelCanvas>(SessionProperty);
     }
 
-    public PixelCanvas() => RenderOptions.SetBitmapInterpolationMode(this, BitmapInterpolationMode.None);
+    protected override void OnSessionAttached() => PlaceImage(Bounds.Size);
 
-    public EditorSession? Session
+    protected override void OnSessionPropertyChanged(string? propertyName)
     {
-        get => GetValue(SessionProperty);
-        set => SetValue(SessionProperty, value);
-    }
-
-    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
-    {
-        base.OnPropertyChanged(change);
-        if (change.Property != SessionProperty)
-            return;
-        if (change.OldValue is EditorSession old)
-        {
-            old.ImageUpdated -= OnImageUpdated;
-            old.PropertyChanged -= OnSessionPropertyChanged;
-        }
-        if (change.NewValue is EditorSession s)
-        {
-            s.ImageUpdated += OnImageUpdated;
-            s.PropertyChanged += OnSessionPropertyChanged;
-        }
-        PlaceImage(Bounds.Size);
-    }
-
-    private void OnImageUpdated(object? sender, EventArgs e) => InvalidateVisual();
-
-    private void OnSessionPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(EditorSession.Document))
+        if (propertyName == nameof(EditorSession.Document))
             PlaceImage(Bounds.Size);
-        if (e.PropertyName == nameof(EditorSession.Zoom) && Session is { } s)
+        else if (propertyName == nameof(EditorSession.Zoom) && Session is { } s)
         {
-            // zoom around the cursor for wheel input, around the view centre otherwise
             ZoomAround(_zoomAnchor ?? new Point(Bounds.Width / 2, Bounds.Height / 2), _lastZoom);
             _lastZoom = s.Zoom;
-            _zoomAnchor = null;
         }
-        InvalidateVisual();
     }
-
-    private Point? _zoomAnchor;
-    private int _lastZoom = 4;
 
     // ------------------------------------------------------------------ layout
 
@@ -128,15 +96,9 @@ public sealed class PixelCanvas : Control
         int z = s.Zoom;
         var dest = new Rect(_origin.X, _origin.Y, img.Width * z, img.Height * z);
 
-        context.FillRectangle(CheckerBrushes.Large, dest);
-        if (s.ShowTemplate && s.Template is { } template)
-        {
-            using (context.PushOpacity(0.35))
-                context.DrawImage(template, new Rect(template.Size), dest);
-        }
-        context.DrawImage(s.Bitmap, new Rect(0, 0, img.Width, img.Height), dest);
+        DrawImage(context, s, dest, s.ShowTemplate ? s.Template : null, TemplateOpacity);
 
-        if (s.ShowGrid && z >= 6)
+        if (s.ShowGrid && z >= MinZoomForGrid)
         {
             for (int x = 1; x < img.Width; x++)
             {
@@ -182,7 +144,7 @@ public sealed class PixelCanvas : Control
         {
             var (x, y) = ToPixel(point.Position);
             _drawing = true;
-            s.Document.BeginStroke(s.CurrentTool, x, y, secondary: props.IsRightButtonPressed);
+            s.Document.BeginStroke(s.CurrentTool.Tool, x, y, secondary: props.IsRightButtonPressed);
         }
         else
         {

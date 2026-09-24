@@ -18,7 +18,7 @@ public sealed partial class EditorSession : ObservableObject
 
     [ObservableProperty] private EditorDocument _document = null!;
     [ObservableProperty] private WriteableBitmap _bitmap = null!;
-    [ObservableProperty] private ToolKind _currentTool = ToolKind.Pencil;
+    [ObservableProperty] private ToolItem _currentTool = ToolCatalog.Pencil;
     [ObservableProperty] private int _zoom = 4;
     [ObservableProperty] private bool _showGrid = true;
     [ObservableProperty] private bool _showTemplate = true;

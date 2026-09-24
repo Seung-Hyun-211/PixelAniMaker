@@ -1,12 +1,13 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:PixelAniMaker.App.ViewModels"
+             xmlns:svc="using:PixelAniMaker.App.Services"
              x:Class="PixelAniMaker.App.Views.ToolboxView"
              x:DataType="vm:ToolboxViewModel">
   <StackPanel Margin="8" Spacing="10">
-    <ListBox ItemsSource="{Binding Tools}" SelectedItem="{Binding SelectedTool}">
+    <ListBox ItemsSource="{Binding Tools}" SelectedItem="{Binding Session.CurrentTool}">
       <ListBox.ItemTemplate>
-        <DataTemplate x:DataType="vm:ToolItem">
+        <DataTemplate x:DataType="svc:ToolItem">
           <TextBlock Text="{Binding Display}" />
         </DataTemplate>
       </ListBox.ItemTemplate>

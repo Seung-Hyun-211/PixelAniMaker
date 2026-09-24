@@ -24,47 +24,20 @@ public sealed class CanvasDocumentViewModel : Document
     public EditorSession Session { get; }
 }
 
-public sealed record ToolItem(ToolKind Kind, string Label, string Shortcut)
-{
-    public string Display => $"{Label}  ({Shortcut})";
-}
-
 /// <summary>Tool selection and view toggles.</summary>
-public sealed partial class ToolboxViewModel : Tool
+public sealed class ToolboxViewModel : Tool
 {
-    public static readonly IReadOnlyList<ToolItem> AllTools =
-    [
-        new(ToolKind.Pencil, "연필", "B"),
-        new(ToolKind.Eraser, "지우개", "E"),
-        new(ToolKind.Fill, "채우기", "G"),
-        new(ToolKind.Eyedropper, "스포이드", "I"),
-    ];
-
-    [ObservableProperty] private ToolItem _selectedTool;
-
     public ToolboxViewModel(EditorSession session)
     {
         Session = session;
         Id = "Toolbox";
         Title = "도구";
         CanClose = false;
-        _selectedTool = AllTools.First(t => t.Kind == session.CurrentTool);
-        session.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName == nameof(EditorSession.CurrentTool))
-                SelectedTool = AllTools.First(t => t.Kind == session.CurrentTool);
-        };
     }
 
     public EditorSession Session { get; }
 
-    public IReadOnlyList<ToolItem> Tools => AllTools;
-
-    partial void OnSelectedToolChanged(ToolItem value)
-    {
-        if (value is not null)
-            Session.CurrentTool = value.Kind;
-    }
+    public IReadOnlyList<ToolItem> Tools => ToolCatalog.All;
 }
 
 public sealed partial class SwatchViewModel : ObservableObject
@@ -133,36 +106,22 @@ public sealed partial class PaletteViewModel : Tool
     [RelayCommand]
     private void AddColor()
     {
-        if (_document is null || !TryParseHex(HexInput, out var color))
-        {
-            Message = "#RRGGBB 형식으로 입력하세요";
-            return;
-        }
-        Message = "";
-        _document.PrimaryIndex = _document.Palette.GetOrAdd(color);
+        if (TryReadInput(out var color))
+            _document!.PrimaryIndex = _document.Palette.GetOrAdd(color);
     }
 
     /// <summary>Replaces the primary colour; every pixel using it changes too.</summary>
     [RelayCommand]
     private void ReplacePrimary()
     {
-        if (_document is null || !TryParseHex(HexInput, out var color))
-        {
-            Message = "#RRGGBB 형식으로 입력하세요";
+        if (!TryReadInput(out var color))
             return;
-        }
-        if (_document.PrimaryIndex == Palette.TransparentIndex)
-        {
+        if (_document!.PrimaryIndex == Palette.TransparentIndex)
             Message = "투명은 바꿀 수 없습니다";
-            return;
-        }
-        if (_document.Palette.IndexOf(color) >= 0)
-        {
+        else if (_document.Palette.IndexOf(color) >= 0)
             Message = "이미 팔레트에 있는 색입니다";
-            return;
-        }
-        Message = "";
-        _document.Palette.Set(_document.PrimaryIndex, color);
+        else
+            _document.Palette.Set(_document.PrimaryIndex, color);
     }
 
     private void Attach()
@@ -214,14 +173,13 @@ public sealed partial class PaletteViewModel : Tool
             HexInput = Primary.Hex;
     }
 
-    private static bool TryParseHex(string text, out Rgba color)
+    /// <summary>Parses the hex input box; shows a message and returns false when invalid.</summary>
+    private bool TryReadInput(out Rgba color)
     {
         color = default;
-        var t = text.Trim().TrimStart('#');
-        if (t.Length != 6 || !uint.TryParse(t, System.Globalization.NumberStyles.HexNumber, null, out uint v))
-            return false;
-        color = new Rgba((byte)(v >> 16), (byte)(v >> 8), (byte)v);
-        return true;
+        bool ok = _document is not null && Rgba.TryParseHex(HexInput, out color);
+        Message = ok ? "" : "#RRGGBB 형식으로 입력하세요";
+        return ok;
     }
 }
 

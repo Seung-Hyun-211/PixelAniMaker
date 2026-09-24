@@ -4,14 +4,14 @@ using PixelAniMaker.Core.Imaging;
 namespace PixelAniMaker.Core.Editing;
 
 /// <summary>A set of pixel changes (one stroke or one fill) that can be undone as a unit.</summary>
-public sealed class PixelEditAction : IUndoableAction
+public sealed class PixelEdit : IUndoableAction
 {
     private readonly IndexedImage _image;
     private readonly Action _onApplied;
     // key = y * width + x ; value = (before, after)
     private readonly Dictionary<int, (ushort Before, ushort After)> _changes = [];
 
-    public PixelEditAction(string name, IndexedImage image, Action onApplied)
+    public PixelEdit(string name, IndexedImage image, Action onApplied)
     {
         Name = name;
         _image = image;

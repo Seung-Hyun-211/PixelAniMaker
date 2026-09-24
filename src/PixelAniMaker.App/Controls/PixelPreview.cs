@@ -1,32 +1,19 @@
 using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Media;
-using Avalonia.Media.Imaging;
 using PixelAniMaker.App.Services;
 
 namespace PixelAniMaker.App.Controls;
 
 /// <summary>Shows the current image at a fixed integer scale (actual size preview).</summary>
-public sealed class PixelPreview : Control
+public sealed class PixelPreview : SessionControl
 {
-    public static readonly StyledProperty<EditorSession?> SessionProperty =
-        AvaloniaProperty.Register<PixelPreview, EditorSession?>(nameof(Session));
-
     public static readonly StyledProperty<int> ScaleProperty =
         AvaloniaProperty.Register<PixelPreview, int>(nameof(Scale), 1);
 
     static PixelPreview()
     {
         AffectsMeasure<PixelPreview>(SessionProperty, ScaleProperty);
-        AffectsRender<PixelPreview>(SessionProperty, ScaleProperty);
-    }
-
-    public PixelPreview() => RenderOptions.SetBitmapInterpolationMode(this, BitmapInterpolationMode.None);
-
-    public EditorSession? Session
-    {
-        get => GetValue(SessionProperty);
-        set => SetValue(SessionProperty, value);
+        AffectsRender<PixelPreview>(ScaleProperty);
     }
 
     public int Scale
@@ -35,28 +22,9 @@ public sealed class PixelPreview : Control
         set => SetValue(ScaleProperty, value);
     }
 
-    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    protected override void OnSessionPropertyChanged(string? propertyName)
     {
-        base.OnPropertyChanged(change);
-        if (change.Property != SessionProperty)
-            return;
-        if (change.OldValue is EditorSession old)
-        {
-            old.ImageUpdated -= OnImageUpdated;
-            old.PropertyChanged -= OnSessionChanged;
-        }
-        if (change.NewValue is EditorSession s)
-        {
-            s.ImageUpdated += OnImageUpdated;
-            s.PropertyChanged += OnSessionChanged;
-        }
-    }
-
-    private void OnImageUpdated(object? sender, EventArgs e) => InvalidateVisual();
-
-    private void OnSessionChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(EditorSession.Document))
+        if (propertyName == nameof(EditorSession.Document))
             InvalidateMeasure();
     }
 
@@ -70,8 +38,6 @@ public sealed class PixelPreview : Control
         if (Session is not { } s)
             return;
         var img = s.Document.Image;
-        var dest = new Rect(0, 0, img.Width * Scale, img.Height * Scale);
-        context.FillRectangle(CheckerBrushes.Large, dest);
-        context.DrawImage(s.Bitmap, new Rect(0, 0, img.Width, img.Height), dest);
+        DrawImage(context, s, new Rect(0, 0, img.Width * Scale, img.Height * Scale));
     }
 }

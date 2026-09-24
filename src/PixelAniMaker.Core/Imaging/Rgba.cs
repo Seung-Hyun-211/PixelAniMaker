@@ -13,5 +13,16 @@ public readonly record struct Rgba(byte R, byte G, byte B, byte A = 255)
     public static Rgba FromBgra32(uint v) =>
         new((byte)(v >> 16), (byte)(v >> 8), (byte)v, (byte)(v >> 24));
 
+    /// <summary>Parses "#RRGGBB" (the leading # is optional).</summary>
+    public static bool TryParseHex(string? text, out Rgba color)
+    {
+        color = default;
+        var t = text?.Trim().TrimStart('#') ?? "";
+        if (t.Length != 6 || !uint.TryParse(t, System.Globalization.NumberStyles.HexNumber, null, out uint v))
+            return false;
+        color = new Rgba((byte)(v >> 16), (byte)(v >> 8), (byte)v);
+        return true;
+    }
+
     public override string ToString() => A == 255 ? $"#{R:X2}{G:X2}{B:X2}" : $"#{R:X2}{G:X2}{B:X2}{A:X2}";
 }
