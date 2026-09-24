@@ -28,14 +28,18 @@
 
     <!-- key row -->
     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="0,0,0,6">
-      <Button Content="◀" Command="{Binding PreviousFrameCommand}" ToolTip.Tip="이전 프레임 (,)" />
+      <Button Content="◀" Command="{Binding PreviousFrameCommand}"
+              ToolTip.Tip="{Binding Shortcuts.Texts[PreviousFrame], StringFormat='이전 프레임 ({0})'}" />
       <TextBlock VerticalAlignment="Center" MinWidth="60" HorizontalAlignment="Center">
         <Run Text="{Binding Animation.CurrentFrame, Converter={x:Static conv:FrameNumberConverter.Instance}}" />
         <Run Text="/" />
         <Run Text="{Binding Animation.CurrentClip.FrameCount, FallbackValue=0}" />
       </TextBlock>
-      <Button Content="▶" Command="{Binding NextFrameCommand}" ToolTip.Tip="다음 프레임 (.)" />
-      <Button Content="키 저장 (K)" Command="{Binding SaveKeyCommand}" Margin="10,0,0,0" />
+      <Button Content="▶" Command="{Binding NextFrameCommand}"
+              ToolTip.Tip="{Binding Shortcuts.Texts[NextFrame], StringFormat='다음 프레임 ({0})'}" />
+      <Button Command="{Binding SaveKeyCommand}" Margin="10,0,0,0">
+        <TextBlock Text="{Binding Shortcuts.Texts[SaveKey], StringFormat='키 저장 ({0})'}" />
+      </Button>
       <Button Content="키 삭제" Command="{Binding DeleteKeyCommand}" />
       <TextBlock Text="보간" VerticalAlignment="Center" Margin="10,0,0,0" />
       <ComboBox ItemsSource="{Binding EasingOptions}" SelectedItem="{Binding CurrentEasing}" Width="90"
@@ -47,8 +51,10 @@
         </ComboBox.ItemTemplate>
       </ComboBox>
       <CheckBox Content="어니언 스킨" IsChecked="{Binding Animation.OnionSkin}" Margin="10,0,0,0" />
-      <ToggleButton Content="프레임 손보기 (F)" IsChecked="{Binding Session.TouchupMode}"
-                    ToolTip.Tip="완성된 프레임에 직접 도트를 찍습니다. 프레임을 다시 만들어도 유지됩니다." />
+      <ToggleButton IsChecked="{Binding Session.TouchupMode}"
+                    ToolTip.Tip="완성된 프레임에 직접 도트를 찍습니다. 프레임을 다시 만들어도 유지됩니다.">
+        <TextBlock Text="{Binding Shortcuts.Texts[ToggleTouchup], StringFormat='프레임 손보기 ({0})'}" />
+      </ToggleButton>
       <Button Content="손본 내용 지우기" Command="{Binding ClearTouchupCommand}"
               ToolTip.Tip="현재 방향·프레임의 손본 픽셀을 지웁니다 (되돌리기 가능)" />
       <ToggleButton Content="미리보기 재생" IsChecked="{Binding Animation.IsPlaying}" />

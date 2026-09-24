@@ -16,7 +16,15 @@
       </ListBox.ItemsPanel>
       <ListBox.ItemTemplate>
         <DataTemplate>
-          <TextBlock Text="{Binding Converter={x:Static conv:DirectionLabelConverter.Instance}}" />
+          <TextBlock>
+            <TextBlock.Text>
+              <MultiBinding Converter="{x:Static conv:ShortcutLabelConverter.Instance}">
+                <Binding Converter="{x:Static conv:DirectionLabelConverter.Instance}" />
+                <Binding Converter="{x:Static conv:DirectionLabelConverter.ShortcutId}" />
+                <Binding Path="$parent[ListBox].((vm:ToolboxViewModel)DataContext).Shortcuts.Texts" />
+              </MultiBinding>
+            </TextBlock.Text>
+          </TextBlock>
         </DataTemplate>
       </ListBox.ItemTemplate>
     </ListBox>
@@ -24,15 +32,29 @@
     <ListBox ItemsSource="{Binding Tools}" SelectedItem="{Binding Session.CurrentTool}">
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="svc:ToolItem">
-          <TextBlock Text="{Binding Display}" />
+          <TextBlock>
+            <TextBlock.Text>
+              <MultiBinding Converter="{x:Static conv:ShortcutLabelConverter.Instance}">
+                <Binding Path="Label" />
+                <Binding Path="ShortcutId" />
+                <Binding Path="$parent[ListBox].((vm:ToolboxViewModel)DataContext).Shortcuts.Texts" />
+              </MultiBinding>
+            </TextBlock.Text>
+          </TextBlock>
         </DataTemplate>
       </ListBox.ItemTemplate>
     </ListBox>
-    <CheckBox Content="픽셀 격자 (Ctrl+')" IsChecked="{Binding Session.ShowGrid}" />
-    <CheckBox Content="다른 파츠 흐리게 (H)" IsChecked="{Binding Session.DimOtherParts}" />
+    <CheckBox IsChecked="{Binding Session.ShowGrid}">
+      <TextBlock Text="{Binding Shortcuts.Texts[ToggleGrid], StringFormat='픽셀 격자 ({0})'}" />
+    </CheckBox>
+    <CheckBox IsChecked="{Binding Session.DimOtherParts}">
+      <TextBlock Text="{Binding Shortcuts.Texts[ToggleDim], StringFormat='다른 파츠 흐리게 ({0})'}" />
+    </CheckBox>
     <CheckBox Content="자동 외곽선" IsChecked="{Binding Session.AutoOutline}"
               ToolTip.Tip="회전 후 1px 외곽선과 파츠 경계선을 다시 그립니다. 엔진 셰이더로 외곽선을 넣을 거라면 끄세요." />
-    <ToggleButton Content="포즈 모드 (P)" IsChecked="{Binding Session.PoseMode}" HorizontalAlignment="Stretch" />
+    <ToggleButton IsChecked="{Binding Session.PoseMode}" HorizontalAlignment="Stretch">
+      <TextBlock Text="{Binding Shortcuts.Texts[TogglePose], StringFormat='포즈 모드 ({0})'}" />
+    </ToggleButton>
     <TextBlock Foreground="#999999" TextWrapping="Wrap" FontSize="12"
                Text="그리기: 선택한 파츠에만 찍힘 · 왼쪽 클릭 주 색, 오른쪽 클릭 보조 색&#10;포즈: 파츠를 끌어서 관절 기준 회전, Shift로 15° 단위, Alt+드래그는 선택한 파츠를 회전(가려진 파츠용)&#10;휠: 확대/축소 · 휠 클릭 또는 Space+드래그: 이동" />
   </StackPanel>
