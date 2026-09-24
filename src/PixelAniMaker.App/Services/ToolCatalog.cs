@@ -12,6 +12,9 @@ public static class ToolCatalog
     public static ToolItem Eraser { get; } = new(PencilTool.Eraser, "지우개", "Tool.Eraser");
     public static ToolItem Fill { get; } = new(FillTool.Instance, "채우기", "Tool.Fill");
     public static ToolItem Eyedropper { get; } = new(EyedropperTool.Instance, "스포이드", "Tool.Eyedropper");
+    public static ToolItem Line { get; } = new(ShapeTool.Line, "선", "Tool.Line");
+    public static ToolItem Rectangle { get; } = new(ShapeTool.Rectangle, "사각형", "Tool.Rectangle");
+    public static ToolItem Ellipse { get; } = new(ShapeTool.Ellipse, "원", "Tool.Ellipse");
 
-    public static IReadOnlyList<ToolItem> All { get; } = [Pencil, Eraser, Fill, Eyedropper];
+    public static IReadOnlyList<ToolItem> All { get; } = [Pencil, Eraser, Fill, Eyedropper, Line, Rectangle, Ellipse];
 }

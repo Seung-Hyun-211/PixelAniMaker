@@ -44,6 +44,8 @@
         </DataTemplate>
       </ListBox.ItemTemplate>
     </ListBox>
+    <CheckBox Content="픽셀 퍼펙트 연필" IsChecked="{Binding Session.PixelPerfect}"
+              ToolTip.Tip="연필로 그을 때 계단 모서리의 군더더기 픽셀을 빼서 1px 선을 유지합니다" />
     <CheckBox IsChecked="{Binding Session.ShowGrid}">
       <TextBlock Text="{Binding Shortcuts.Texts[ToggleGrid], StringFormat='픽셀 격자 ({0})'}" />
     </CheckBox>

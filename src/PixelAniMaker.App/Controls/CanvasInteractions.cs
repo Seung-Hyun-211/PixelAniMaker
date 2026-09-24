@@ -28,7 +28,7 @@ internal sealed class TouchupInteraction(EditorSession session, TouchupSession t
     public void Begin(CanvasInput input)
     {
         var (x, y) = Pixel(input);
-        touchup.Document?.BeginStroke(session.CurrentTool.Tool, x, y, input.Secondary);
+        touchup.Document?.BeginStroke(session.ActiveTool, x, y, input.Secondary);
     }
 
     public void Move(CanvasInput input)
@@ -49,7 +49,7 @@ internal sealed class DrawInteraction(EditorSession session) : ICanvasInteractio
     public void Begin(CanvasInput input)
     {
         var (x, y) = ToLocal(input.Point);
-        session.ActiveDocument.BeginStroke(session.CurrentTool.Tool, x, y, input.Secondary);
+        session.ActiveDocument.BeginStroke(session.ActiveTool, x, y, input.Secondary);
     }
 
     public void Move(CanvasInput input)
