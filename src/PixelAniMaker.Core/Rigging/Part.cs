@@ -6,10 +6,21 @@ namespace PixelAniMaker.Core.Rigging;
 /// <summary>
 /// How a part looks in one direction. At rest (all rotations 0) the image sits at
 /// <see cref="RestPosition"/> on the canvas and rotates around <see cref="RestPivot"/>, the joint it
-/// shares with its parent.
+/// shares with its parent. The picture is made of <see cref="Layers"/>; <see cref="Image"/> is the
+/// flattened result that gets drawn.
 /// </summary>
-public sealed record PartView(IndexedImage Image, Vector2 RestPosition, Vector2 RestPivot, int DrawOrder)
+public sealed class PartView(IndexedImage image, Vector2 restPosition, Vector2 restPivot, int drawOrder)
 {
+    /// <summary>Drawing layers, bottom first (at least one; the first starts as <paramref name="image"/>).</summary>
+    public PartLayers Layers { get; } = new(image);
+
+    /// <summary>The visible layers flattened — what is drawn and rotated.</summary>
+    public IndexedImage Image => Layers.Flattened;
+
+    public Vector2 RestPosition { get; } = restPosition;
+    public Vector2 RestPivot { get; } = restPivot;
+    public int DrawOrder { get; } = drawOrder;
+
     /// <summary>Joint position inside the image.</summary>
     public Vector2 LocalPivot => RestPivot - RestPosition;
 

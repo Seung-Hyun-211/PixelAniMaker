@@ -72,7 +72,7 @@ public sealed class Character
     }
 
     /// <summary>A drawing target for one part's image in a direction (Right edits the Left image).</summary>
-    public EditorDocument CreateDocument(Part part, Direction direction) => CreateDocument(part.View(direction).Image);
+    public EditorDocument CreateDocument(Part part, Direction direction) => CreateDocument(part.View(direction).Layers[0].Image);
 
     /// <summary>A drawing target for any image of this character (e.g. an angle variant).</summary>
     public EditorDocument CreateDocument(IndexedImage image) => new(image, Palette, History, Colors);

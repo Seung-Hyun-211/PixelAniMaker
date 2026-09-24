@@ -38,6 +38,13 @@ public readonly record struct PartTransform
     /// <summary>Rotation still applied to <see cref="Image"/> (radians).</summary>
     public float ImageAngle { get; }
 
+    /// <summary>
+    /// The image a stroke should change: the angle variant when one is drawn, otherwise the view's
+    /// layer <paramref name="layer"/> (clamped to the layers the view has).
+    /// </summary>
+    public IndexedImage EditImage(int layer) =>
+        Image == View.Image ? View.Layers[Math.Clamp(layer, 0, View.Layers.Count - 1)].Image : Image;
+
     /// <summary>True when the drawn image is turned by a multiple of 90°, so pixels map 1:1.</summary>
     public bool IsGridAligned
     {

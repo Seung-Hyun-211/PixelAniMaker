@@ -3,8 +3,9 @@
              xmlns:vm="using:PixelAniMaker.App.ViewModels"
              x:Class="PixelAniMaker.App.Views.PartsView"
              x:DataType="vm:PartsViewModel">
-  <DockPanel Margin="8">
-    <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,8,0,0">
+  <Grid Margin="8" RowDefinitions="*,6,*">
+    <ScrollViewer Grid.Row="2">
+    <StackPanel Spacing="6" Margin="0,4,0,0">
       <StackPanel Orientation="Horizontal" Spacing="6">
         <TextBlock Text="회전" VerticalAlignment="Center" />
         <NumericUpDown Value="{Binding Rotation}" Minimum="-180" Maximum="180" Increment="5"
@@ -28,6 +29,28 @@
       </StackPanel>
       <TextBlock Text="{Binding VariantMessage}" FontSize="11" Foreground="#E0B060" TextWrapping="Wrap"
                  IsVisible="{Binding VariantMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <TextBlock Text="레이어 (위가 앞 · 체크 = 보이기 · 고른 레이어에 그려짐)" FontSize="11" Foreground="#999999" TextWrapping="Wrap" />
+      <ListBox ItemsSource="{Binding Layers}" SelectedItem="{Binding SelectedLayer}" MaxHeight="140">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:LayerItem">
+            <StackPanel Orientation="Horizontal" Spacing="4">
+              <CheckBox IsChecked="{Binding Visible}" MinWidth="0" ToolTip.Tip="보이기" />
+              <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}" Width="150" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+        <ListBox.Styles>
+          <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="4,2" />
+          </Style>
+        </ListBox.Styles>
+      </ListBox>
+      <StackPanel Orientation="Horizontal" Spacing="4">
+        <Button Content="추가" Command="{Binding AddLayerCommand}" ToolTip.Tip="고른 레이어 위에 빈 레이어 추가" />
+        <Button Content="삭제" Command="{Binding RemoveLayerCommand}" ToolTip.Tip="고른 레이어 삭제 (마지막 하나는 남음)" />
+        <Button Content="▲" Command="{Binding LayerUpCommand}" ToolTip.Tip="앞으로" />
+        <Button Content="▼" Command="{Binding LayerDownCommand}" ToolTip.Tip="뒤로" />
+      </StackPanel>
       <TextBlock Text="장착점 (이 파츠 · 지금 방향 · 파츠 이미지 픽셀 좌표)" FontSize="11" Foreground="#999999" TextWrapping="Wrap" />
       <ItemsControl ItemsSource="{Binding Attachments}">
         <ItemsControl.ItemTemplate>
@@ -54,7 +77,9 @@
         <Button Content="포즈 초기화" Command="{Binding ResetPoseCommand}" />
       </StackPanel>
     </StackPanel>
-    <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}">
+    </ScrollViewer>
+    <GridSplitter Grid.Row="1" ResizeDirection="Rows" />
+    <ListBox Grid.Row="0" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}">
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="vm:PartItem">
           <TextBlock Text="{Binding Display}" xml:space="preserve" />
@@ -66,5 +91,5 @@
         </Style>
       </ListBox.Styles>
     </ListBox>
-  </DockPanel>
+  </Grid>
 </UserControl>

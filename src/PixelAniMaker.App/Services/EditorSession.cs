@@ -33,6 +33,9 @@ public sealed partial class EditorSession : ObservableObject
     /// <summary>Front/back views: strokes are mirrored across the body's centre line (onto the _l/_r counterpart).</summary>
     [ObservableProperty] private bool _symmetric;
 
+    /// <summary>Layer of the active part that strokes go to (0 = bottom; clamped per part).</summary>
+    [ObservableProperty] private int _activeLayer;
+
     /// <summary>Freehand pencil removes L-corner pixels so lines stay 1px thin.</summary>
     [ObservableProperty] private bool _pixelPerfect = true;
 
@@ -167,13 +170,54 @@ public sealed partial class EditorSession : ObservableObject
 
     partial void OnSymmetricChanged(bool value) => UpdateMirror();
 
+    partial void OnActiveLayerChanged(int value) => ReopenDocument();
+
+    /// <summary>The layers of the active part in the current direction.</summary>
+    public PartLayers ActiveLayers => ActiveTransform.View.Layers;
+
+    /// <summary><see cref="ActiveLayer"/> limited to the layers the active part has.</summary>
+    public int ActiveLayerIndex => Math.Clamp(ActiveLayer, 0, ActiveLayers.Count - 1);
+
+    /// <summary>Adds an empty layer above the active one and makes it active.</summary>
+    public void AddLayer()
+    {
+        var layers = ActiveLayers;
+        int at = ActiveLayerIndex + 1;
+        LayerChange.Apply(layers, Character.History, "레이어 추가",
+            list => list.Insert(at, layers.CreateLayer(layers.FreeName("레이어"))));
+        ActiveLayer = at;
+    }
+
+    public void RemoveActiveLayer()
+    {
+        int at = ActiveLayerIndex;
+        LayerChange.Apply(ActiveLayers, Character.History, "레이어 삭제", list => list.RemoveAt(at));
+        ActiveLayer = Math.Max(0, at - 1);
+    }
+
+    /// <summary>Moves the active layer up (+1) or down (-1) in the stack.</summary>
+    public void MoveActiveLayer(int delta)
+    {
+        int from = ActiveLayerIndex, to = from + delta;
+        if (to < 0 || to >= ActiveLayers.Count)
+            return;
+        LayerChange.Apply(ActiveLayers, Character.History, "레이어 순서", list => (list[from], list[to]) = (list[to], list[from]));
+        ActiveLayer = to;
+    }
+
+    public void RenameLayer(int index, string name) =>
+        LayerChange.Apply(ActiveLayers, Character.History, "레이어 이름", list => list[index].Name = name);
+
+    public void SetLayerVisible(int index, bool visible) =>
+        LayerChange.Apply(ActiveLayers, Character.History, visible ? "레이어 보이기" : "레이어 숨기기", list => list[index].Visible = visible);
+
     /// <summary>Mirrors strokes while symmetric editing applies (not for moving a selection).</summary>
     private void UpdateMirror()
     {
         if (ActiveDocument is null)
             return;
         ActiveDocument.Mirror = Symmetric && CurrentTool != ToolCatalog.Select
-            ? Core.Rigging.Symmetry.For(Character, ActivePart, Direction)
+            ? Core.Rigging.Symmetry.For(Character, ActivePart, Direction, ActiveLayerIndex)
             : null;
     }
 
@@ -225,7 +269,7 @@ public sealed partial class EditorSession : ObservableObject
     {
         if (ActivePart is null)
             return;
-        AttachDocument(Character.ComputeTransforms(Direction)[ActivePart].Image);
+        AttachDocument(Character.ComputeTransforms(Direction)[ActivePart].EditImage(ActiveLayer));
         Refresh();
     }
 
@@ -267,7 +311,7 @@ public sealed partial class EditorSession : ObservableObject
         if (Character is null || ActivePart is null)
             return;
         Transforms = Character.ComputeTransforms(Direction);
-        AttachDocument(ActiveTransform.Image); // rotating into or out of an angle variant switches the target
+        AttachDocument(ActiveTransform.EditImage(ActiveLayer)); // rotating into or out of an angle variant switches the target
         UpdateMirror();                        // the mirror follows the pose
         var composites = DirectionExtensions.All.ToDictionary(d => d, d => Compositor.Compose(Character, d));
         SourceComposite = composites[Direction];
