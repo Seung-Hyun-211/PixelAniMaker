@@ -166,9 +166,13 @@ public sealed class PixelCanvas : SessionControl
         int w = s.Character.Width, h = s.Character.Height, z = s.Zoom;
         var dest = new Rect(_origin.X, _origin.Y, w * z, h * z);
         context.FillRectangle(CheckerBrushes.Large, dest);
+        if (!s.Reference.OnTop)
+            DrawReference(context, s, dest);
         DrawOnionSkin(context, s, dest);
         var image = s.TouchupMode && Touchup?.Bitmap is { } frame ? frame : s.CanvasBitmap;
         context.DrawImage(image, new Rect(0, 0, w, h), dest);
+        if (s.Reference.OnTop)
+            DrawReference(context, s, dest);
 
         if (s.ShowGrid && z >= MinZoomForGrid)
             DrawGrid(context, dest, w, h, z);
@@ -182,6 +186,20 @@ public sealed class PixelCanvas : SessionControl
 
         if (_hover is var (hx, hy) && hx >= 0 && hy >= 0 && hx < w && hy < h)
             context.DrawRectangle(null, HoverPen, new Rect(ToScreen(hx, hy) + new Point(0.5, 0.5), new Size(z - 1, z - 1)));
+    }
+
+    /// <summary>The direction's reference picture, faded and clipped to the canvas.</summary>
+    private void DrawReference(DrawingContext context, EditorSession s, Rect dest)
+    {
+        if (s.Reference is not { Visible: true, Current: { } r } layer)
+            return;
+        double scale = (double)r.Scale / 100;
+        var size = r.Bitmap.PixelSize;
+        var topLeft = ToScreen((double)r.X, (double)r.Y);
+        var target = new Rect(topLeft, new Size(size.Width * scale * s.Zoom, size.Height * scale * s.Zoom));
+        using (context.PushClip(dest))
+        using (context.PushOpacity(layer.Opacity))
+            context.DrawImage(r.Bitmap, new Rect(0, 0, size.Width, size.Height), target);
     }
 
     /// <summary>Previous and next baked frames, faded, under the current image.</summary>

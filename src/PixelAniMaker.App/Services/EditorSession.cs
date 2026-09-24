@@ -43,7 +43,14 @@ public sealed partial class EditorSession : ObservableObject
     [ObservableProperty] private bool _showGrid = true;
     [ObservableProperty] private string _cursorText = "";
 
-    public EditorSession() => LoadCharacter(TemplateLoader.LoadChibi96());
+    public EditorSession()
+    {
+        Reference.Changed += (_, _) => ImageUpdated?.Invoke(this, EventArgs.Empty);
+        LoadCharacter(TemplateLoader.LoadChibi96());
+    }
+
+    /// <summary>Reference pictures shown on the canvas (per direction, not saved).</summary>
+    public ReferenceLayer Reference { get; } = new();
 
     /// <summary>Composite of the current direction's source view (for hit-testing in source coordinates).</summary>
     public CompositeResult SourceComposite { get; private set; } = null!;
@@ -146,7 +153,11 @@ public sealed partial class EditorSession : ObservableObject
 
     partial void OnActivePartChanged(Part value) => ReopenDocument();
 
-    partial void OnDirectionChanged(Direction value) => ReopenDocument();
+    partial void OnDirectionChanged(Direction value)
+    {
+        Reference.Direction = value;
+        ReopenDocument();
+    }
 
     partial void OnCurrentToolChanged(ToolItem value)
     {

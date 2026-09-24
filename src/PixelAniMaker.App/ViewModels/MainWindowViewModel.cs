@@ -251,6 +251,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task LoadReference()
+    {
+        if (Dialogs is not null && await Dialogs.PickOpenFileAsync("참고 이미지 불러오기", ProjectService.ImageType) is { } path)
+            await TryAsync(() => Session.Reference.Load(path, Session.Character.Width, Session.Character.Height),
+                "참고 이미지를 불러오지 못했습니다");
+    }
+
+    [RelayCommand]
+    private void ClearReference() => Session.Reference.Clear();
+
+    [RelayCommand]
     private Task ExportPalette() => ExportAsync("팔레트 내보내기", ProjectService.PaletteType, Project.DocumentName, Project.ExportPalette);
 
     /// <summary>Reads a palette file, previews the character with it, then swaps or merges it (undoable).</summary>
