@@ -1,6 +1,30 @@
-# 도트 캐릭터 제작 툴
+# PixelAniMaker
 
-4등신 도트 캐릭터를 파츠와 스켈레톤으로 조립하고, 보정된 애니메이션 스프라이트 시트로 내보내는 윈도우 프로그램.
+4등신 도트 캐릭터를 파츠와 스켈레톤으로 조립하고, 보정된 애니메이션 스프라이트 시트로 내보내는 데스크톱 프로그램.
+C# .NET 8 + Avalonia UI로 만들며 윈도우·맥·리눅스를 지원한다.
 
 - 설계 문서: [doc/design.md](doc/design.md)
+- 패치노트: [doc/patchnotes/](doc/patchnotes/README.md)
 - 프로토타입 스크립트: [mannequin/](mannequin/) (템플릿 생성, 팔 흔들기 회전 보정 테스트)
+
+## 실행
+
+.NET 8 SDK가 필요하다.
+
+```bash
+dotnet run --project src/PixelAniMaker.App
+```
+
+## 테스트
+
+```bash
+dotnet test
+```
+
+## 구조
+
+| 경로 | 역할 |
+| --- | --- |
+| `src/PixelAniMaker.Core` | UI와 무관한 로직: 인덱스 이미지, 팔레트, 도구, 되돌리기 |
+| `src/PixelAniMaker.App` | Avalonia 앱: 도킹 창, 캔버스, 팔레트, 미리보기 |
+| `tests/PixelAniMaker.Core.Tests` | Core 단위 테스트 |

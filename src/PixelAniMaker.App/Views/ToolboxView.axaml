@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PixelAniMaker.App.ViewModels"
+             x:Class="PixelAniMaker.App.Views.ToolboxView"
+             x:DataType="vm:ToolboxViewModel">
+  <StackPanel Margin="8" Spacing="10">
+    <ListBox ItemsSource="{Binding Tools}" SelectedItem="{Binding SelectedTool}">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:ToolItem">
+          <TextBlock Text="{Binding Display}" />
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+    <CheckBox Content="픽셀 격자 (Ctrl+')" IsChecked="{Binding Session.ShowGrid}" />
+    <CheckBox Content="템플릿 표시 (T)" IsChecked="{Binding Session.ShowTemplate}" />
+    <TextBlock Foreground="#999999" TextWrapping="Wrap" FontSize="12"
+               Text="왼쪽 클릭: 주 색 · 오른쪽 클릭: 보조 색&#10;휠: 확대/축소 · 휠 클릭 또는 Space+드래그: 이동" />
+  </StackPanel>
+</UserControl>
