@@ -72,8 +72,10 @@ public sealed class Character
     }
 
     /// <summary>A drawing target for one part's image in a direction (Right edits the Left image).</summary>
-    public EditorDocument CreateDocument(Part part, Direction direction) =>
-        new(part.View(direction).Image, Palette, History, Colors);
+    public EditorDocument CreateDocument(Part part, Direction direction) => CreateDocument(part.View(direction).Image);
+
+    /// <summary>A drawing target for any image of this character (e.g. an angle variant).</summary>
+    public EditorDocument CreateDocument(IndexedImage image) => new(image, Palette, History, Colors);
 
     /// <summary>
     /// Canvas placement of every part (forward kinematics) for <paramref name="pose"/>, or the

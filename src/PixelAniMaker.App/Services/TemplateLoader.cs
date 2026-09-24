@@ -9,16 +9,19 @@ namespace PixelAniMaker.App.Services;
 public static class TemplateLoader
 {
     private const string Folder = "avares://PixelAniMaker/Assets/Templates/chibi96/";
+    private const string PlainFolder = "avares://PixelAniMaker/Assets/Templates/chibi96_plain/";
 
     /// <summary>Mannequin line colours: silhouette outline and the line where parts overlap.</summary>
     private static readonly Rgba OutlineColor = new(52, 40, 34);
     private static readonly Rgba InnerLineColor = new(120, 96, 74);
 
-    public static Character LoadChibi96()
+    /// <param name="jointDiscs">False loads the plain mannequin without ball-joint circles.</param>
+    public static Character LoadChibi96(bool jointDiscs = true)
     {
-        var spec = CharacterSpec.Parse(ReadText("skeleton.json"));
+        string folder = jointDiscs ? Folder : PlainFolder;
+        var spec = CharacterSpec.Parse(ReadText(folder, "skeleton.json"));
         var palette = new Palette();
-        var character = spec.Build(file => LoadRgba(new Uri(Folder + file)), palette);
+        var character = spec.Build(file => LoadRgba(new Uri(folder + file)), palette);
         SeedPalette(palette);
         character.Outline.OutlineIndex = palette.GetOrAdd(OutlineColor);
         character.Outline.InnerIndex = palette.GetOrAdd(InnerLineColor);
@@ -27,11 +30,11 @@ public static class TemplateLoader
     }
 
     /// <summary>The default clips (idle, walk, run, jump, attack, hit).</summary>
-    public static IReadOnlyList<AnimationClip> LoadDefaultAnimations() => AnimationJson.Parse(ReadText("animations.json"));
+    public static IReadOnlyList<AnimationClip> LoadDefaultAnimations() => AnimationJson.Parse(ReadText(Folder, "animations.json"));
 
-    private static string ReadText(string file)
+    private static string ReadText(string folder, string file)
     {
-        using var reader = new StreamReader(AssetLoader.Open(new Uri(Folder + file)));
+        using var reader = new StreamReader(AssetLoader.Open(new Uri(folder + file)));
         return reader.ReadToEnd();
     }
 

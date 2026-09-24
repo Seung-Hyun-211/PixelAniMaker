@@ -14,16 +14,9 @@
     <Menu DockPanel.Dock="Top">
       <MenuItem Header="파일(_F)">
         <MenuItem Header="새로 만들기" InputGesture="{Binding Shortcuts.Gestures[New]}" Command="{Binding NewDocumentCommand}" />
+        <MenuItem Header="새로 만들기 (관절 원 없는 마네킹)" Command="{Binding NewPlainDocumentCommand}" />
         <MenuItem Header="열기..." InputGesture="{Binding Shortcuts.Gestures[Open]}" Command="{Binding OpenCommand}" />
-        <MenuItem Header="최근 파일" ItemsSource="{Binding RecentFiles}">
-          <MenuItem.Styles>
-            <Style Selector="MenuItem > MenuItem" x:DataType="x:String">
-              <Setter Property="Header" Value="{Binding}" />
-              <Setter Property="Command" Value="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenRecentCommand}" />
-              <Setter Property="CommandParameter" Value="{Binding}" />
-            </Style>
-          </MenuItem.Styles>
-        </MenuItem>
+        <MenuItem Header="최근 파일" x:Name="RecentMenu" />
         <Separator />
         <MenuItem Header="저장" InputGesture="{Binding Shortcuts.Gestures[Save]}" Command="{Binding SaveCommand}" />
         <MenuItem Header="다른 이름으로 저장..." InputGesture="{Binding Shortcuts.Gestures[SaveAs]}" Command="{Binding SaveAsCommand}" />

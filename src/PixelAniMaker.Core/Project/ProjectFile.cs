@@ -48,12 +48,11 @@ public static class ProjectFile
         Write(zip, SkeletonEntry, CharacterSpec.From(c).ToJson());
         Write(zip, AnimationsEntry, AnimationJson.Serialize(project.Clips));
 
-        foreach (var part in c.Parts)
-            foreach (var d in DirectionExtensions.Stored)
-            {
-                using var s = zip.CreateEntry(PartsFolder + CharacterSpec.ImagePath(d, part.Name)).Open();
-                s.Write(codec.EncodePng(part.View(d).Image.ToRgba(c.Palette)));
-            }
+        foreach (var (path, image) in CharacterSpec.Images(c))
+        {
+            using var s = zip.CreateEntry(PartsFolder + path).Open();
+            s.Write(codec.EncodePng(image.ToRgba(c.Palette)));
+        }
     }
 
     public static ProjectData Load(Stream input, IImageCodec codec)
