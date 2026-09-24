@@ -11,6 +11,7 @@ public sealed partial class ProjectService : ObservableObject
     public static readonly FileType ProjectType = new("PixelAniMaker 프로젝트", ProjectFile.Extension);
     public static readonly FileType PngType = new("PNG 이미지", ".png");
     public static readonly FileType GifType = new("GIF 애니메이션", ".gif");
+    public static readonly FileType ImageType = new("이미지", ".png", ".jpg", ".jpeg", ".bmp");
     public static readonly FileType PaletteType = new("팔레트", [.. PaletteFile.Extensions]);
 
     private readonly EditorSession _editor;

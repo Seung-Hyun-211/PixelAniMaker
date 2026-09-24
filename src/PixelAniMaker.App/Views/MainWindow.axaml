@@ -46,6 +46,9 @@
         <MenuItem Header="포즈 모드" InputGesture="{Binding Shortcuts.Gestures[TogglePose]}" Command="{Binding TogglePoseModeCommand}"
                   ToggleType="CheckBox" IsChecked="{Binding Session.PoseMode, Mode=OneWay}" />
         <Separator />
+        <MenuItem Header="참고 이미지 불러오기 (지금 방향)..." Command="{Binding LoadReferenceCommand}" />
+        <MenuItem Header="참고 이미지 지우기 (지금 방향)" Command="{Binding ClearReferenceCommand}" />
+        <Separator />
         <MenuItem Header="확대" InputGesture="{Binding Shortcuts.Gestures[ZoomIn]}" Command="{Binding ZoomInCommand}" />
         <MenuItem Header="축소" InputGesture="{Binding Shortcuts.Gestures[ZoomOut]}" Command="{Binding ZoomOutCommand}" />
       </MenuItem>

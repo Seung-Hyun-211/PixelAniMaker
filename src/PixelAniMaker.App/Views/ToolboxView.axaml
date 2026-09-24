@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:PixelAniMaker.App.ViewModels"
              xmlns:svc="using:PixelAniMaker.App.Services"
@@ -61,6 +61,34 @@
     <ToggleButton IsChecked="{Binding Session.PoseMode}" HorizontalAlignment="Stretch">
       <TextBlock Text="{Binding Shortcuts.Texts[TogglePose], StringFormat='포즈 모드 ({0})'}" />
     </ToggleButton>
+    <TextBlock Text="참고 이미지" FontSize="11" Foreground="#999999" />
+    <TextBlock Text="보기 → 참고 이미지 불러오기 (방향마다 따로)" FontSize="12" Foreground="#999999" TextWrapping="Wrap"
+               IsVisible="{Binding !Session.Reference.HasImage}" />
+    <StackPanel Spacing="6" IsVisible="{Binding Session.Reference.HasImage}">
+      <StackPanel Orientation="Horizontal" Spacing="10">
+        <CheckBox Content="보기" IsChecked="{Binding Session.Reference.Visible}" />
+        <CheckBox Content="캐릭터 위에" IsChecked="{Binding Session.Reference.OnTop}" />
+      </StackPanel>
+      <DockPanel>
+        <TextBlock Text="불투명도" VerticalAlignment="Center" Margin="0,0,8,0" />
+        <Slider Minimum="0.05" Maximum="1" Value="{Binding Session.Reference.Opacity}" />
+      </DockPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <TextBlock Text="크기 %" VerticalAlignment="Center" Width="42" />
+        <NumericUpDown Value="{Binding Session.Reference.Current.Scale, FallbackValue=100}" Minimum="1" Maximum="2000"
+                       Increment="5" FormatString="0.#" Width="110" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <TextBlock Text="위치 X" VerticalAlignment="Center" Width="42" />
+        <NumericUpDown Value="{Binding Session.Reference.Current.X, FallbackValue=0}" Minimum="-1000" Maximum="1000"
+                       Increment="1" FormatString="0" Width="110" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <TextBlock Text="위치 Y" VerticalAlignment="Center" Width="42" />
+        <NumericUpDown Value="{Binding Session.Reference.Current.Y, FallbackValue=0}" Minimum="-1000" Maximum="1000"
+                       Increment="1" FormatString="0" Width="110" />
+      </StackPanel>
+    </StackPanel>
     <TextBlock Foreground="#999999" TextWrapping="Wrap" FontSize="12"
                Text="그리기: 선택한 파츠에만 찍힘 · 왼쪽 클릭 주 색, 오른쪽 클릭 보조 색&#10;선택·이동: 끌어서 영역 선택, 영역 안을 끌면 이동 · Delete 지우기 · Esc 해제&#10;포즈: 파츠를 끌어서 관절 기준 회전, Shift로 15° 단위, Alt+드래그는 선택한 파츠를 회전(가려진 파츠용)&#10;휠: 확대/축소 · 휠 클릭 또는 Space+드래그: 이동" />
   </StackPanel>
