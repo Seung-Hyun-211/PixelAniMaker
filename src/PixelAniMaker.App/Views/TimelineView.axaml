@@ -47,6 +47,10 @@
         </ComboBox.ItemTemplate>
       </ComboBox>
       <CheckBox Content="어니언 스킨" IsChecked="{Binding Animation.OnionSkin}" Margin="10,0,0,0" />
+      <ToggleButton Content="프레임 손보기 (F)" IsChecked="{Binding Session.TouchupMode}"
+                    ToolTip.Tip="완성된 프레임에 직접 도트를 찍습니다. 프레임을 다시 만들어도 유지됩니다." />
+      <Button Content="손본 내용 지우기" Command="{Binding ClearTouchupCommand}"
+              ToolTip.Tip="현재 방향·프레임의 손본 픽셀을 지웁니다 (되돌리기 가능)" />
       <ToggleButton Content="미리보기 재생" IsChecked="{Binding Animation.IsPlaying}" />
       <TextBlock Text="{Binding KeyStatus}" VerticalAlignment="Center" Foreground="#E0B060" Margin="10,0,0,0" />
     </StackPanel>
@@ -69,6 +73,7 @@
                   <Image Source="{Binding Thumbnail}" Width="48" Height="64" RenderOptions.BitmapInterpolationMode="None" />
                   <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="3">
                     <TextBlock Text="◆" Foreground="#E0B060" FontSize="10" IsVisible="{Binding HasKey}" VerticalAlignment="Center" />
+                    <TextBlock Text="✎" Foreground="#7FD0FF" FontSize="10" IsVisible="{Binding HasTouchup}" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding Label}" FontSize="11" />
                   </StackPanel>
                 </StackPanel>

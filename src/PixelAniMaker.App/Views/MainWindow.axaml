@@ -29,6 +29,7 @@
     <KeyBinding Gesture="OemComma" Command="{Binding PreviousFrameCommand}" />
     <KeyBinding Gesture="OemPeriod" Command="{Binding NextFrameCommand}" />
     <KeyBinding Gesture="O" Command="{Binding ToggleOnionSkinCommand}" />
+    <KeyBinding Gesture="F" Command="{Binding ToggleTouchupModeCommand}" />
     <KeyBinding Gesture="D1" Command="{Binding SetDirectionCommand}" CommandParameter="{x:Static rig:Direction.Front}" />
     <KeyBinding Gesture="D2" Command="{Binding SetDirectionCommand}" CommandParameter="{x:Static rig:Direction.Left}" />
     <KeyBinding Gesture="D3" Command="{Binding SetDirectionCommand}" CommandParameter="{x:Static rig:Direction.Right}" />
@@ -90,6 +91,10 @@
         <MenuItem Header="다음 프레임" InputGesture="OemPeriod" Command="{Binding NextFrameCommand}" />
         <MenuItem Header="어니언 스킨" InputGesture="O" Command="{Binding ToggleOnionSkinCommand}"
                   ToggleType="CheckBox" IsChecked="{Binding Animation.OnionSkin, Mode=OneWay}" />
+        <Separator />
+        <MenuItem Header="프레임 손보기" InputGesture="F" Command="{Binding ToggleTouchupModeCommand}"
+                  ToggleType="CheckBox" IsChecked="{Binding Session.TouchupMode, Mode=OneWay}" />
+        <MenuItem Header="손본 내용 지우기 (현재 프레임)" Command="{Binding ClearTouchupCommand}" />
       </MenuItem>
       <MenuItem Header="창(_W)">
         <MenuItem Header="창 배치 초기화" Command="{Binding ResetLayoutCommand}" />

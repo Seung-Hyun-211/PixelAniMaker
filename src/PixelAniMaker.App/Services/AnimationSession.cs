@@ -23,6 +23,7 @@ public sealed partial class AnimationSession : ObservableObject
     private readonly DispatcherTimer _bakeTimer;
     private readonly DispatcherTimer _playTimer;
     private Dictionary<Direction, WriteableBitmap[]> _frames = [];
+    private IReadOnlyDictionary<Direction, CompositeResult[]> _generated = new Dictionary<Direction, CompositeResult[]>();
 
     [ObservableProperty] private AnimationClip? _currentClip;
     [ObservableProperty] private int _currentFrame;
@@ -63,8 +64,19 @@ public sealed partial class AnimationSession : ObservableObject
     public WriteableBitmap? Frame(Direction direction, int frame) =>
         _frames.TryGetValue(direction, out var frames) && frame >= 0 && frame < frames.Length ? frames[frame] : null;
 
+    /// <summary>A frame as generated from the pose, before touch-ups (null before the first bake).</summary>
+    public CompositeResult? GeneratedFrame(Direction direction, int frame) =>
+        _generated.TryGetValue(direction, out var frames) && frame >= 0 && frame < frames.Length ? frames[frame] : null;
+
     /// <summary>Raised after the frames have been re-baked.</summary>
     public event EventHandler? FramesUpdated;
+
+    /// <summary>Removes the hand-painted fixes of the current frame in the current direction (undoable).</summary>
+    public void ClearTouchup()
+    {
+        if (CurrentClip is { } clip)
+            TouchupChange.Apply(clip.Touchups, _editor.Character.History, _editor.Direction, CurrentFrame, []);
+    }
 
     // ------------------------------------------------------------------ keys
 
@@ -154,9 +166,15 @@ public sealed partial class AnimationSession : ObservableObject
     partial void OnCurrentClipChanged(AnimationClip? oldValue, AnimationClip? newValue)
     {
         if (oldValue is not null)
+        {
             oldValue.Changed -= OnClipChanged;
+            oldValue.Touchups.Changed -= OnClipChanged;
+        }
         if (newValue is not null)
+        {
             newValue.Changed += OnClipChanged;
+            newValue.Touchups.Changed += OnClipChanged;
+        }
         PlaybackFrame = 0;
         if (CurrentFrame == 0)
             ApplyFrame();
@@ -199,11 +217,16 @@ public sealed partial class AnimationSession : ObservableObject
     private void Bake()
     {
         _frames = [];
+        _generated = new Dictionary<Direction, CompositeResult[]>();
         if (CurrentClip is { } clip)
         {
-            var baked = SpriteBaker.Bake(_editor.Character, clip, _editor.Compositor);
-            _frames = baked.ToDictionary(kv => kv.Key,
-                kv => kv.Value.Select(c => CompositeBitmap.From(c, _editor.Character.Palette)).ToArray());
+            _generated = SpriteBaker.Bake(_editor.Character, clip, _editor.Compositor, touchups: false);
+            _frames = _generated.ToDictionary(kv => kv.Key, kv => kv.Value.Select((generated, f) =>
+            {
+                var final = generated.Clone();
+                clip.Touchups.ApplyTo(final, kv.Key, f);
+                return CompositeBitmap.From(final, _editor.Character.Palette);
+            }).ToArray());
         }
         FramesUpdated?.Invoke(this, EventArgs.Empty);
     }

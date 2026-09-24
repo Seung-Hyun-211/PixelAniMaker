@@ -18,8 +18,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         Session = new EditorSession();
         Animation = new AnimationSession(Session);
+        Touchup = new TouchupSession(Session, Animation);
         Project = new ProjectService(Session, Animation, AppSettings.Load());
-        _factory = new DockFactory(Session, Animation);
+        _factory = new DockFactory(Session, Animation, Touchup);
         ResetLayout();
 
         Session.HistoryChanged += (_, _) => OnDocumentStateChanged();
@@ -32,7 +33,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Session.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(EditorSession.Zoom) or nameof(EditorSession.CurrentTool)
-                or nameof(EditorSession.PoseMode) or nameof(EditorSession.ActivePart) or nameof(EditorSession.Direction))
+                or nameof(EditorSession.PoseMode) or nameof(EditorSession.TouchupMode)
+                or nameof(EditorSession.ActivePart) or nameof(EditorSession.Direction))
                 OnPropertyChanged(nameof(StatusText));
         };
         RefreshRecentFiles();
@@ -41,6 +43,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public EditorSession Session { get; }
     public AnimationSession Animation { get; }
+    public TouchupSession Touchup { get; }
     public ProjectService Project { get; }
 
     /// <summary>Set by the window; dialogs are a view concern.</summary>
@@ -60,8 +63,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 
     public string StatusText =>
-        $"{Session.Direction.Label()}   ·   {(Session.PoseMode ? "포즈" : Session.CurrentTool.Label)}   ·   {Session.ActivePart.Label}   ·   " +
+        $"{Session.Direction.Label()}   ·   {Mode}   ·   {(Session.TouchupMode ? "완성 프레임" : Session.ActivePart.Label)}   ·   " +
         $"{Session.Character.Width}×{Session.Character.Height}   ·   ×{Session.Zoom}";
+
+    private string Mode =>
+        Session.PoseMode ? "포즈" : Session.TouchupMode ? $"손보기 · {Session.CurrentTool.Label}" : Session.CurrentTool.Label;
 
     // ------------------------------------------------------------------ file
 
@@ -204,6 +210,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [RelayCommand] private void PreviousFrame() => Animation.Step(-1);
     [RelayCommand] private void NextFrame() => Animation.Step(1);
     [RelayCommand] private void ToggleOnionSkin() => Animation.OnionSkin = !Animation.OnionSkin;
+    [RelayCommand] private void ToggleTouchupMode() => Session.TouchupMode = !Session.TouchupMode;
+    [RelayCommand] private void ClearTouchup() => Animation.ClearTouchup();
 
     [RelayCommand]
     private void ToggleGrid() => Session.ShowGrid = !Session.ShowGrid;
