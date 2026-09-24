@@ -26,6 +26,14 @@ dotnet run --project src/PixelAniMaker.App -- my_character.dotchar
 dotnet run --project src/PixelAniMaker.App -- --export my_character.dotchar --out export
 ```
 
+## 배포 파일 만들기
+
+설치 없이 실행되는 exe 하나를 `publish/win-x64/`에 만든다 (`-Runtime osx-arm64`, `linux-x64` 등도 가능).
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts/publish.ps1
+```
+
 ## 테스트
 
 ```bash

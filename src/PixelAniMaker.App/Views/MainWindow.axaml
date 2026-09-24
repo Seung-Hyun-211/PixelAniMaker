@@ -6,6 +6,7 @@
         x:Class="PixelAniMaker.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{Binding Title}"
+        Icon="/Assets/app.ico"
         Width="1400" Height="900"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized">
