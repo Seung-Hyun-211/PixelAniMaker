@@ -11,7 +11,7 @@ Side suffixes are anatomical: *_r is the character's right arm/leg.
 import json
 from pathlib import Path
 
-from make_chibi import Figure
+from make_chibi import Figure, head_front, head_side
 
 W, H = 96, 128
 SCALE = 0.5
@@ -61,7 +61,7 @@ def front_torso():
         "pelvis": ((64 + o, 130), lambda f: f.poly([(45 + o, 124), (82 + o, 124), (85 + o, 140), (75 + o, 150), (64 + o, 153), (52 + o, 150), (42 + o, 140)])),
         "waist": ((64 + o, 125), lambda f: f.poly([(47 + o, 110), (80 + o, 110), (81 + o, 126), (46 + o, 126)])),
         "chest": ((64 + o, 111), lambda f: f.poly([(44 + o, 74), (83 + o, 74), (85 + o, 86), (81 + o, 112), (46 + o, 112), (42 + o, 86)])),
-        "head": ((64 + o, 74), lambda f: (f.capsule((64 + o, 62), 6, (64 + o, 76), 6), f.ellipse((35 + o, 8, 92 + o, 68)))),
+        "head": ((64 + o, 74), lambda f: (f.capsule((64 + o, 62), 6, (64 + o, 76), 6), head_front(f, 63.5 + o))),
     }
 
 
@@ -73,9 +73,9 @@ def front_limbs(s):
         "foot": ((s(55), 238), lambda f: (f.poly([(s(47), 236), (s(62), 236), (s(64), 246), (s(62), 249), (s(46), 249), (s(44), 246)]),
                                           disc(f, (s(55), 238), 4))),
         "upper_arm": ((s(43), 80), lambda f: (f.capsule((s(41), 84), 6, (s(37), 118), 5), disc(f, (s(43), 80), 7))),
-        "forearm": ((s(37), 122), lambda f: (f.capsule((s(37), 126), 5, (s(34), 148), 4), disc(f, (s(37), 122), 5))),
-        "hand": ((s(34), 151), lambda f: (f.poly([(s(29), 152), (s(39), 152), (s(41), 162), (s(38), 170), (s(31), 171), (s(27), 164)]),
-                                          disc(f, (s(34), 151), 3))),
+        "forearm": ((s(37), 122), lambda f: (f.capsule((s(37), 126), 5, (s(35), 141), 4), disc(f, (s(37), 122), 5))),
+        "hand": ((s(35), 144), lambda f: (f.poly([(s(30), 145), (s(40), 145), (s(42), 155), (s(39), 163), (s(32), 164), (s(28), 157)]),
+                                          disc(f, (s(35), 144), 3))),
     }
 
 
@@ -85,7 +85,7 @@ def side_torso():
         "pelvis": ((c, 130), lambda f: f.poly([(c - 16, 124), (c + 18, 124), (c + 22, 140), (c + 14, 152), (c - 12, 152), (c - 18, 140)])),
         "waist": ((c, 125), lambda f: f.poly([(c - 14, 110), (c + 14, 110), (c + 15, 126), (c - 15, 126)])),
         "chest": ((c, 111), lambda f: f.poly([(c - 18, 74), (c + 14, 74), (c + 16, 86), (c + 14, 112), (c - 14, 112), (c - 20, 90)])),
-        "head": ((c, 74), lambda f: (f.capsule((c + 1, 62), 6, (c, 76), 6), f.ellipse((c - 30, 8, c + 26, 68)))),
+        "head": ((c, 74), lambda f: (f.capsule((c + 1, 62), 6, (c, 76), 6), head_side(f, c))),
     }
 
 
@@ -98,9 +98,9 @@ def side_limbs(dx):
         "foot": ((c + 1, 238), lambda f: (f.poly([(c - 16, 238), (c + 6, 236), (c + 8, 246), (c + 6, 249), (c - 16, 249), (c - 18, 245)]),
                                           disc(f, (c + 1, 238), 4))),
         "upper_arm": ((c + 1, 80), lambda f: (f.capsule((c + 1, 84), 6, (c + 1, 118), 5), disc(f, (c + 1, 80), 7))),
-        "forearm": ((c + 1, 122), lambda f: (f.capsule((c + 1, 126), 5, (c, 148), 4), disc(f, (c + 1, 122), 5))),
-        "hand": ((c, 151), lambda f: (f.poly([(c - 4, 152), (c + 5, 152), (c + 6, 162), (c + 3, 170), (c - 3, 171), (c - 6, 163)]),
-                                      disc(f, (c, 151), 3))),
+        "forearm": ((c + 1, 122), lambda f: (f.capsule((c + 1, 126), 5, (c, 141), 4), disc(f, (c + 1, 122), 5))),
+        "hand": ((c, 144), lambda f: (f.poly([(c - 4, 145), (c + 5, 145), (c + 6, 155), (c + 3, 163), (c - 3, 164), (c - 6, 156)]),
+                                      disc(f, (c, 144), 3))),
     }
 
 
