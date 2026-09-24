@@ -10,40 +10,11 @@
         Width="1400" Height="900"
         WindowStartupLocation="CenterScreen">
 
-  <Window.KeyBindings>
-    <KeyBinding Gesture="Ctrl+N" Command="{Binding NewDocumentCommand}" />
-    <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenCommand}" />
-    <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveCommand}" />
-    <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}" />
-    <KeyBinding Gesture="Ctrl+E" Command="{Binding ExportCurrentSheetCommand}" />
-    <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
-    <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
-    <KeyBinding Gesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}" />
-    <KeyBinding Gesture="B" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static svc:ToolCatalog.Pencil}" />
-    <KeyBinding Gesture="E" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static svc:ToolCatalog.Eraser}" />
-    <KeyBinding Gesture="G" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static svc:ToolCatalog.Fill}" />
-    <KeyBinding Gesture="I" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static svc:ToolCatalog.Eyedropper}" />
-    <KeyBinding Gesture="Ctrl+OemQuotes" Command="{Binding ToggleGridCommand}" />
-    <KeyBinding Gesture="P" Command="{Binding TogglePoseModeCommand}" />
-    <KeyBinding Gesture="K" Command="{Binding SaveKeyCommand}" />
-    <KeyBinding Gesture="OemComma" Command="{Binding PreviousFrameCommand}" />
-    <KeyBinding Gesture="OemPeriod" Command="{Binding NextFrameCommand}" />
-    <KeyBinding Gesture="O" Command="{Binding ToggleOnionSkinCommand}" />
-    <KeyBinding Gesture="F" Command="{Binding ToggleTouchupModeCommand}" />
-    <KeyBinding Gesture="D1" Command="{Binding SetDirectionCommand}" CommandParameter="{x:Static rig:Direction.Front}" />
-    <KeyBinding Gesture="D2" Command="{Binding SetDirectionCommand}" CommandParameter="{x:Static rig:Direction.Left}" />
-    <KeyBinding Gesture="D3" Command="{Binding SetDirectionCommand}" CommandParameter="{x:Static rig:Direction.Right}" />
-    <KeyBinding Gesture="D4" Command="{Binding SetDirectionCommand}" CommandParameter="{x:Static rig:Direction.Back}" />
-    <KeyBinding Gesture="H" Command="{Binding ToggleDimOtherPartsCommand}" />
-    <KeyBinding Gesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}" />
-    <KeyBinding Gesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}" />
-  </Window.KeyBindings>
-
   <DockPanel>
     <Menu DockPanel.Dock="Top">
       <MenuItem Header="파일(_F)">
-        <MenuItem Header="새로 만들기" InputGesture="Ctrl+N" Command="{Binding NewDocumentCommand}" />
-        <MenuItem Header="열기..." InputGesture="Ctrl+O" Command="{Binding OpenCommand}" />
+        <MenuItem Header="새로 만들기" InputGesture="{Binding Shortcuts.Gestures[New]}" Command="{Binding NewDocumentCommand}" />
+        <MenuItem Header="열기..." InputGesture="{Binding Shortcuts.Gestures[Open]}" Command="{Binding OpenCommand}" />
         <MenuItem Header="최근 파일" ItemsSource="{Binding RecentFiles}">
           <MenuItem.Styles>
             <Style Selector="MenuItem > MenuItem" x:DataType="x:String">
@@ -54,11 +25,11 @@
           </MenuItem.Styles>
         </MenuItem>
         <Separator />
-        <MenuItem Header="저장" InputGesture="Ctrl+S" Command="{Binding SaveCommand}" />
-        <MenuItem Header="다른 이름으로 저장..." InputGesture="Ctrl+Shift+S" Command="{Binding SaveAsCommand}" />
+        <MenuItem Header="저장" InputGesture="{Binding Shortcuts.Gestures[Save]}" Command="{Binding SaveCommand}" />
+        <MenuItem Header="다른 이름으로 저장..." InputGesture="{Binding Shortcuts.Gestures[SaveAs]}" Command="{Binding SaveAsCommand}" />
         <Separator />
         <MenuItem Header="내보내기">
-          <MenuItem Header="현재 동작 시트 PNG..." InputGesture="Ctrl+E" Command="{Binding ExportCurrentSheetCommand}" />
+          <MenuItem Header="현재 동작 시트 PNG..." InputGesture="{Binding Shortcuts.Gestures[ExportSheet]}" Command="{Binding ExportCurrentSheetCommand}" />
           <MenuItem Header="전체 동작 통합 시트 PNG..." Command="{Binding ExportAllSheetCommand}" />
           <MenuItem Header="현재 동작 GIF..." Command="{Binding ExportGifCommand}" />
           <Separator />
@@ -69,35 +40,36 @@
         <MenuItem Header="종료" Click="OnExitClick" />
       </MenuItem>
       <MenuItem Header="편집(_E)">
-        <MenuItem Header="되돌리기" InputGesture="Ctrl+Z" Command="{Binding UndoCommand}" />
-        <MenuItem Header="다시 하기" InputGesture="Ctrl+Y" Command="{Binding RedoCommand}" />
+        <MenuItem Header="되돌리기" InputGesture="{Binding Shortcuts.Gestures[Undo]}" Command="{Binding UndoCommand}" />
+        <MenuItem Header="다시 하기" InputGesture="{Binding Shortcuts.Gestures[Redo]}" Command="{Binding RedoCommand}" />
       </MenuItem>
       <MenuItem Header="보기(_V)">
-        <MenuItem Header="픽셀 격자" InputGesture="Ctrl+OemQuotes" Command="{Binding ToggleGridCommand}"
+        <MenuItem Header="픽셀 격자" InputGesture="{Binding Shortcuts.Gestures[ToggleGrid]}" Command="{Binding ToggleGridCommand}"
                   ToggleType="CheckBox" IsChecked="{Binding Session.ShowGrid, Mode=OneWay}" />
-        <MenuItem Header="다른 파츠 흐리게" InputGesture="H" Command="{Binding ToggleDimOtherPartsCommand}"
+        <MenuItem Header="다른 파츠 흐리게" InputGesture="{Binding Shortcuts.Gestures[ToggleDim]}" Command="{Binding ToggleDimOtherPartsCommand}"
                   ToggleType="CheckBox" IsChecked="{Binding Session.DimOtherParts, Mode=OneWay}" />
-        <MenuItem Header="포즈 모드" InputGesture="P" Command="{Binding TogglePoseModeCommand}"
+        <MenuItem Header="포즈 모드" InputGesture="{Binding Shortcuts.Gestures[TogglePose]}" Command="{Binding TogglePoseModeCommand}"
                   ToggleType="CheckBox" IsChecked="{Binding Session.PoseMode, Mode=OneWay}" />
         <Separator />
-        <MenuItem Header="확대" InputGesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}" />
-        <MenuItem Header="축소" InputGesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}" />
+        <MenuItem Header="확대" InputGesture="{Binding Shortcuts.Gestures[ZoomIn]}" Command="{Binding ZoomInCommand}" />
+        <MenuItem Header="축소" InputGesture="{Binding Shortcuts.Gestures[ZoomOut]}" Command="{Binding ZoomOutCommand}" />
       </MenuItem>
       <MenuItem Header="애니메이션(_A)">
-        <MenuItem Header="키 저장" InputGesture="K" Command="{Binding SaveKeyCommand}" />
+        <MenuItem Header="키 저장" InputGesture="{Binding Shortcuts.Gestures[SaveKey]}" Command="{Binding SaveKeyCommand}" />
         <MenuItem Header="키 삭제" Command="{Binding DeleteKeyCommand}" />
         <Separator />
-        <MenuItem Header="이전 프레임" InputGesture="OemComma" Command="{Binding PreviousFrameCommand}" />
-        <MenuItem Header="다음 프레임" InputGesture="OemPeriod" Command="{Binding NextFrameCommand}" />
-        <MenuItem Header="어니언 스킨" InputGesture="O" Command="{Binding ToggleOnionSkinCommand}"
+        <MenuItem Header="이전 프레임" InputGesture="{Binding Shortcuts.Gestures[PreviousFrame]}" Command="{Binding PreviousFrameCommand}" />
+        <MenuItem Header="다음 프레임" InputGesture="{Binding Shortcuts.Gestures[NextFrame]}" Command="{Binding NextFrameCommand}" />
+        <MenuItem Header="어니언 스킨" InputGesture="{Binding Shortcuts.Gestures[ToggleOnion]}" Command="{Binding ToggleOnionSkinCommand}"
                   ToggleType="CheckBox" IsChecked="{Binding Animation.OnionSkin, Mode=OneWay}" />
         <Separator />
-        <MenuItem Header="프레임 손보기" InputGesture="F" Command="{Binding ToggleTouchupModeCommand}"
+        <MenuItem Header="프레임 손보기" InputGesture="{Binding Shortcuts.Gestures[ToggleTouchup]}" Command="{Binding ToggleTouchupModeCommand}"
                   ToggleType="CheckBox" IsChecked="{Binding Session.TouchupMode, Mode=OneWay}" />
         <MenuItem Header="손본 내용 지우기 (현재 프레임)" Command="{Binding ClearTouchupCommand}" />
       </MenuItem>
       <MenuItem Header="창(_W)">
         <MenuItem Header="창 배치 초기화" Command="{Binding ResetLayoutCommand}" />
+        <MenuItem Header="단축키 설정..." Command="{Binding EditShortcutsCommand}" />
       </MenuItem>
     </Menu>
 

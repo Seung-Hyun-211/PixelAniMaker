@@ -13,7 +13,7 @@
 | 3 | 4방향 (96×128, 정면·좌측면·우측면(반전)·후면, 방향별 포즈) | 완료 | `15e3d0a` | [3단계](patchnotes/2026-09-24-stage3-four-directions.md) |
 | 4 | 애니메이션 (타임라인, 키프레임·이징, 프레임 생성, 재생, 어니언 스킨, 자동 외곽선) | 완료 | `4a1ad74` | [4단계](patchnotes/2026-09-24-stage4-animation.md) |
 | 5 | 저장·불러오기, 스프라이트 시트·GIF 내보내기, 명령줄 열기·일괄 내보내기 | 완료 | `36f81d2` | [5단계](patchnotes/2026-09-24-stage5-save-export.md) |
-| 6 | 다듬기 (프레임 손보기, 배포 등) | **진행 중** — ①~④ 완료 | — | [①](patchnotes/2026-09-24-frame-touchup.md), [②](patchnotes/2026-09-24-autosave.md), [③](patchnotes/2026-09-24-packaging.md), [④](patchnotes/2026-09-24-layout-persistence.md) |
+| 6 | 다듬기 (프레임 손보기, 배포 등) | **진행 중** — ①~⑤ 완료 | — | [①](patchnotes/2026-09-24-frame-touchup.md), [②](patchnotes/2026-09-24-autosave.md), [③](patchnotes/2026-09-24-packaging.md), [④](patchnotes/2026-09-24-layout-persistence.md), [⑤](patchnotes/2026-09-24-shortcuts.md) |
 
 ## 2. 5단계 결과
 
@@ -32,7 +32,7 @@
 | ~~2~~ | ~~자동 저장·백업~~ | **완료** — 2분마다 복구 사본, 비정상 종료 후 복구 |
 | ~~3~~ | ~~배포~~ | **완료** — 단일 exe(`scripts/publish.ps1`), 아이콘, 버전. 남음: 파일 연결, 맥·리눅스 실행 확인, GitHub Releases 업로드 |
 | ~~4~~ | ~~창 배치 저장~~ | **완료** — 영역 크기·창 위치·메인 창 복원 (새 분할·떠 있는 창은 제외) |
-| 5 | 단축키 | 단축키 목록 창, 변경 기능 |
+| ~~5~~ | ~~단축키~~ | **완료** — 단축키 설정 창, 겹침 처리, 표시 연동 |
 | 6 | 회전 품질 | 작은 파츠(손)용 각도별 교체 이미지, 관절 원 표시 옵션 (팔 테스트에서 나온 과제) |
 
 ### 3.2 이후 백로그 (첫 버전 이후)

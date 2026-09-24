@@ -20,6 +20,9 @@ public sealed class AppSettings
     /// <summary>Scale of exported GIFs.</summary>
     public int GifScale { get; set; } = 2;
 
+    /// <summary>Shortcuts changed by the user: action id → key ("" = none). Others use the defaults.</summary>
+    public Dictionary<string, string> Shortcuts { get; set; } = [];
+
     /// <summary>Docking layout saved at exit (null = default layout).</summary>
     public LayoutState? Layout { get; set; }
 

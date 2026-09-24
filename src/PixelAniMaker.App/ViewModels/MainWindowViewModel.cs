@@ -21,7 +21,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Touchup = new TouchupSession(Session, Animation);
         Project = new ProjectService(Session, Animation, AppSettings.Load());
         Autosave = new AutosaveService(Project);
-        _factory = new DockFactory(Session, Animation, Touchup);
+        Shortcuts = new ShortcutMap(Project.Settings.Shortcuts);
+        _factory = new DockFactory(Session, Animation, Touchup, Shortcuts);
         CreateLayout(Project.Settings.Layout);
 
         Session.HistoryChanged += (_, _) => OnDocumentStateChanged();
@@ -47,6 +48,51 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public TouchupSession Touchup { get; }
     public ProjectService Project { get; }
     public AutosaveService Autosave { get; }
+    public ShortcutMap Shortcuts { get; }
+
+    /// <summary>What each shortcut id runs (command + parameter).</summary>
+    public IReadOnlyDictionary<string, (System.Windows.Input.ICommand Command, object? Parameter)> ShortcutCommands =>
+        _shortcutCommands ??= new Dictionary<string, (System.Windows.Input.ICommand, object?)>
+        {
+            ["New"] = (NewDocumentCommand, null),
+            ["Open"] = (OpenCommand, null),
+            ["Save"] = (SaveCommand, null),
+            ["SaveAs"] = (SaveAsCommand, null),
+            ["ExportSheet"] = (ExportCurrentSheetCommand, null),
+            ["Undo"] = (UndoCommand, null),
+            ["Redo"] = (RedoCommand, null),
+            ["RedoAlt"] = (RedoCommand, null),
+            ["Tool.Pencil"] = (SelectToolCommand, ToolCatalog.Pencil),
+            ["Tool.Eraser"] = (SelectToolCommand, ToolCatalog.Eraser),
+            ["Tool.Fill"] = (SelectToolCommand, ToolCatalog.Fill),
+            ["Tool.Eyedropper"] = (SelectToolCommand, ToolCatalog.Eyedropper),
+            ["Direction.Front"] = (SetDirectionCommand, Direction.Front),
+            ["Direction.Left"] = (SetDirectionCommand, Direction.Left),
+            ["Direction.Right"] = (SetDirectionCommand, Direction.Right),
+            ["Direction.Back"] = (SetDirectionCommand, Direction.Back),
+            ["ToggleGrid"] = (ToggleGridCommand, null),
+            ["ToggleDim"] = (ToggleDimOtherPartsCommand, null),
+            ["TogglePose"] = (TogglePoseModeCommand, null),
+            ["ZoomIn"] = (ZoomInCommand, null),
+            ["ZoomOut"] = (ZoomOutCommand, null),
+            ["SaveKey"] = (SaveKeyCommand, null),
+            ["PreviousFrame"] = (PreviousFrameCommand, null),
+            ["NextFrame"] = (NextFrameCommand, null),
+            ["ToggleOnion"] = (ToggleOnionSkinCommand, null),
+            ["ToggleTouchup"] = (ToggleTouchupModeCommand, null),
+        };
+
+    private Dictionary<string, (System.Windows.Input.ICommand, object?)>? _shortcutCommands;
+
+    [RelayCommand]
+    private async Task EditShortcuts()
+    {
+        if (Dialogs is null)
+            return;
+        await Dialogs.EditShortcutsAsync(Shortcuts);
+        Project.Settings.Shortcuts = Shortcuts.Overrides();
+        Project.Settings.Save();
+    }
 
     /// <summary>Set by the window; dialogs are a view concern.</summary>
     public IFileDialogs? Dialogs { get; set; }

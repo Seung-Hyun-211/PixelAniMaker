@@ -32,15 +32,18 @@ public sealed class CanvasDocumentViewModel : Document
 /// <summary>Tool selection and view toggles.</summary>
 public sealed class ToolboxViewModel : Tool
 {
-    public ToolboxViewModel(EditorSession session)
+    public ToolboxViewModel(EditorSession session, ShortcutMap shortcuts)
     {
         Session = session;
+        Shortcuts = shortcuts;
         Id = "Toolbox";
         Title = "도구";
         CanClose = false;
     }
 
     public EditorSession Session { get; }
+
+    public ShortcutMap Shortcuts { get; }
 
     public IReadOnlyList<ToolItem> Tools => ToolCatalog.All;
 

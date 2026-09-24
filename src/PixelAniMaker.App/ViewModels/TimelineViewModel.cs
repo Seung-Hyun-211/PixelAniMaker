@@ -24,8 +24,9 @@ public sealed partial class TimelineViewModel : Tool
 {
     private int _newClipCount;
 
-    public TimelineViewModel(EditorSession session, AnimationSession animation, TouchupSession touchup)
+    public TimelineViewModel(EditorSession session, AnimationSession animation, TouchupSession touchup, ShortcutMap shortcuts)
     {
+        Shortcuts = shortcuts;
         Session = session;
         Animation = animation;
         touchup.Updated += (_, _) => OnPropertyChanged(nameof(KeyStatus));
@@ -53,6 +54,7 @@ public sealed partial class TimelineViewModel : Tool
     public EditorSession Session { get; }
     public AnimationSession Animation { get; }
     public TouchupSession Touchup { get; }
+    public ShortcutMap Shortcuts { get; }
 
     public ObservableCollection<FrameCellViewModel> Frames { get; } = [];
 

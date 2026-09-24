@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using PixelAniMaker.App.Services;
@@ -20,8 +21,25 @@ public partial class MainWindow : Window, IFileDialogs
             {
                 vm.Dialogs = this;
                 RestorePlacement(vm.Project.Settings.Window);
+                ApplyShortcuts(vm);
+                vm.Shortcuts.PropertyChanged += (_, _) => ApplyShortcuts(vm);
             }
         };
+    }
+
+    /// <summary>Rebuilds the window's key bindings from the shortcut map.</summary>
+    private void ApplyShortcuts(MainWindowViewModel vm)
+    {
+        KeyBindings.Clear();
+        foreach (var (id, (command, parameter)) in vm.ShortcutCommands)
+        {
+            if (vm.Shortcuts.Get(id) is not { } gesture)
+                continue;
+            var binding = new KeyBinding { Gesture = gesture, Command = command };
+            if (parameter is not null)
+                binding.CommandParameter = parameter;
+            KeyBindings.Add(binding);
+        }
     }
 
     /// <summary>Puts the window where it was last time (maximized when nothing was saved).</summary>
@@ -95,6 +113,8 @@ public partial class MainWindow : Window, IFileDialogs
         };
 
     public Task ShowErrorAsync(string message) => MessageDialog.ShowAsync(this, "오류", message, "확인");
+
+    public Task EditShortcutsAsync(ShortcutMap shortcuts) => new ShortcutsWindow(shortcuts).ShowDialog(this);
 
     public async Task<bool> ConfirmRecoveryAsync(string message) =>
         await MessageDialog.ShowAsync(this, "작업 복구", message, "복구", "버리기") == 0;
