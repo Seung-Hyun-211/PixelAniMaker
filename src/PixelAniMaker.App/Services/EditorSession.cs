@@ -30,6 +30,9 @@ public sealed partial class EditorSession : ObservableObject
     [ObservableProperty] private ToolItem _currentTool = ToolCatalog.Pencil;
     [ObservableProperty] private bool _poseMode;
 
+    /// <summary>Freehand pencil removes L-corner pixels so lines stay 1px thin.</summary>
+    [ObservableProperty] private bool _pixelPerfect = true;
+
     /// <summary>Paint directly on generated frames (the touch-up layer) instead of on parts.</summary>
     [ObservableProperty] private bool _touchupMode;
     [ObservableProperty] private bool _dimOtherParts = true;
@@ -48,6 +51,9 @@ public sealed partial class EditorSession : ObservableObject
     public PartTransform ActiveTransform => Transforms[ActivePart];
 
     public Pose CurrentPose => Character.PoseFor(Direction);
+
+    /// <summary>The tool strokes use: the selected tool, with the pencil's pixel-perfect option applied.</summary>
+    public ITool ActiveTool => CurrentTool == ToolCatalog.Pencil && PixelPerfect ? PencilTool.PixelPerfectPencil : CurrentTool.Tool;
 
     /// <summary>Automatic 1px outline on composites (off: parts are used exactly as drawn).</summary>
     public bool AutoOutline

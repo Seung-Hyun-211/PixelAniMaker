@@ -37,6 +37,18 @@ public sealed class PixelEdit : IUndoableAction
         return true;
     }
 
+    /// <summary>The value a pixel had before this edit touched it (its current value if untouched).</summary>
+    public int Original(int x, int y) =>
+        _changes.TryGetValue(y * _image.Width + x, out var c) ? c.Before : _image[x, y];
+
+    /// <summary>Puts every touched pixel back and forgets the changes (for shape previews).</summary>
+    public void RevertAll()
+    {
+        foreach (var (key, (before, _)) in _changes)
+            _image.Set(key % _image.Width, key / _image.Width, before);
+        _changes.Clear();
+    }
+
     public void Undo() => Apply(before: true);
 
     public void Redo() => Apply(before: false);

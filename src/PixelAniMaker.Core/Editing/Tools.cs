@@ -17,32 +17,38 @@ public interface IStroke
     void End();
 }
 
-/// <summary>Freehand line. With <paramref name="fixedIndex"/> it paints that index regardless of colour selection.</summary>
-public sealed class PencilTool(string name, int? fixedIndex = null) : ITool
+/// <summary>
+/// Freehand line. With <paramref name="fixedIndex"/> it paints that index regardless of colour
+/// selection. With <paramref name="pixelPerfect"/> the extra corner pixel of every L-shaped step is
+/// removed, so freehand lines stay one pixel thin.
+/// </summary>
+public sealed class PencilTool(string name, int? fixedIndex = null, bool pixelPerfect = false) : ITool
 {
     public static PencilTool Pencil { get; } = new("연필");
+    public static PencilTool PixelPerfectPencil { get; } = new("연필", pixelPerfect: true);
     public static PencilTool Eraser { get; } = new("지우개", Palette.TransparentIndex);
 
     public IStroke Begin(EditorDocument document, int x, int y, bool secondary) =>
-        new Stroke(document, document.BeginEdit(name), fixedIndex ?? document.Colors.Get(secondary), x, y);
+        new Stroke(document, document.BeginEdit(name), fixedIndex ?? document.Colors.Get(secondary), pixelPerfect, x, y);
 
     private sealed class Stroke : IStroke
     {
         private readonly EditorDocument _document;
         private readonly PixelEdit _edit;
         private readonly int _index;
-        private int _lastX, _lastY;
+        private readonly bool _pixelPerfect;
+        private readonly List<(int X, int Y)> _path = [];
 
-        public Stroke(EditorDocument document, PixelEdit edit, int index, int x, int y)
+        public Stroke(EditorDocument document, PixelEdit edit, int index, bool pixelPerfect, int x, int y)
         {
-            (_document, _edit, _index, _lastX, _lastY) = (document, edit, index, x, y);
+            (_document, _edit, _index, _pixelPerfect) = (document, edit, index, pixelPerfect);
             Paint(Raster.Line(x, y, x, y));
         }
 
         public void Move(int x, int y)
         {
-            Paint(Raster.Line(_lastX, _lastY, x, y));
-            (_lastX, _lastY) = (x, y);
+            var (lx, ly) = _path[^1];
+            Paint(Raster.Line(lx, ly, x, y).Skip(1));
         }
 
         public void End() => _document.Commit(_edit);
@@ -50,11 +56,53 @@ public sealed class PencilTool(string name, int? fixedIndex = null) : ITool
         private void Paint(IEnumerable<(int X, int Y)> points)
         {
             bool changed = false;
-            foreach (var (px, py) in points)
-                changed |= _edit.Set(px, py, _index);
+            foreach (var p in points)
+            {
+                changed |= _edit.Set(p.X, p.Y, _index);
+                _path.Add(p);
+                if (_pixelPerfect && _path.Count >= 3 && IsCorner(_path[^3], _path[^2], _path[^1]))
+                {
+                    var (cx, cy) = _path[^2];
+                    changed |= _edit.Set(cx, cy, _edit.Original(cx, cy));
+                    _path.RemoveAt(_path.Count - 2);
+                }
+            }
             if (changed)
                 _document.NotifyPixelsChanged();
         }
+
+        /// <summary>b is the elbow of an L between a and c (a and c touch diagonally).</summary>
+        private static bool IsCorner((int X, int Y) a, (int X, int Y) b, (int X, int Y) c) =>
+            Math.Abs(a.X - c.X) == 1 && Math.Abs(a.Y - c.Y) == 1 && (a.X == b.X || a.Y == b.Y) && (c.X == b.X || c.Y == b.Y);
+    }
+}
+
+/// <summary>A shape dragged from a start point; the preview is redrawn on every move and kept on release.</summary>
+public sealed class ShapeTool(string name, Func<int, int, int, int, IEnumerable<(int X, int Y)>> shape) : ITool
+{
+    public static ShapeTool Line { get; } = new("선", Raster.Line);
+    public static ShapeTool Rectangle { get; } = new("사각형", Raster.Rectangle);
+    public static ShapeTool Ellipse { get; } = new("원", Raster.Ellipse);
+
+    public IStroke Begin(EditorDocument document, int x, int y, bool secondary)
+    {
+        var stroke = new Stroke(document, document.BeginEdit(name), document.Colors.Get(secondary), x, y, shape);
+        stroke.Move(x, y);
+        return stroke;
+    }
+
+    private sealed class Stroke(EditorDocument document, PixelEdit edit, int index, int x0, int y0,
+        Func<int, int, int, int, IEnumerable<(int X, int Y)>> shape) : IStroke
+    {
+        public void Move(int x, int y)
+        {
+            edit.RevertAll();
+            foreach (var (px, py) in shape(x0, y0, x, y))
+                edit.Set(px, py, index);
+            document.NotifyPixelsChanged();
+        }
+
+        public void End() => document.Commit(edit);
     }
 }
 

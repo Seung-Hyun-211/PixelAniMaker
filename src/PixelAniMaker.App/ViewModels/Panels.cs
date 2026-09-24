@@ -126,7 +126,7 @@ public sealed partial class PaletteViewModel : Tool
         else if (_palette!.IndexOf(color) >= 0)
             Message = "이미 팔레트에 있는 색입니다";
         else
-            _palette.Set(_colors.Primary, color);
+            PaletteChange.Apply(_palette, Session.Character.History, _colors.Primary, color);
     }
 
     private void Attach()
