@@ -21,6 +21,7 @@
         <MenuItem Header="저장" InputGesture="{Binding Shortcuts.Gestures[Save]}" Command="{Binding SaveCommand}" />
         <MenuItem Header="다른 이름으로 저장..." InputGesture="{Binding Shortcuts.Gestures[SaveAs]}" Command="{Binding SaveAsCommand}" />
         <Separator />
+        <MenuItem Header="다른 프로젝트에서 동작 가져오기..." Command="{Binding ImportClipsCommand}" />
         <MenuItem Header="팔레트 불러오기..." Command="{Binding ImportPaletteCommand}" />
         <MenuItem Header="내보내기">
           <MenuItem Header="현재 동작 시트 PNG..." InputGesture="{Binding Shortcuts.Gestures[ExportSheet]}" Command="{Binding ExportCurrentSheetCommand}" />

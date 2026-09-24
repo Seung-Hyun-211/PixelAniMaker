@@ -80,6 +80,16 @@ public sealed class AnimationClip : INotifyPropertyChanged
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>A copy with the same settings and keys (touch-ups are not copied).</summary>
+    public AnimationClip CopyAs(string name)
+    {
+        var copy = new AnimationClip(name, FrameCount, Fps, Loop);
+        foreach (var (direction, track) in _tracks)
+            foreach (var key in track.Values)
+                copy._tracks[direction][key.Frame] = key;
+        return copy;
+    }
+
     public void RemoveKey(Direction direction, int frame)
     {
         if (_tracks[direction.Source()].Remove(frame))
