@@ -10,6 +10,10 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <RootNamespace>PixelAniMaker.App</RootNamespace>
     <AssemblyName>PixelAniMaker</AssemblyName>
+    <ApplicationIcon>Assets/app.ico</ApplicationIcon>
+    <Version>0.1.0</Version>
+    <Product>PixelAniMaker</Product>
+    <Description>4등신 도트 캐릭터 파츠·스켈레톤 애니메이션 제작 툴</Description>
   </PropertyGroup>
 
   <ItemGroup>
