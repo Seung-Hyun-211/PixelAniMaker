@@ -29,6 +29,9 @@ public sealed class AppSettings
     /// <summary>Main window placement saved at exit (null = maximized).</summary>
     public WindowPlacement? Window { get; set; }
 
+    /// <summary>UI language: "ko" (default) or "en". Applied at start-up.</summary>
+    public string Language { get; set; } = Localizer.Korean;
+
     /// <summary>Seconds between autosave copies of unsaved work; 0 turns autosave off.</summary>
     public int AutosaveSeconds { get; set; } = 120;
 

@@ -16,7 +16,7 @@ public sealed partial class LayerItem : ObservableObject
     {
         _session = session;
         Index = index;
-        _name = name;
+        _name = Localizer.T(name);   // the default "기본" is shown in the UI language
         _visible = visible;
         _ready = true;
     }
@@ -26,7 +26,7 @@ public sealed partial class LayerItem : ObservableObject
 
     partial void OnNameChanged(string value)
     {
-        if (_ready && value.Trim().Length > 0)
+        if (_ready && value.Trim().Length > 0 && value.Trim() != Localizer.T(_session.ActiveLayers[Index].Name))
             _session.RenameLayer(Index, value.Trim());
     }
 

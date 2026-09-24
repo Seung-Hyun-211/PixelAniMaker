@@ -30,7 +30,13 @@ public static class TemplateLoader
     }
 
     /// <summary>The default clips (idle, walk, run, jump, attack, hit).</summary>
-    public static IReadOnlyList<AnimationClip> LoadDefaultAnimations() => AnimationJson.Parse(ReadText(Folder, "animations.json"));
+    public static IReadOnlyList<AnimationClip> LoadDefaultAnimations()
+    {
+        var clips = AnimationJson.Parse(ReadText(Folder, "animations.json"));
+        foreach (var clip in clips)
+            clip.Name = Localizer.T(clip.Name); // names are data: new projects get them in the UI language
+        return clips;
+    }
 
     private static string ReadText(string folder, string file)
     {

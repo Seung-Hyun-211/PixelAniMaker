@@ -184,7 +184,7 @@ public sealed partial class EditorSession : ObservableObject
         var layers = ActiveLayers;
         int at = ActiveLayerIndex + 1;
         LayerChange.Apply(layers, Character.History, "레이어 추가",
-            list => list.Insert(at, layers.CreateLayer(layers.FreeName("레이어"))));
+            list => list.Insert(at, layers.CreateLayer(layers.FreeName(Localizer.T("레이어")))));
         ActiveLayer = at;
     }
 
