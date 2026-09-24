@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using PixelAniMaker.Core.Animation;
 using PixelAniMaker.Core.Export;
 using PixelAniMaker.Core.Imaging;
 using PixelAniMaker.Core.Project;
@@ -109,6 +110,13 @@ public sealed partial class ProjectService : ObservableObject
         File.WriteAllBytes(path, AvaloniaImageCodec.Instance.EncodePng(sheet.Image));
         if (Settings.WriteSheetMetadata)
             File.WriteAllText(Path.ChangeExtension(path, ".json"), sheet.MetadataJson());
+    }
+
+    /// <summary>The animation clips of another project file.</summary>
+    public IReadOnlyList<AnimationClip> ReadClips(string path)
+    {
+        using var stream = File.OpenRead(path);
+        return ProjectFile.Load(stream, AvaloniaImageCodec.Instance).Clips;
     }
 
     public IReadOnlyList<Rgba> ReadPalette(string path)

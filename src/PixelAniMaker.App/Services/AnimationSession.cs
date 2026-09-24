@@ -132,16 +132,7 @@ public sealed partial class AnimationSession : ObservableObject
     }
 
     /// <summary>A copy of the current clip (settings and every direction's keys).</summary>
-    public AnimationClip? DuplicateCurrent()
-    {
-        if (CurrentClip is not { } src)
-            return null;
-        var copy = new AnimationClip(src.Name + " 복사본", src.FrameCount, src.Fps, src.Loop);
-        foreach (var d in DirectionExtensions.Stored)
-            foreach (var key in src.Keys(d))
-                copy.SetKey(d, key);
-        return copy;
-    }
+    public AnimationClip? DuplicateCurrent() => CurrentClip?.CopyAs(CurrentClip.Name + " 복사본");
 
     /// <summary>Replaces the clip list (new project or a loaded file).</summary>
     public void SetClips(IEnumerable<AnimationClip> clips)

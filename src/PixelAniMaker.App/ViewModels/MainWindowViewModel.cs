@@ -261,6 +261,33 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void ClearReference() => Session.Reference.Clear();
 
+    /// <summary>Copies chosen animation clips from another project (keys only; touch-ups stay behind).</summary>
+    [RelayCommand]
+    private async Task ImportClips()
+    {
+        if (Dialogs is null || await Dialogs.PickOpenFileAsync("동작 가져오기", ProjectService.ProjectType) is not { } path)
+            return;
+        IReadOnlyList<Core.Animation.AnimationClip> clips = [];
+        if (!await TryAsync(() => clips = Project.ReadClips(path), $"'{Path.GetFileName(path)}'을(를) 읽을 수 없습니다"))
+            return;
+        if (clips.Count == 0)
+        {
+            await Dialogs.ShowErrorAsync("가져올 동작이 없습니다.");
+            return;
+        }
+        var labels = clips.Select(c => $"{c.Name}  ({c.FrameCount}프레임 · {c.Fps} fps)").ToList();
+        if (await Dialogs.PickItemsAsync("동작 가져오기", $"'{Path.GetFileName(path)}'에서 가져올 동작을 고르세요.\n" +
+                "키프레임만 가져오며, 손본 픽셀은 그 캐릭터 전용이라 가져오지 않습니다. 같은 이름은 뒤에 번호가 붙습니다.",
+                labels, "가져오기") is not { Count: > 0 } picked)
+            return;
+
+        var result = Core.Animation.ClipImport.Import(picked.Select(i => clips[i]), Animation.Clips.Select(c => c.Name), Session.Character);
+        foreach (var clip in result.Clips)
+            Animation.AddClip(clip);
+        if (result.UnknownParts.Count > 0)
+            await Dialogs.ShowErrorAsync("이 캐릭터에 없는 파츠의 회전은 무시됩니다: " + string.Join(", ", result.UnknownParts));
+    }
+
     [RelayCommand]
     private Task ExportPalette() => ExportAsync("팔레트 내보내기", ProjectService.PaletteType, Project.DocumentName, Project.ExportPalette);
 
