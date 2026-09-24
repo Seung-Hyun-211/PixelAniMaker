@@ -29,6 +29,7 @@ public partial class MainWindow : Window, IFileDialogs
         if (await vm.CanCloseAsync())
         {
             _closeConfirmed = true;
+            vm.OnClosed();
             Close();
         }
     }
@@ -72,6 +73,9 @@ public partial class MainWindow : Window, IFileDialogs
         };
 
     public Task ShowErrorAsync(string message) => MessageDialog.ShowAsync(this, "오류", message, "확인");
+
+    public async Task<bool> ConfirmRecoveryAsync(string message) =>
+        await MessageDialog.ShowAsync(this, "작업 복구", message, "복구", "버리기") == 0;
 
     private static FilePickerFileType ToFilter(FileType type) => new(type.Name) { Patterns = ["*" + type.Extension] };
 }

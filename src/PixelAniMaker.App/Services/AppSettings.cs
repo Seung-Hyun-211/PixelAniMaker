@@ -20,6 +20,12 @@ public sealed class AppSettings
     /// <summary>Scale of exported GIFs.</summary>
     public int GifScale { get; set; } = 2;
 
+    /// <summary>Seconds between autosave copies of unsaved work; 0 turns autosave off.</summary>
+    public int AutosaveSeconds { get; set; } = 120;
+
+    /// <summary>Folder next to settings.json, e.g. for autosave copies.</summary>
+    public static string DataFolder(string name) => Path.Combine(Path.GetDirectoryName(FilePath)!, name);
+
     public static AppSettings Load()
     {
         try

@@ -29,8 +29,7 @@ public partial class App : Application
     {
         var vm = new MainWindowViewModel();
         var window = new MainWindow { DataContext = vm };
-        if (openPath is not null)
-            window.Opened += async (_, _) => await vm.OpenAtStartupAsync(openPath);
+        window.Opened += async (_, _) => await vm.StartAsync(openPath);
         return window;
     }
 }

@@ -20,6 +20,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Animation = new AnimationSession(Session);
         Touchup = new TouchupSession(Session, Animation);
         Project = new ProjectService(Session, Animation, AppSettings.Load());
+        Autosave = new AutosaveService(Project);
         _factory = new DockFactory(Session, Animation, Touchup);
         ResetLayout();
 
@@ -45,6 +46,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public AnimationSession Animation { get; }
     public TouchupSession Touchup { get; }
     public ProjectService Project { get; }
+    public AutosaveService Autosave { get; }
 
     /// <summary>Set by the window; dialogs are a view concern.</summary>
     public IFileDialogs? Dialogs { get; set; }
@@ -118,8 +120,36 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private Task ExportGif() => ExportAsync("GIF 내보내기", ProjectService.GifType,
         $"{Project.DocumentName}_{Animation.CurrentClip?.Name}", Project.ExportGif);
 
-    /// <summary>Opens a file given on the command line once the window is up.</summary>
-    public Task OpenAtStartupAsync(string path) => OpenPathAsync(path);
+    /// <summary>
+    /// First thing after the window opens: offer to recover work left by a crash, otherwise open the
+    /// file given on the command line.
+    /// </summary>
+    public async Task StartAsync(string? openPath)
+    {
+        if (await TryRecoverAsync())
+            return;
+        if (openPath is not null)
+            await OpenPathAsync(openPath);
+    }
+
+    /// <summary>Called when the window has closed normally: autosave copies are no longer needed.</summary>
+    public void OnClosed() => Autosave.DiscardCurrent();
+
+    private async Task<bool> TryRecoverAsync()
+    {
+        var found = AutosaveService.FindRecoveries();
+        if (found.Count == 0 || Dialogs is null)
+            return false;
+        var latest = found[0];
+        string what = latest.OriginalPath is null ? "제목 없는 문서" : $"'{Path.GetFileName(latest.OriginalPath)}'";
+        bool recover = await Dialogs.ConfirmRecoveryAsync(
+            $"지난번에 프로그램이 정상적으로 닫히지 않았습니다.\n{what}의 저장되지 않은 작업({latest.SavedAt:yyyy-MM-dd HH:mm})을 복구할까요?");
+        bool ok = recover && await TryAsync(() => Project.OpenRecovery(latest.File, latest.OriginalPath), "복구하지 못했습니다");
+        foreach (var r in found)
+            AutosaveService.Discard(r);
+        OnPropertyChanged(nameof(StatusText));
+        return ok;
+    }
 
     /// <summary>Called by the window before it closes; false keeps it open.</summary>
     public Task<bool> CanCloseAsync() => ConfirmDiscardAsync();
