@@ -51,6 +51,17 @@ public sealed class Palette
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>
+    /// Replaces every colour after the transparent entry. The list must not be shorter than the
+    /// highest index in use — callers only shrink it to undo an earlier append.
+    /// </summary>
+    public void ReplaceAll(IReadOnlyList<Rgba> colors)
+    {
+        _colors.RemoveRange(1, _colors.Count - 1);
+        _colors.AddRange(colors);
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
     public Palette Clone()
     {
         var p = new Palette();

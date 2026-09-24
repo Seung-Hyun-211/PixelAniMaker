@@ -10,7 +10,7 @@ public sealed class MessageDialog : Window
 {
     private int _result = -1;
 
-    private MessageDialog(string title, string message, IReadOnlyList<string> buttons)
+    private MessageDialog(string title, string message, Control? extra, IReadOnlyList<string> buttons)
     {
         Title = title;
         SizeToContent = SizeToContent.WidthAndHeight;
@@ -31,21 +31,21 @@ public sealed class MessageDialog : Window
             buttonRow.Children.Add(button);
         }
 
-        Content = new StackPanel
-        {
-            Margin = new Thickness(20),
-            Spacing = 20,
-            Children =
-            {
-                new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, MaxWidth = 460 },
-                buttonRow,
-            },
-        };
+        var body = new StackPanel { Margin = new Thickness(20), Spacing = 20 };
+        body.Children.Add(new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, MaxWidth = 460, HorizontalAlignment = HorizontalAlignment.Left });
+        if (extra is not null)
+            body.Children.Add(extra);
+        body.Children.Add(buttonRow);
+        Content = body;
     }
 
-    public static async Task<int> ShowAsync(Window owner, string title, string message, params string[] buttons)
+    public static Task<int> ShowAsync(Window owner, string title, string message, params string[] buttons) =>
+        ShowAsync(owner, title, message, null, buttons);
+
+    /// <param name="extra">Shown between the message and the buttons (e.g. preview images).</param>
+    public static async Task<int> ShowAsync(Window owner, string title, string message, Control? extra, params string[] buttons)
     {
-        var dialog = new MessageDialog(title, message, buttons);
+        var dialog = new MessageDialog(title, message, extra, buttons);
         await dialog.ShowDialog(owner);
         return dialog._result;
     }
