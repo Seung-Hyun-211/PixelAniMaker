@@ -36,12 +36,16 @@ public sealed class Compositor
 {
     private readonly Dictionary<IndexedImage, (int Version, IndexedImage Image)> _upscaled = [];
 
-    public CompositeResult Compose(Character character, Direction direction)
+    /// <summary>Renders <paramref name="direction"/> in <paramref name="pose"/> (default: the direction's current pose).</summary>
+    public CompositeResult Compose(Character character, Direction direction, PoseData? pose = null)
     {
         var result = new CompositeResult(character.Width, character.Height);
-        var transforms = character.ComputeTransforms(direction);
-        foreach (var part in character.DrawOrder(direction))
+        var transforms = character.ComputeTransforms(direction, pose);
+        var order = character.DrawOrder(direction).ToList();
+        foreach (var part in order)
             Draw(result, transforms[part], (short)character.IndexOf(part));
+        if (character.Outline.Enabled)
+            OutlinePass.Apply(result, RankByOwner(character, order), character.Outline);
         if (direction.IsMirrored())
             result.MirrorHorizontally();
         return result;
@@ -65,6 +69,14 @@ public sealed class Compositor
                 target.Owners[i] = owner;
             }
         }
+    }
+
+    private static int[] RankByOwner(Character character, List<Part> drawOrder)
+    {
+        var rank = new int[character.Parts.Count];
+        for (int i = 0; i < drawOrder.Count; i++)
+            rank[character.IndexOf(drawOrder[i])] = i;
+        return rank;
     }
 
     private static (int X0, int Y0, int X1, int Y1) CanvasBounds(PartTransform t, int width, int height)

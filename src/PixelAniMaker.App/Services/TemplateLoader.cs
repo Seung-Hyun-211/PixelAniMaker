@@ -1,7 +1,7 @@
-using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using PixelAniMaker.Core.Animation;
 using PixelAniMaker.Core.Imaging;
 using PixelAniMaker.Core.Rigging;
 
@@ -12,14 +12,29 @@ public static class TemplateLoader
 {
     private const string Folder = "avares://PixelAniMaker/Assets/Templates/chibi96/";
 
+    /// <summary>Mannequin line colours: silhouette outline and the line where parts overlap.</summary>
+    private static readonly Rgba OutlineColor = new(52, 40, 34);
+    private static readonly Rgba InnerLineColor = new(120, 96, 74);
+
     public static Character LoadChibi96()
     {
-        using var reader = new StreamReader(AssetLoader.Open(new Uri(Folder + "skeleton.json")));
-        var spec = CharacterSpec.Parse(reader.ReadToEnd());
+        var spec = CharacterSpec.Parse(ReadText("skeleton.json"));
         var palette = new Palette();
         var character = spec.Build(file => LoadRgba(new Uri(Folder + file)), palette);
         SeedPalette(palette);
+        character.Outline.OutlineIndex = palette.GetOrAdd(OutlineColor);
+        character.Outline.InnerIndex = palette.GetOrAdd(InnerLineColor);
+        character.Outline.Enabled = true;
         return character;
+    }
+
+    /// <summary>The default clips (idle, walk, run, jump, attack, hit).</summary>
+    public static IReadOnlyList<AnimationClip> LoadDefaultAnimations() => AnimationJson.Parse(ReadText("animations.json"));
+
+    private static string ReadText(string file)
+    {
+        using var reader = new StreamReader(AssetLoader.Open(new Uri(Folder + file)));
+        return reader.ReadToEnd();
     }
 
     private static unsafe RgbaImage LoadRgba(Uri uri)

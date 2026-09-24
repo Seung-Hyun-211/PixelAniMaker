@@ -55,6 +55,7 @@ internal sealed class PoseInteraction(EditorSession session) : ICanvasInteractio
     private Vector2 _pivot;
     private double _startAngle;
     private double _startRotation;
+    private PoseData _before = PoseData.Rest;
 
     public void Begin(CanvasInput input)
     {
@@ -66,6 +67,7 @@ internal sealed class PoseInteraction(EditorSession session) : ICanvasInteractio
         _pivot = session.Transforms[_part].Pivot;
         _startAngle = AngleTo(input.Point);
         _startRotation = session.CurrentPose.Get(_part.Name);
+        _before = session.CurrentPose.Snapshot();
     }
 
     public void Move(CanvasInput input)
@@ -78,8 +80,7 @@ internal sealed class PoseInteraction(EditorSession session) : ICanvasInteractio
     {
         if (_part is null)
             return;
-        PoseChange.Record(session.CurrentPose, session.Character.History, _part.Name,
-            _startRotation, session.CurrentPose.Get(_part.Name));
+        PoseChange.Record(session.CurrentPose, session.Character.History, _before);
         _part = null;
     }
 

@@ -7,7 +7,8 @@
         x:DataType="vm:MainWindowViewModel"
         Title="{Binding Title}"
         Width="1400" Height="900"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized">
 
   <Window.KeyBindings>
     <KeyBinding Gesture="Ctrl+N" Command="{Binding NewDocumentCommand}" />
@@ -20,6 +21,10 @@
     <KeyBinding Gesture="I" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static svc:ToolCatalog.Eyedropper}" />
     <KeyBinding Gesture="Ctrl+OemQuotes" Command="{Binding ToggleGridCommand}" />
     <KeyBinding Gesture="P" Command="{Binding TogglePoseModeCommand}" />
+    <KeyBinding Gesture="K" Command="{Binding SaveKeyCommand}" />
+    <KeyBinding Gesture="OemComma" Command="{Binding PreviousFrameCommand}" />
+    <KeyBinding Gesture="OemPeriod" Command="{Binding NextFrameCommand}" />
+    <KeyBinding Gesture="O" Command="{Binding ToggleOnionSkinCommand}" />
     <KeyBinding Gesture="D1" Command="{Binding SetDirectionCommand}" CommandParameter="{x:Static rig:Direction.Front}" />
     <KeyBinding Gesture="D2" Command="{Binding SetDirectionCommand}" CommandParameter="{x:Static rig:Direction.Left}" />
     <KeyBinding Gesture="D3" Command="{Binding SetDirectionCommand}" CommandParameter="{x:Static rig:Direction.Right}" />
@@ -50,6 +55,15 @@
         <Separator />
         <MenuItem Header="확대" InputGesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}" />
         <MenuItem Header="축소" InputGesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}" />
+      </MenuItem>
+      <MenuItem Header="애니메이션(_A)">
+        <MenuItem Header="키 저장" InputGesture="K" Command="{Binding SaveKeyCommand}" />
+        <MenuItem Header="키 삭제" Command="{Binding DeleteKeyCommand}" />
+        <Separator />
+        <MenuItem Header="이전 프레임" InputGesture="OemComma" Command="{Binding PreviousFrameCommand}" />
+        <MenuItem Header="다음 프레임" InputGesture="OemPeriod" Command="{Binding NextFrameCommand}" />
+        <MenuItem Header="어니언 스킨" InputGesture="O" Command="{Binding ToggleOnionSkinCommand}"
+                  ToggleType="CheckBox" IsChecked="{Binding Animation.OnionSkin, Mode=OneWay}" />
       </MenuItem>
       <MenuItem Header="창(_W)">
         <MenuItem Header="창 배치 초기화" Command="{Binding ResetLayoutCommand}" />

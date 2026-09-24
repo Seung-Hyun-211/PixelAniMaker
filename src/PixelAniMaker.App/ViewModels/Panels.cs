@@ -13,9 +13,10 @@ namespace PixelAniMaker.App.ViewModels;
 /// <summary>Editing canvas (document area).</summary>
 public sealed class CanvasDocumentViewModel : Document
 {
-    public CanvasDocumentViewModel(EditorSession session)
+    public CanvasDocumentViewModel(EditorSession session, AnimationSession animation)
     {
         Session = session;
+        Animation = animation;
         Id = "Canvas";
         Title = "캔버스";
         CanClose = false;
@@ -23,6 +24,7 @@ public sealed class CanvasDocumentViewModel : Document
     }
 
     public EditorSession Session { get; }
+    public AnimationSession Animation { get; }
 }
 
 /// <summary>Tool selection and view toggles.</summary>

@@ -1,13 +1,43 @@
+using System.Numerics;
+
 namespace PixelAniMaker.Core.Rigging;
 
-/// <summary>Joint rotations in degrees (clockwise on screen) keyed by part name. Missing parts are at 0.</summary>
+/// <summary>An immutable pose: joint rotations (degrees, clockwise on screen) plus a whole-body offset in pixels.</summary>
+public sealed record PoseData(IReadOnlyDictionary<string, double> Rotations, Vector2 Offset)
+{
+    public static PoseData Rest { get; } = new(new Dictionary<string, double>(), Vector2.Zero);
+
+    public double Get(string part) => Rotations.GetValueOrDefault(part);
+
+    /// <summary>Content equality (records compare dictionaries by reference).</summary>
+    public bool SameAs(PoseData other) =>
+        Offset == other.Offset
+        && Rotations.Count(kv => kv.Value != 0) == other.Rotations.Count(kv => kv.Value != 0)
+        && Rotations.All(kv => other.Get(kv.Key) == kv.Value);
+}
+
+/// <summary>The editable pose of one direction. Missing parts are at 0°.</summary>
 public sealed class Pose
 {
     private readonly Dictionary<string, double> _rotations = [];
+    private Vector2 _offset;
 
     public event EventHandler? Changed;
 
     public double Get(string part) => _rotations.GetValueOrDefault(part);
+
+    /// <summary>Whole-body offset in pixels, applied to the root joint.</summary>
+    public Vector2 Offset
+    {
+        get => _offset;
+        set
+        {
+            if (_offset == value)
+                return;
+            _offset = value;
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
+    }
 
     public void Set(string part, double degrees)
     {
@@ -21,17 +51,18 @@ public sealed class Pose
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    public IReadOnlyDictionary<string, double> Snapshot() => new Dictionary<string, double>(_rotations);
+    public PoseData Snapshot() => new(new Dictionary<string, double>(_rotations), _offset);
 
-    /// <summary>Replaces every rotation with <paramref name="snapshot"/> (empty = rest pose).</summary>
-    public void Restore(IReadOnlyDictionary<string, double> snapshot)
+    /// <summary>Replaces the whole pose (raises <see cref="Changed"/> once, only if something differs).</summary>
+    public void Restore(PoseData data)
     {
-        if (_rotations.Count == snapshot.Count && snapshot.All(kv => _rotations.GetValueOrDefault(kv.Key) == kv.Value))
+        if (Snapshot().SameAs(data))
             return;
         _rotations.Clear();
-        foreach (var (part, degrees) in snapshot)
+        foreach (var (part, degrees) in data.Rotations)
             if (degrees != 0)
                 _rotations[part] = Normalize(degrees);
+        _offset = data.Offset;
         Changed?.Invoke(this, EventArgs.Empty);
     }
 

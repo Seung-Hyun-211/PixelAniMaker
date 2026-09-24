@@ -15,6 +15,8 @@ public sealed class ViewLocator : IDataTemplate
         [typeof(PaletteViewModel)] = () => new PaletteView(),
         [typeof(PreviewViewModel)] = () => new PreviewView(),
         [typeof(PartsViewModel)] = () => new PartsView(),
+        [typeof(TimelineViewModel)] = () => new TimelineView(),
+        [typeof(AnimationPreviewViewModel)] = () => new AnimationPreviewView(),
     };
 
     public Control? Build(object? data) =>
