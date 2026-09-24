@@ -6,6 +6,7 @@ using Dock.Model.Mvvm.Controls;
 using PixelAniMaker.App.Services;
 using PixelAniMaker.Core.Editing;
 using PixelAniMaker.Core.Imaging;
+using PixelAniMaker.Core.Rigging;
 
 namespace PixelAniMaker.App.ViewModels;
 
@@ -38,6 +39,8 @@ public sealed class ToolboxViewModel : Tool
     public EditorSession Session { get; }
 
     public IReadOnlyList<ToolItem> Tools => ToolCatalog.All;
+
+    public IReadOnlyList<Direction> Directions => DirectionExtensions.All;
 }
 
 public sealed partial class SwatchViewModel : ObservableObject

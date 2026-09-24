@@ -2,8 +2,8 @@ using System.Numerics;
 
 namespace PixelAniMaker.Core.Rigging;
 
-/// <summary>Where a part is on the canvas: its joint position and accumulated rotation.</summary>
-public readonly record struct PartTransform(Part Part, Vector2 Pivot, float Angle)
+/// <summary>Where a part is on the canvas in one direction: its joint position and accumulated rotation.</summary>
+public readonly record struct PartTransform(Part Part, PartView View, Vector2 Pivot, float Angle)
 {
     private const float QuarterTurn = MathF.PI / 2;
 
@@ -18,10 +18,10 @@ public readonly record struct PartTransform(Part Part, Vector2 Pivot, float Angl
     }
 
     /// <summary>Image-local point → canvas point.</summary>
-    public Vector2 ToCanvas(Vector2 local) => Pivot + Rotate(local - Part.LocalPivot, Angle);
+    public Vector2 ToCanvas(Vector2 local) => Pivot + Rotate(local - View.LocalPivot, Angle);
 
     /// <summary>Canvas point → image-local point.</summary>
-    public Vector2 ToLocal(Vector2 canvas) => Part.LocalPivot + Rotate(canvas - Pivot, -Angle);
+    public Vector2 ToLocal(Vector2 canvas) => View.LocalPivot + Rotate(canvas - Pivot, -Angle);
 
     /// <summary>Canvas pixel → image pixel (sampled at the pixel centre).</summary>
     public (int X, int Y) ToLocalPixel(int x, int y)

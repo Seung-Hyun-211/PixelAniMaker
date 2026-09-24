@@ -19,8 +19,9 @@ OUTLINE = (52, 40, 34, 255)
 
 
 class Figure:
-    def __init__(self, w, h):
-        self.w, self.h, self.s = w, h, w / BASE_W
+    def __init__(self, w, h, scale=None):
+        """scale: design units -> pixels (default: fit the 128-wide design space to w)."""
+        self.w, self.h, self.s = w, h, scale if scale is not None else w / BASE_W
         self.labels = Image.new("I", (w, h), 0)
         self.draw = ImageDraw.Draw(self.labels)
         self.kind = {0: None}

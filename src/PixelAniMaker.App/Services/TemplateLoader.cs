@@ -7,12 +7,12 @@ using PixelAniMaker.Core.Rigging;
 
 namespace PixelAniMaker.App.Services;
 
-/// <summary>Loads the built-in 4-head mannequin (16 parts) from the app assets.</summary>
+/// <summary>Loads the built-in 4-head mannequin (16 parts, front/left/back) from the app assets.</summary>
 public static class TemplateLoader
 {
-    private const string Folder = "avares://PixelAniMaker/Assets/Templates/chibi64/";
+    private const string Folder = "avares://PixelAniMaker/Assets/Templates/chibi96/";
 
-    public static Character LoadChibi64()
+    public static Character LoadChibi96()
     {
         using var reader = new StreamReader(AssetLoader.Open(new Uri(Folder + "skeleton.json")));
         var spec = CharacterSpec.Parse(reader.ReadToEnd());

@@ -4,42 +4,41 @@ using PixelAniMaker.Core.Imaging;
 namespace PixelAniMaker.Core.Rigging;
 
 /// <summary>
-/// One bone of the skeleton with its pixel image. At rest (all rotations 0) the image sits at
-/// <see cref="RestPosition"/> on the canvas; it rotates around <see cref="RestPivot"/>, the joint it
+/// How a part looks in one direction. At rest (all rotations 0) the image sits at
+/// <see cref="RestPosition"/> on the canvas and rotates around <see cref="RestPivot"/>, the joint it
 /// shares with its parent.
 /// </summary>
+public sealed record PartView(IndexedImage Image, Vector2 RestPosition, Vector2 RestPivot, int DrawOrder)
+{
+    /// <summary>Joint position inside the image.</summary>
+    public Vector2 LocalPivot => RestPivot - RestPosition;
+}
+
+/// <summary>One bone of the skeleton, with its look in every stored direction.</summary>
 public sealed class Part
 {
     private readonly List<Part> _children = [];
+    private readonly IReadOnlyDictionary<Direction, PartView> _views;
 
-    public Part(string name, string label, IndexedImage image, Vector2 restPosition, Vector2 restPivot, int drawOrder)
+    public Part(string name, string label, IReadOnlyDictionary<Direction, PartView> views)
     {
+        foreach (var direction in DirectionExtensions.Stored)
+            if (!views.ContainsKey(direction))
+                throw new ArgumentException($"Part '{name}' has no {direction} view.", nameof(views));
         Name = name;
         Label = label;
-        Image = image;
-        RestPosition = restPosition;
-        RestPivot = restPivot;
-        DrawOrder = drawOrder;
+        _views = views;
     }
 
     public string Name { get; }
     public string Label { get; }
-    public IndexedImage Image { get; }
-
-    /// <summary>Canvas position of the image's top-left corner at rest.</summary>
-    public Vector2 RestPosition { get; }
-
-    /// <summary>Canvas position of the joint at rest.</summary>
-    public Vector2 RestPivot { get; }
-
-    /// <summary>Joint position inside the image.</summary>
-    public Vector2 LocalPivot => RestPivot - RestPosition;
-
-    public int DrawOrder { get; }
     public Part? Parent { get; private set; }
     public IReadOnlyList<Part> Children => _children;
 
     public int Depth => Parent is null ? 0 : Parent.Depth + 1;
+
+    /// <summary>The view drawn for <paramref name="direction"/> (Right uses the Left data).</summary>
+    public PartView View(Direction direction) => _views[direction.Source()];
 
     internal void AttachTo(Part parent)
     {

@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Controls;
 using PixelAniMaker.App.Services;
+using PixelAniMaker.Core.Rigging;
 
 namespace PixelAniMaker.App.ViewModels;
 
@@ -21,7 +22,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Session.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(EditorSession.Zoom) or nameof(EditorSession.CurrentTool)
-                or nameof(EditorSession.PoseMode) or nameof(EditorSession.ActivePart))
+                or nameof(EditorSession.PoseMode) or nameof(EditorSession.ActivePart) or nameof(EditorSession.Direction))
                 OnPropertyChanged(nameof(StatusText));
         };
         OnHistoryChanged();
@@ -30,7 +31,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public EditorSession Session { get; }
 
     public string StatusText =>
-        $"{(Session.PoseMode ? "포즈" : Session.CurrentTool.Label)}   ·   {Session.ActivePart.Label}   ·   " +
+        $"{Session.Direction.Label()}   ·   {(Session.PoseMode ? "포즈" : Session.CurrentTool.Label)}   ·   {Session.ActivePart.Label}   ·   " +
         $"{Session.Character.Width}×{Session.Character.Height}   ·   ×{Session.Zoom}";
 
     [RelayCommand]
@@ -59,6 +60,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     [RelayCommand]
     private void SelectTool(ToolItem tool) => Session.SelectTool(tool);
+
+    [RelayCommand]
+    private void SetDirection(Direction direction) => Session.Direction = direction;
 
     [RelayCommand]
     private void ToggleGrid() => Session.ShowGrid = !Session.ShowGrid;
