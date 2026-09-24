@@ -26,7 +26,7 @@ public sealed class CompositeResult(int width, int height)
         return copy;
     }
 
-    internal void MirrorHorizontally()
+    public void MirrorHorizontally()
     {
         for (int y = 0; y < Height; y++)
         {

@@ -26,12 +26,16 @@ public sealed record PartView(IndexedImage Image, Vector2 RestPosition, Vector2 
     }
 }
 
-/// <summary>One bone of the skeleton, with its look in every stored direction.</summary>
+/// <summary>
+/// One bone of the skeleton, with its look in every stored direction. The Right view mirrors the
+/// Left view unless the part has its own right image (<see cref="HasOwnRight"/>).
+/// </summary>
 public sealed class Part
 {
     private readonly List<Part> _children = [];
-    private readonly IReadOnlyDictionary<Direction, PartView> _views;
+    private readonly Dictionary<Direction, PartView> _views;
 
+    /// <param name="views">Every stored direction, plus optionally <see cref="Direction.Right"/>.</param>
     public Part(string name, string label, IReadOnlyDictionary<Direction, PartView> views)
     {
         foreach (var direction in DirectionExtensions.Stored)
@@ -39,7 +43,7 @@ public sealed class Part
                 throw new ArgumentException($"Part '{name}' has no {direction} view.", nameof(views));
         Name = name;
         Label = label;
-        _views = views;
+        _views = new Dictionary<Direction, PartView>(views);
     }
 
     public string Name { get; }
@@ -49,8 +53,24 @@ public sealed class Part
 
     public int Depth => Parent is null ? 0 : Parent.Depth + 1;
 
-    /// <summary>The view drawn for <paramref name="direction"/> (Right uses the Left data).</summary>
-    public PartView View(Direction direction) => _views[direction.Source()];
+    /// <summary>
+    /// The view drawn for <paramref name="direction"/>. Right uses its own view when there is one,
+    /// otherwise the Left view. Either way it is in Left-view coordinates; the renderer mirrors it.
+    /// </summary>
+    public PartView View(Direction direction) =>
+        _views.TryGetValue(direction, out var own) ? own : _views[direction.Source()];
+
+    /// <summary>True when the Right view is drawn separately instead of mirroring the Left view.</summary>
+    public bool HasOwnRight => _views.ContainsKey(Direction.Right);
+
+    /// <summary>Gives the part its own right view, or (null) goes back to mirroring the Left view.</summary>
+    internal void SetOwnRight(PartView? view)
+    {
+        if (view is null)
+            _views.Remove(Direction.Right);
+        else
+            _views[Direction.Right] = view;
+    }
 
     internal void AttachTo(Part parent)
     {

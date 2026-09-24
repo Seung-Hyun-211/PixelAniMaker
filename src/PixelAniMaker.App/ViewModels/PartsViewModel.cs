@@ -24,6 +24,8 @@ public sealed partial class PartsViewModel : Tool
     [ObservableProperty] private decimal? _offsetY;
     [ObservableProperty] private string _variantStatus = "";
     [ObservableProperty] private string _variantMessage = "";
+    [ObservableProperty] private bool _ownRight;
+    [ObservableProperty] private bool _isRightView;
 
     public PartsViewModel(EditorSession session)
     {
@@ -31,7 +33,7 @@ public sealed partial class PartsViewModel : Tool
         Id = "Parts";
         Title = "파츠";
         CanClose = false;
-        session.HistoryChanged += (_, _) => UpdateVariantStatus(); // variants added/removed or undone
+        session.HistoryChanged += (_, _) => Sync(); // variants or right views added/removed or undone
         session.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(EditorSession.Character))
@@ -56,6 +58,12 @@ public sealed partial class PartsViewModel : Tool
     {
         if (!_syncing && value is { } degrees)
             Session.SetRotation(Session.ActivePart, (double)degrees);
+    }
+
+    partial void OnOwnRightChanged(bool value)
+    {
+        if (!_syncing)
+            Session.SetOwnRight(value);
     }
 
     partial void OnOffsetXChanged(decimal? value) => ApplyOffset();
@@ -114,6 +122,8 @@ public sealed partial class PartsViewModel : Tool
         Rotation = (decimal)Math.Round(Session.CurrentPose.Get(Session.ActivePart.Name), 1);
         OffsetX = (decimal)Math.Round(Session.CurrentPose.Offset.X);
         OffsetY = (decimal)Math.Round(Session.CurrentPose.Offset.Y);
+        IsRightView = Session.Direction.IsMirrored();
+        OwnRight = Session.ActivePart.HasOwnRight;
         UpdateVariantStatus();
         _syncing = false;
     }

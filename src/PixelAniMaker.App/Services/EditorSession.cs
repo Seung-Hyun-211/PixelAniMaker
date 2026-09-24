@@ -200,6 +200,9 @@ public sealed partial class EditorSession : ObservableObject
         return null;
     }
 
+    /// <summary>Right view only: draw the active part separately (true) or mirror the Left view again.</summary>
+    public void SetOwnRight(bool separate) => RightViewChange.Apply(ActivePart, Character.History, separate);
+
     public void RemoveActiveVariant()
     {
         if (ActiveVariantAngle is { } angle)
@@ -256,7 +259,13 @@ public sealed partial class EditorSession : ObservableObject
         AttachDocument(ActiveTransform.Image); // rotating into or out of an angle variant switches the target
         UpdateMirror();                        // the mirror follows the pose
         var composites = DirectionExtensions.All.ToDictionary(d => d, d => Compositor.Compose(Character, d));
-        SourceComposite = composites[Direction.Source()];
+        SourceComposite = composites[Direction];
+        if (Direction.IsMirrored())
+        {
+            // hit-testing works in source coordinates; the Right view may have its own images
+            SourceComposite = SourceComposite.Clone();
+            SourceComposite.MirrorHorizontally();
+        }
 
         foreach (var (d, composite) in composites)
             CompositeBitmap.Write(composite, Character.Palette, _previewBitmaps[d]);
