@@ -10,7 +10,11 @@ public static class AnimationJson
 {
     private sealed record KeySpec(int Frame, string? Easing, float[]? Offset, Dictionary<string, double>? Rotations);
 
-    private sealed record ClipSpec(string Name, int Frames, int Fps, bool Loop, Dictionary<string, List<KeySpec>> Tracks);
+    /// <summary>One touched-up frame: pixels as [x, y, paletteIndex] (index 0 erases).</summary>
+    private sealed record TouchupSpec(string Direction, int Frame, List<int[]> Pixels);
+
+    private sealed record ClipSpec(string Name, int Frames, int Fps, bool Loop, Dictionary<string, List<KeySpec>> Tracks,
+        List<TouchupSpec>? Touchups = null);
 
     private sealed record FileSpec(List<ClipSpec> Animations);
 
@@ -20,6 +24,7 @@ public static class AnimationJson
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
     public static IReadOnlyList<AnimationClip> Parse(string json)
@@ -41,6 +46,13 @@ public static class AnimationJson
             foreach (var k in keys)
                 clip.SetKey(direction, new Keyframe(k.Frame, ToPose(k), ParseEasing(k.Easing)));
         }
+        foreach (var t in spec.Touchups ?? [])
+        {
+            if (!Enum.TryParse<Direction>(t.Direction, ignoreCase: true, out var direction))
+                throw new FormatException($"Unknown direction '{t.Direction}' in touch-ups of '{spec.Name}'.");
+            clip.Touchups.Set(direction, t.Frame, new PixelOverrides(
+                t.Pixels.Select(p => KeyValuePair.Create((p[0], p[1]), (ushort)p[2]))));
+        }
         return clip;
     }
 
@@ -51,7 +63,13 @@ public static class AnimationJson
                 k.Frame,
                 k.Easing.ToString(),
                 k.Pose.Offset == Vector2.Zero ? null : [k.Pose.Offset.X, k.Pose.Offset.Y],
-                k.Pose.Rotations.Where(r => r.Value != 0).ToDictionary(r => r.Key, r => r.Value))).ToList()));
+                k.Pose.Rotations.Where(r => r.Value != 0).ToDictionary(r => r.Key, r => r.Value))).ToList()),
+        clip.Touchups.Frames.Any()
+            ? clip.Touchups.Frames.OrderBy(f => f.Direction).ThenBy(f => f.Frame)
+                .Select(f => new TouchupSpec(f.Direction.ToString().ToLowerInvariant(), f.Frame,
+                    clip.Touchups.Get(f.Direction, f.Frame).Select(p => new[] { p.Key.X, p.Key.Y, (int)p.Value }).ToList()))
+                .ToList()
+            : null);
 
     private static PoseData ToPose(KeySpec k) =>
         new(k.Rotations ?? [], k.Offset is [var x, var y] ? new Vector2(x, y) : Vector2.Zero);

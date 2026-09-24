@@ -18,6 +18,14 @@ public sealed class CompositeResult(int width, int height)
     public short OwnerAt(int x, int y) =>
         (uint)x < (uint)Width && (uint)y < (uint)Height ? Owners[y * Width + x] : NoPart;
 
+    public CompositeResult Clone()
+    {
+        var copy = new CompositeResult(Width, Height);
+        Indices.CopyTo(copy.Indices, 0);
+        Owners.CopyTo(copy.Owners, 0);
+        return copy;
+    }
+
     internal void MirrorHorizontally()
     {
         for (int y = 0; y < Height; y++)

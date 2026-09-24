@@ -29,6 +29,9 @@ public sealed partial class EditorSession : ObservableObject
     [ObservableProperty] private WriteableBitmap _canvasBitmap = null!;
     [ObservableProperty] private ToolItem _currentTool = ToolCatalog.Pencil;
     [ObservableProperty] private bool _poseMode;
+
+    /// <summary>Paint directly on generated frames (the touch-up layer) instead of on parts.</summary>
+    [ObservableProperty] private bool _touchupMode;
     [ObservableProperty] private bool _dimOtherParts = true;
     [ObservableProperty] private int _zoom = 4;
     [ObservableProperty] private bool _showGrid = true;
@@ -138,7 +141,18 @@ public sealed partial class EditorSession : ObservableObject
 
     partial void OnCurrentToolChanged(ToolItem value) => PoseMode = false;
 
-    partial void OnPoseModeChanged(bool value) => Refresh();
+    partial void OnPoseModeChanged(bool value)
+    {
+        if (value)
+            TouchupMode = false;
+        Refresh();
+    }
+
+    partial void OnTouchupModeChanged(bool value)
+    {
+        if (value)
+            PoseMode = false;
+    }
 
     partial void OnDimOtherPartsChanged(bool value) => Refresh();
 

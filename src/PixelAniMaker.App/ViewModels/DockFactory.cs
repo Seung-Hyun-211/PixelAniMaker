@@ -11,11 +11,11 @@ namespace PixelAniMaker.App.ViewModels;
 /// Builds the default window layout:
 /// tools + parts | canvas + timeline | preview + animation + palette.
 /// </summary>
-public sealed class DockFactory(EditorSession session, AnimationSession animation) : Factory
+public sealed class DockFactory(EditorSession session, AnimationSession animation, TouchupSession touchup) : Factory
 {
     public override IRootDock CreateLayout()
     {
-        var canvas = new CanvasDocumentViewModel(session, animation);
+        var canvas = new CanvasDocumentViewModel(session, animation, touchup);
         var documents = new DocumentDock
         {
             Id = "Documents",
@@ -31,7 +31,7 @@ public sealed class DockFactory(EditorSession session, AnimationSession animatio
             Panel("LeftBottomDock", 0.45, Alignment.Left, new PartsViewModel(session)));
         var center = Column("CenterColumn", 0.56,
             documents,
-            Panel("BottomDock", 0.3, Alignment.Bottom, new TimelineViewModel(session, animation)));
+            Panel("BottomDock", 0.3, Alignment.Bottom, new TimelineViewModel(session, animation, touchup)));
         var right = Column("RightColumn", 0.26,
             Panel("RightTopDock", 0.36, Alignment.Right, new PreviewViewModel(session)),
             Panel("RightMiddleDock", 0.36, Alignment.Right, new AnimationPreviewViewModel(animation)),

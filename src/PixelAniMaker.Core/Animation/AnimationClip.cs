@@ -67,6 +67,9 @@ public sealed class AnimationClip : INotifyPropertyChanged
     public bool Loop { get => _loop; set => Set(ref _loop, value); }
 
     /// <summary>The direction's keys in frame order (a copy).</summary>
+    /// <summary>Hand-painted pixel fixes on top of the generated frames.</summary>
+    public FrameTouchups Touchups { get; } = new();
+
     public IReadOnlyList<Keyframe> Keys(Direction direction) => [.. _tracks[direction.Source()].Values];
 
     public Keyframe? KeyAt(Direction direction, int frame) => _tracks[direction.Source()].GetValueOrDefault(frame);

@@ -16,6 +16,9 @@ public sealed class PixelCanvas : SessionControl
     public static readonly StyledProperty<AnimationSession?> AnimationProperty =
         AvaloniaProperty.Register<PixelCanvas, AnimationSession?>(nameof(Animation));
 
+    public static readonly StyledProperty<TouchupSession?> TouchupProperty =
+        AvaloniaProperty.Register<PixelCanvas, TouchupSession?>(nameof(Touchup));
+
     private const int MinZoomForGrid = 6;
     private const double OnionOpacity = 0.3;
 
@@ -52,9 +55,24 @@ public sealed class PixelCanvas : SessionControl
         set => SetValue(AnimationProperty, value);
     }
 
+    /// <summary>Finished-frame canvas used in touch-up mode.</summary>
+    public TouchupSession? Touchup
+    {
+        get => GetValue(TouchupProperty);
+        set => SetValue(TouchupProperty, value);
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == TouchupProperty)
+        {
+            if (change.OldValue is TouchupSession oldTouchup)
+                oldTouchup.Updated -= OnAnimationChanged;
+            if (change.NewValue is TouchupSession newTouchup)
+                newTouchup.Updated += OnAnimationChanged;
+            return;
+        }
         if (change.Property != AnimationProperty)
             return;
         if (change.OldValue is AnimationSession old)
@@ -147,7 +165,8 @@ public sealed class PixelCanvas : SessionControl
         var dest = new Rect(_origin.X, _origin.Y, w * z, h * z);
         context.FillRectangle(CheckerBrushes.Large, dest);
         DrawOnionSkin(context, s, dest);
-        context.DrawImage(s.CanvasBitmap, new Rect(0, 0, w, h), dest);
+        var image = s.TouchupMode && Touchup?.Bitmap is { } frame ? frame : s.CanvasBitmap;
+        context.DrawImage(image, new Rect(0, 0, w, h), dest);
 
         if (s.ShowGrid && z >= MinZoomForGrid)
             DrawGrid(context, dest, w, h, z);
@@ -155,7 +174,7 @@ public sealed class PixelCanvas : SessionControl
 
         if (s.PoseMode)
             DrawSkeleton(context, s);
-        else
+        else if (!s.TouchupMode)
             DrawPartBounds(context, s.ActiveTransform);
 
         if (_hover is var (hx, hy) && hx >= 0 && hy >= 0 && hx < w && hy < h)
@@ -240,7 +259,9 @@ public sealed class PixelCanvas : SessionControl
         }
         else if (props.IsLeftButtonPressed || props.IsRightButtonPressed)
         {
-            _interaction = s.PoseMode ? new PoseInteraction(s) : new DrawInteraction(s);
+            _interaction = s.PoseMode ? new PoseInteraction(s)
+                : s.TouchupMode && Touchup is { } touchup ? new TouchupInteraction(s, touchup)
+                : new DrawInteraction(s);
             _interaction.Begin(Input(point.Position, e, props.IsRightButtonPressed));
         }
         else
@@ -309,8 +330,12 @@ public sealed class PixelCanvas : SessionControl
         _panning = false;
     }
 
-    private CanvasInput Input(Point screen, PointerEventArgs e, bool secondary = false) =>
-        new(ToSource(screen), secondary, e.KeyModifiers.HasFlag(KeyModifiers.Shift), e.KeyModifiers.HasFlag(KeyModifiers.Alt));
+    private CanvasInput Input(Point screen, PointerEventArgs e, bool secondary = false)
+    {
+        var display = ToCanvas(screen);
+        return new(ToSource(screen), new System.Numerics.Vector2((float)display.X, (float)display.Y), secondary,
+            e.KeyModifiers.HasFlag(KeyModifiers.Shift), e.KeyModifiers.HasFlag(KeyModifiers.Alt));
+    }
 
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {

@@ -16,10 +16,32 @@ internal interface ICanvasInteraction
 }
 
 /// <param name="Point">Canvas point in source-view coordinates.</param>
+/// <param name="Display">Canvas point as shown (not un-mirrored), for editing finished frames.</param>
 /// <param name="Secondary">Right mouse button.</param>
 /// <param name="Snap">Shift: snap angles.</param>
 /// <param name="UseActivePart">Alt: act on the selected part instead of the one under the cursor.</param>
-internal readonly record struct CanvasInput(Vector2 Point, bool Secondary, bool Snap, bool UseActivePart);
+internal readonly record struct CanvasInput(Vector2 Point, Vector2 Display, bool Secondary, bool Snap, bool UseActivePart);
+
+/// <summary>Paints on the finished frame (touch-up layer), in display coordinates.</summary>
+internal sealed class TouchupInteraction(EditorSession session, TouchupSession touchup) : ICanvasInteraction
+{
+    public void Begin(CanvasInput input)
+    {
+        var (x, y) = Pixel(input);
+        touchup.Document?.BeginStroke(session.CurrentTool.Tool, x, y, input.Secondary);
+    }
+
+    public void Move(CanvasInput input)
+    {
+        var (x, y) = Pixel(input);
+        touchup.Document?.ContinueStroke(x, y);
+    }
+
+    public void End() => touchup.Document?.EndStroke();
+
+    private static (int X, int Y) Pixel(CanvasInput input) =>
+        ((int)MathF.Floor(input.Display.X), (int)MathF.Floor(input.Display.Y));
+}
 
 /// <summary>Draws on the active part: canvas pixels are mapped back into the part's own image.</summary>
 internal sealed class DrawInteraction(EditorSession session) : ICanvasInteraction

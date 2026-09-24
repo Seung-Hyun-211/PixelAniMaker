@@ -15,6 +15,7 @@ public sealed partial class FrameCellViewModel(int index) : ObservableObject
 
     [ObservableProperty] private Bitmap? _thumbnail;
     [ObservableProperty] private bool _hasKey;
+    [ObservableProperty] private bool _hasTouchup;
     [ObservableProperty] private bool _isCurrent;
 }
 
@@ -23,10 +24,12 @@ public sealed partial class TimelineViewModel : Tool
 {
     private int _newClipCount;
 
-    public TimelineViewModel(EditorSession session, AnimationSession animation)
+    public TimelineViewModel(EditorSession session, AnimationSession animation, TouchupSession touchup)
     {
         Session = session;
         Animation = animation;
+        touchup.Updated += (_, _) => OnPropertyChanged(nameof(KeyStatus));
+        Touchup = touchup;
         Id = "Timeline";
         Title = "타임라인";
         CanClose = false;
@@ -40,7 +43,7 @@ public sealed partial class TimelineViewModel : Tool
         };
         session.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(EditorSession.Direction))
+            if (e.PropertyName is nameof(EditorSession.Direction) or nameof(EditorSession.TouchupMode))
                 UpdateCells();
         };
         session.ImageUpdated += (_, _) => OnPropertyChanged(nameof(KeyStatus)); // pose edits refresh the image
@@ -49,6 +52,7 @@ public sealed partial class TimelineViewModel : Tool
 
     public EditorSession Session { get; }
     public AnimationSession Animation { get; }
+    public TouchupSession Touchup { get; }
 
     public ObservableCollection<FrameCellViewModel> Frames { get; } = [];
 
@@ -67,6 +71,7 @@ public sealed partial class TimelineViewModel : Tool
 
     public string KeyStatus =>
         Animation.CurrentClip is null ? ""
+        : Session.TouchupMode ? $"프레임 손보기 — 이 프레임 {Touchup.CurrentOverrideCount}픽셀 수정됨"
         : Animation.IsPoseUnsaved(Session.Direction) ? "포즈가 키와 다름 — K로 저장"
         : Animation.CurrentKey is null ? "키 없음 (보간된 포즈)"
         : "키 프레임";
@@ -77,6 +82,7 @@ public sealed partial class TimelineViewModel : Tool
     [RelayCommand] private void SaveKey() => Animation.SaveKey();
     [RelayCommand] private void DeleteKey() => Animation.DeleteKey();
     [RelayCommand] private void TogglePlay() => Animation.IsPlaying = !Animation.IsPlaying;
+    [RelayCommand] private void ClearTouchup() => Animation.ClearTouchup();
 
     [RelayCommand]
     private void NewClip() => Animation.AddClip(new AnimationClip($"새 동작 {++_newClipCount}", 8));
@@ -104,6 +110,7 @@ public sealed partial class TimelineViewModel : Tool
         {
             cell.Thumbnail = Animation.Frame(Session.Direction, cell.Index);
             cell.HasKey = clip?.KeyAt(Session.Direction, cell.Index) is not null;
+            cell.HasTouchup = clip?.Touchups.Has(Session.Direction, cell.Index) ?? false;
             cell.IsCurrent = cell.Index == Animation.CurrentFrame;
         }
         OnPropertyChanged(nameof(CurrentEasing));
