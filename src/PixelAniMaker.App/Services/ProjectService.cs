@@ -16,6 +16,9 @@ public sealed partial class ProjectService : ObservableObject
 
     [ObservableProperty] private string? _currentPath;
 
+    /// <summary>The document came from an autosave after a crash; it stays unsaved until saved.</summary>
+    [ObservableProperty] private bool _isRecovered;
+
     public ProjectService(EditorSession editor, AnimationSession animation, AppSettings settings)
     {
         _editor = editor;
@@ -27,40 +30,69 @@ public sealed partial class ProjectService : ObservableObject
 
     public string DocumentName => CurrentPath is null ? "제목 없음" : Path.GetFileNameWithoutExtension(CurrentPath);
 
-    public bool IsDirty => _editor.Character.History.IsDirty || _animation.HasUnsavedClipChanges;
+    public bool IsDirty => IsRecovered || _editor.Character.History.IsDirty || _animation.HasUnsavedClipChanges;
+
+    /// <summary>Raised when the document is replaced (new, open) or saved — autosave copies are then obsolete.</summary>
+    public event EventHandler? DocumentReset;
 
     public void New()
     {
         _editor.LoadCharacter(TemplateLoader.LoadChibi96());
         _animation.SetClips(TemplateLoader.LoadDefaultAnimations());
         CurrentPath = null;
+        IsRecovered = false;
+        DocumentReset?.Invoke(this, EventArgs.Empty);
     }
 
     /// <param name="rememberRecent">False for batch runs, which must not touch the user's recent files.</param>
     public void Open(string path, bool rememberRecent = true)
+    {
+        Load(path);
+        CurrentPath = path;
+        IsRecovered = false;
+        if (rememberRecent)
+            Settings.AddRecent(path);
+        DocumentReset?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Opens an autosave copy as unsaved changes to <paramref name="originalPath"/> (null = untitled).</summary>
+    public void OpenRecovery(string autosavePath, string? originalPath)
+    {
+        Load(autosavePath);
+        CurrentPath = originalPath;
+        IsRecovered = true;
+    }
+
+    public void Save(string path)
+    {
+        WriteCopy(path);
+        _editor.Character.History.MarkSaved();
+        _animation.MarkSaved();
+        CurrentPath = path;
+        IsRecovered = false;
+        Settings.AddRecent(path);
+        DocumentReset?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Writes the project without changing the document state (used by autosave). Goes through a
+    /// temporary file so a failed write never destroys the previous file.
+    /// </summary>
+    public void WriteCopy(string path)
+    {
+        string temp = path + ".tmp";
+        using (var stream = File.Create(temp))
+            ProjectFile.Save(new ProjectData(_editor.Character, _animation.Clips.ToList()), stream, AvaloniaImageCodec.Instance);
+        File.Move(temp, path, overwrite: true);
+    }
+
+    private void Load(string path)
     {
         ProjectData data;
         using (var stream = File.OpenRead(path))
             data = ProjectFile.Load(stream, AvaloniaImageCodec.Instance);
         _editor.LoadCharacter(data.Character);
         _animation.SetClips(data.Clips);
-        CurrentPath = path;
-        if (rememberRecent)
-            Settings.AddRecent(path);
-    }
-
-    /// <summary>Writes to a temporary file first so a failed save never destroys the previous file.</summary>
-    public void Save(string path)
-    {
-        string temp = path + ".tmp";
-        using (var stream = File.Create(temp))
-            ProjectFile.Save(new ProjectData(_editor.Character, _animation.Clips.ToList()), stream, AvaloniaImageCodec.Instance);
-        File.Move(temp, path, overwrite: true);
-
-        _editor.Character.History.MarkSaved();
-        _animation.MarkSaved();
-        CurrentPath = path;
-        Settings.AddRecent(path);
     }
 
     /// <summary>Sheet PNG of the current clip or of all clips, plus a .json description when enabled.</summary>
@@ -84,4 +116,6 @@ public sealed partial class ProjectService : ObservableObject
     }
 
     partial void OnCurrentPathChanged(string? value) => OnPropertyChanged(nameof(DocumentName));
+
+    partial void OnIsRecoveredChanged(bool value) => OnPropertyChanged(nameof(IsDirty));
 }

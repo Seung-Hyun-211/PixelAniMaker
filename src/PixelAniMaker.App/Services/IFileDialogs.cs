@@ -20,4 +20,7 @@ public interface IFileDialogs
     Task<UnsavedChoice> ConfirmUnsavedAsync(string documentName);
 
     Task ShowErrorAsync(string message);
+
+    /// <summary>True to recover the autosaved work, false to discard it.</summary>
+    Task<bool> ConfirmRecoveryAsync(string message);
 }
