@@ -36,6 +36,36 @@ public sealed class EditorDocument
     /// <summary>Raised while a stroke changes pixels. Undo/redo are reported through <see cref="History"/>.</summary>
     public event EventHandler? PixelsChanged;
 
+    /// <summary>When set, every edit is mirrored (symmetric editing).</summary>
+    public PixelMirror? Mirror { get; set; }
+
+    /// <summary>Selected rectangle in image pixels (inclusive corners), or null.</summary>
+    public PixelRect? Selection
+    {
+        get => _selection;
+        set
+        {
+            _selection = value?.ClipTo(Image.Width, Image.Height);
+            SelectionChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private PixelRect? _selection;
+
+    public event EventHandler? SelectionChanged;
+
+    /// <summary>Clears the selected pixels to transparent as one undo step.</summary>
+    public void DeleteSelection()
+    {
+        if (Selection is not { } r)
+            return;
+        EndStroke();
+        var edit = BeginEdit("선택 지우기");
+        foreach (var (x, y) in r.Pixels())
+            edit.Set(x, y, Palette.TransparentIndex);
+        Commit(edit);
+    }
+
     // ------------------------------------------------------------------ strokes
 
     public void BeginStroke(ITool tool, int x, int y, bool secondary = false)
@@ -68,7 +98,7 @@ public sealed class EditorDocument
     // ------------------------------------------------------------------ tool API
 
     /// <summary>Starts a recorded pixel change; pass it to <see cref="Commit"/> when finished.</summary>
-    public PixelEdit BeginEdit(string name) => new(name, Image, NotifyPixelsChanged);
+    public PixelEdit BeginEdit(string name) => new(name, Image, NotifyPixelsChanged, Mirror);
 
     /// <summary>Adds a finished edit to the history (ignored when nothing changed).</summary>
     public void Commit(PixelEdit edit)

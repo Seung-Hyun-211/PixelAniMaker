@@ -77,6 +77,79 @@ public sealed class PencilTool(string name, int? fixedIndex = null, bool pixelPe
     }
 }
 
+/// <summary>
+/// Drag outside the selection to select a rectangle; drag inside it to move the selected pixels
+/// (transparent pixels are not carried, the hole left behind becomes transparent). A click without
+/// dragging outside the selection clears it.
+/// </summary>
+public sealed class SelectMoveTool : ITool
+{
+    public static SelectMoveTool Instance { get; } = new();
+
+    public IStroke Begin(EditorDocument document, int x, int y, bool secondary) =>
+        document.Selection is { } s && s.Contains(x, y)
+            ? new MoveStroke(document, s, x, y)
+            : new SelectStroke(document, x, y);
+
+    private sealed class SelectStroke : IStroke
+    {
+        private readonly EditorDocument _document;
+        private readonly int _x0, _y0;
+        private bool _dragged;
+
+        public SelectStroke(EditorDocument document, int x, int y)
+        {
+            (_document, _x0, _y0) = (document, x, y);
+            document.Selection = null;
+        }
+
+        public void Move(int x, int y)
+        {
+            _dragged |= x != _x0 || y != _y0;
+            if (_dragged)
+                _document.Selection = PixelRect.FromCorners(_x0, _y0, x, y);
+        }
+
+        public void End() { }
+    }
+
+    private sealed class MoveStroke : IStroke
+    {
+        private readonly EditorDocument _document;
+        private readonly PixelEdit _edit;
+        private readonly PixelRect _source;
+        private readonly int[] _lifted;
+        private readonly int _x0, _y0;
+        private int _dx, _dy;
+
+        public MoveStroke(EditorDocument document, PixelRect source, int x, int y)
+        {
+            (_document, _source, _x0, _y0) = (document, source, x, y);
+            _edit = document.BeginEdit("선택 이동");
+            _lifted = source.Pixels().Select(p => document.Image[p.X, p.Y]).ToArray();
+        }
+
+        public void Move(int x, int y)
+        {
+            (_dx, _dy) = (x - _x0, y - _y0);
+            _edit.RevertAll();
+            foreach (var (px, py) in _source.Pixels())
+                _edit.Set(px, py, Palette.TransparentIndex);
+            int i = 0;
+            foreach (var (px, py) in _source.Pixels())
+            {
+                int value = _lifted[i++];
+                if (value != Palette.TransparentIndex)
+                    _edit.Set(px + _dx, py + _dy, value);
+            }
+            _document.Selection = _source.Offset(_dx, _dy);
+            _document.NotifyPixelsChanged();
+        }
+
+        public void End() => _document.Commit(_edit);
+    }
+}
+
 /// <summary>A shape dragged from a start point; the preview is redrawn on every move and kept on release.</summary>
 public sealed class ShapeTool(string name, Func<int, int, int, int, IEnumerable<(int X, int Y)>> shape) : ITool
 {
