@@ -28,6 +28,27 @@
       </StackPanel>
       <TextBlock Text="{Binding VariantMessage}" FontSize="11" Foreground="#E0B060" TextWrapping="Wrap"
                  IsVisible="{Binding VariantMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <TextBlock Text="장착점 (이 파츠 · 지금 방향 · 파츠 이미지 픽셀 좌표)" FontSize="11" Foreground="#999999" TextWrapping="Wrap" />
+      <ItemsControl ItemsSource="{Binding Attachments}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:AttachmentItem">
+            <StackPanel Spacing="4" Margin="0,0,0,6">
+              <StackPanel Orientation="Horizontal" Spacing="4">
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}" Width="160" ToolTip.Tip="이름 (엔진에서 찾을 때 씀)" />
+                <Button Content="✕" Command="{Binding RemoveCommand}" ToolTip.Tip="장착점 삭제" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="4">
+                <TextBlock Text="X" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding X}" Increment="1" FormatString="0.#" Minimum="-256" Maximum="256" Width="105" />
+                <TextBlock Text="Y" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding Y}" Increment="1" FormatString="0.#" Minimum="-256" Maximum="256" Width="105" />
+              </StackPanel>
+            </StackPanel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <Button Content="장착점 추가" Command="{Binding AddAttachmentCommand}"
+              ToolTip.Tip="무기·이펙트 위치 등. 파츠를 따라 움직이고, 시트 JSON에 프레임마다 위치와 각도로 기록됩니다." />
       <StackPanel Orientation="Horizontal" Spacing="6">
         <Button Content="이 파츠 0°" Command="{Binding ResetPartCommand}" />
         <Button Content="포즈 초기화" Command="{Binding ResetPoseCommand}" />

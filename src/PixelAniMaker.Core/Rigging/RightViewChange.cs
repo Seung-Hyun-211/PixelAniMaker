@@ -31,6 +31,8 @@ public sealed class RightViewChange(Part part, PartView? before, PartView? after
         var copy = new PartView(view.Image.Clone(), view.RestPosition, view.RestPivot, view.DrawOrder);
         foreach (var (angle, variant) in view.Variants.All)
             copy.Variants.Set(angle, variant with { Image = variant.Image.Clone() });
+        foreach (var (name, point) in view.Attachments.All)
+            copy.Attachments.Set(name, point);
         return copy;
     }
 }
