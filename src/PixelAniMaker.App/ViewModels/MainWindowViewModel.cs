@@ -22,7 +22,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Project = new ProjectService(Session, Animation, AppSettings.Load());
         Autosave = new AutosaveService(Project);
         _factory = new DockFactory(Session, Animation, Touchup);
-        ResetLayout();
+        CreateLayout(Project.Settings.Layout);
 
         Session.HistoryChanged += (_, _) => OnDocumentStateChanged();
         Animation.PropertyChanged += (_, e) =>
@@ -132,8 +132,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
             await OpenPathAsync(openPath);
     }
 
-    /// <summary>Called when the window has closed normally: autosave copies are no longer needed.</summary>
-    public void OnClosed() => Autosave.DiscardCurrent();
+    /// <summary>Called when the window closes normally: keep the layout, drop autosave copies.</summary>
+    public void OnClosed(WindowPlacement placement)
+    {
+        Autosave.DiscardCurrent();
+        if (Layout is not null)
+            Project.Settings.Layout = LayoutState.Capture(Layout);
+        Project.Settings.Window = placement;
+        Project.Settings.Save();
+    }
 
     private async Task<bool> TryRecoverAsync()
     {
@@ -212,11 +219,20 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     // ------------------------------------------------------------------ edit & view
 
+    /// <summary>Back to the default window layout; the saved layout is forgotten.</summary>
     [RelayCommand]
     private void ResetLayout()
     {
+        Project.Settings.Layout = null;
+        Project.Settings.Save();
+        CreateLayout(null);
+    }
+
+    private void CreateLayout(LayoutState? saved)
+    {
         var layout = _factory.CreateLayout();
         _factory.InitLayout(layout);
+        saved?.ApplyTo(layout, _factory);
         Layout = layout;
     }
 

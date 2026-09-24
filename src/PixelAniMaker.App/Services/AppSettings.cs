@@ -20,6 +20,12 @@ public sealed class AppSettings
     /// <summary>Scale of exported GIFs.</summary>
     public int GifScale { get; set; } = 2;
 
+    /// <summary>Docking layout saved at exit (null = default layout).</summary>
+    public LayoutState? Layout { get; set; }
+
+    /// <summary>Main window placement saved at exit (null = maximized).</summary>
+    public WindowPlacement? Window { get; set; }
+
     /// <summary>Seconds between autosave copies of unsaved work; 0 turns autosave off.</summary>
     public int AutosaveSeconds { get; set; } = 120;
 
