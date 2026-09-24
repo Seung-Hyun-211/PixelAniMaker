@@ -156,19 +156,52 @@ public sealed partial class EditorSession : ObservableObject
 
     partial void OnDimOtherPartsChanged(bool value) => Refresh();
 
+    /// <summary>The angle variant the active part is drawn with right now (null = base image).</summary>
+    public int? ActiveVariantAngle => ActiveTransform.View.Variants.Pick(ActiveTransform.Angle * 180 / Math.PI);
+
+    /// <summary>
+    /// Adds a hand-drawable image for the active part at the 45° step nearest to its current rotation,
+    /// starting from the rotated base image. Returns a message when nothing was added.
+    /// </summary>
+    public string? AddVariantAtCurrentAngle()
+    {
+        var view = ActiveTransform.View;
+        int angle = AngleVariants.NearestStep(ActiveTransform.Angle * 180 / Math.PI);
+        if (angle == 0)
+            return "0° 근처는 기본 이미지를 씁니다. 파츠를 45° 이상 돌린 뒤 만드세요.";
+        if (view.Variants.Get(angle) is not null)
+            return $"{angle}° 이미지가 이미 있습니다.";
+        VariantChange.Apply(view.Variants, Character.History, angle, VariantChange.RenderFromBase(view, angle));
+        return null;
+    }
+
+    public void RemoveActiveVariant()
+    {
+        if (ActiveVariantAngle is { } angle)
+            VariantChange.Apply(ActiveTransform.View.Variants, Character.History, angle, null);
+    }
+
     /// <summary>Points drawing at the active part's image for the current direction.</summary>
     private void ReopenDocument()
     {
         if (ActivePart is null)
+            return;
+        AttachDocument(Character.ComputeTransforms(Direction)[ActivePart].Image);
+        Refresh();
+    }
+
+    /// <summary>Makes <paramref name="image"/> (base or angle variant) the drawing target, if it is not already.</summary>
+    private void AttachDocument(Core.Imaging.IndexedImage image)
+    {
+        if (ActiveDocument?.Image == image)
             return;
         if (ActiveDocument is not null)
         {
             ActiveDocument.EndStroke();
             ActiveDocument.PixelsChanged -= OnContentChanged;
         }
-        ActiveDocument = Character.CreateDocument(ActivePart, Direction);
+        ActiveDocument = Character.CreateDocument(image);
         ActiveDocument.PixelsChanged += OnContentChanged;
-        Refresh();
     }
 
     private void OnHistoryChanged(object? sender, EventArgs e)
@@ -191,6 +224,7 @@ public sealed partial class EditorSession : ObservableObject
         if (Character is null || ActivePart is null)
             return;
         Transforms = Character.ComputeTransforms(Direction);
+        AttachDocument(ActiveTransform.Image); // rotating into or out of an angle variant switches the target
         var composites = DirectionExtensions.All.ToDictionary(d => d, d => Compositor.Compose(Character, d));
         SourceComposite = composites[Direction.Source()];
 

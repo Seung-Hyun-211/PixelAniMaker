@@ -17,6 +17,15 @@
         <TextBlock Text="Y" VerticalAlignment="Center" />
         <NumericUpDown Value="{Binding OffsetY}" Minimum="-64" Maximum="64" Increment="1" FormatString="0" Width="95" />
       </StackPanel>
+      <TextBlock Text="{Binding VariantStatus}" FontSize="11" Foreground="#999999" TextWrapping="Wrap" />
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <Button Content="이 각도 이미지 만들기" Command="{Binding AddVariantCommand}"
+                ToolTip.Tip="지금 회전에 가까운 45° 각도용 이미지를 만듭니다. 그 각도 근처에서는 이 이미지를 직접 다듬어 씁니다 (손처럼 작은 파츠용)." />
+        <Button Content="지우기" Command="{Binding RemoveVariantCommand}"
+                ToolTip.Tip="지금 쓰이는 각도 이미지를 지웁니다" />
+      </StackPanel>
+      <TextBlock Text="{Binding VariantMessage}" FontSize="11" Foreground="#E0B060" TextWrapping="Wrap"
+                 IsVisible="{Binding VariantMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
       <StackPanel Orientation="Horizontal" Spacing="6">
         <Button Content="이 파츠 0°" Command="{Binding ResetPartCommand}" />
         <Button Content="포즈 초기화" Command="{Binding ResetPoseCommand}" />

@@ -22,6 +22,8 @@ public sealed partial class PartsViewModel : Tool
     [ObservableProperty] private decimal? _rotation;
     [ObservableProperty] private decimal? _offsetX;
     [ObservableProperty] private decimal? _offsetY;
+    [ObservableProperty] private string _variantStatus = "";
+    [ObservableProperty] private string _variantMessage = "";
 
     public PartsViewModel(EditorSession session)
     {
@@ -29,6 +31,7 @@ public sealed partial class PartsViewModel : Tool
         Id = "Parts";
         Title = "파츠";
         CanClose = false;
+        session.HistoryChanged += (_, _) => UpdateVariantStatus(); // variants added/removed or undone
         session.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(EditorSession.Character))
@@ -71,6 +74,16 @@ public sealed partial class PartsViewModel : Tool
     [RelayCommand]
     private void ResetPose() => Session.ResetPose();
 
+    [RelayCommand]
+    private void AddVariant() => VariantMessage = Session.AddVariantAtCurrentAngle() ?? "";
+
+    [RelayCommand]
+    private void RemoveVariant()
+    {
+        Session.RemoveActiveVariant();
+        VariantMessage = "";
+    }
+
     private void Attach()
     {
         if (_character is not null)
@@ -86,6 +99,13 @@ public sealed partial class PartsViewModel : Tool
 
     private void OnPoseChanged(object? sender, EventArgs e) => Sync();
 
+    private void UpdateVariantStatus()
+    {
+        var variants = Session.ActiveTransform.View.Variants.All.Keys.Select(a => $"{a}°").ToList();
+        VariantStatus = (Session.ActiveVariantAngle is { } angle ? $"그리는 이미지: {angle}° 이미지" : "그리는 이미지: 기본")
+            + (variants.Count > 0 ? $"  ·  있음: {string.Join(", ", variants)}" : "");
+    }
+
     /// <summary>Mirrors the session's active part and its rotation without writing back.</summary>
     private void Sync()
     {
@@ -94,6 +114,7 @@ public sealed partial class PartsViewModel : Tool
         Rotation = (decimal)Math.Round(Session.CurrentPose.Get(Session.ActivePart.Name), 1);
         OffsetX = (decimal)Math.Round(Session.CurrentPose.Offset.X);
         OffsetY = (decimal)Math.Round(Session.CurrentPose.Offset.Y);
+        UpdateVariantStatus();
         _syncing = false;
     }
 }

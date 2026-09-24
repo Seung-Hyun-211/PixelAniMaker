@@ -127,6 +127,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task NewPlainDocument()
+    {
+        if (await ConfirmDiscardAsync())
+            Project.New(jointDiscs: false);
+    }
+
+    [RelayCommand]
     private async Task Open()
     {
         if (Dialogs is null || !await ConfirmDiscardAsync())

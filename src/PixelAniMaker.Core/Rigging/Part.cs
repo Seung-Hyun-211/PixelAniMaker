@@ -12,6 +12,18 @@ public sealed record PartView(IndexedImage Image, Vector2 RestPosition, Vector2 
 {
     /// <summary>Joint position inside the image.</summary>
     public Vector2 LocalPivot => RestPivot - RestPosition;
+
+    /// <summary>Hand-drawn replacement images for 45° steps of rotation.</summary>
+    public AngleVariants Variants { get; } = new();
+
+    /// <summary>The image to draw at a rotation (radians): a variant near that angle, or the base image.</summary>
+    public (IndexedImage Image, Vector2 Pivot, float Angle) Pick(float radians)
+    {
+        double degrees = radians * 180 / Math.PI;
+        if (Variants.Pick(degrees) is { } angle && Variants.Get(angle) is { } v)
+            return (v.Image, v.LocalPivot, (float)(Pose.Normalize(degrees - angle) * Math.PI / 180));
+        return (Image, LocalPivot, radians);
+    }
 }
 
 /// <summary>One bone of the skeleton, with its look in every stored direction.</summary>

@@ -4,8 +4,12 @@ using PixelAniMaker.Core.Imaging;
 
 namespace PixelAniMaker.Core.Rigging;
 
+/// <summary>An angle variant image of a part view.</summary>
+public sealed record VariantSpec(int Angle, float PivotX, float PivotY, string Image);
+
 /// <summary>A part's look in one direction, as stored in skeleton.json.</summary>
-public sealed record PartViewSpec(int X, int Y, float JointX, float JointY, int Order, string Image);
+public sealed record PartViewSpec(int X, int Y, float JointX, float JointY, int Order, string Image,
+    IReadOnlyList<VariantSpec>? Variants = null);
 
 /// <summary>One part entry of skeleton.json. <see cref="Views"/> is keyed "front", "left", "back".</summary>
 public sealed record PartSpec(string Name, string Label, string? Parent, IReadOnlyDictionary<string, PartViewSpec> Views);
@@ -19,6 +23,7 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
     public static CharacterSpec Parse(string json) =>
@@ -27,7 +32,16 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
     public string ToJson() => JsonSerializer.Serialize(this, Json);
 
     /// <summary>File name used for a part's image in one direction.</summary>
-    public static string ImagePath(Direction direction, string part) => $"{direction.ToString().ToLowerInvariant()}/{part}.png";
+    public static string ImagePath(Direction direction, string part, int? angle = null) =>
+        $"{direction.ToString().ToLowerInvariant()}/{part}{(angle is { } a ? $"@{a}" : "")}.png";
+
+    /// <summary>Every image a character needs saved: path → image (base images and angle variants).</summary>
+    public static IEnumerable<(string Path, IndexedImage Image)> Images(Character character) =>
+        from p in character.Parts
+        from d in DirectionExtensions.Stored
+        let v = p.View(d)
+        from item in v.Variants.All.Select(kv => (ImagePath(d, p.Name, kv.Key), kv.Value.Image)).Prepend((ImagePath(d, p.Name), v.Image))
+        select item;
 
     /// <summary>Describes an existing character; images are referenced by <see cref="ImagePath"/>.</summary>
     public static CharacterSpec From(Character character) => new(character.Width, character.Height,
@@ -35,8 +49,10 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
             DirectionExtensions.Stored.ToDictionary(d => d.ToString().ToLowerInvariant(), d =>
             {
                 var v = p.View(d);
+                var variants = v.Variants.All.Select(kv => new VariantSpec(kv.Key, kv.Value.LocalPivot.X, kv.Value.LocalPivot.Y,
+                    ImagePath(d, p.Name, kv.Key))).ToList();
                 return new PartViewSpec((int)v.RestPosition.X, (int)v.RestPosition.Y, v.RestPivot.X, v.RestPivot.Y,
-                    v.DrawOrder, ImagePath(d, p.Name));
+                    v.DrawOrder, ImagePath(d, p.Name), variants.Count > 0 ? variants : null);
             }))).ToList());
 
     /// <summary>Builds the character; <paramref name="loadImage"/> decodes an image file named in the spec.</summary>
@@ -59,8 +75,15 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
         string key = direction.ToString().ToLowerInvariant();
         if (!part.Views.TryGetValue(key, out var v))
             throw new FormatException($"Part '{part.Name}' has no '{key}' view.");
-        var rgba = loadImage(v.Image);
-        var image = IndexedImage.FromRgba(rgba.Width, rgba.Height, rgba.Pixels, palette);
-        return new PartView(image, new Vector2(v.X, v.Y), new Vector2(v.JointX, v.JointY), v.Order);
+        var view = new PartView(Load(v.Image), new Vector2(v.X, v.Y), new Vector2(v.JointX, v.JointY), v.Order);
+        foreach (var variant in v.Variants ?? [])
+            view.Variants.Set(variant.Angle, new PartVariant(Load(variant.Image), new Vector2(variant.PivotX, variant.PivotY)));
+        return view;
+
+        IndexedImage Load(string file)
+        {
+            var rgba = loadImage(file);
+            return IndexedImage.FromRgba(rgba.Width, rgba.Height, rgba.Pixels, palette);
+        }
     }
 }

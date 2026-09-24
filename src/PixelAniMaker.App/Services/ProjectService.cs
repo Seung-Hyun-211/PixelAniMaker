@@ -35,9 +35,10 @@ public sealed partial class ProjectService : ObservableObject
     /// <summary>Raised when the document is replaced (new, open) or saved — autosave copies are then obsolete.</summary>
     public event EventHandler? DocumentReset;
 
-    public void New()
+    /// <param name="jointDiscs">False starts from the plain mannequin without ball-joint circles.</param>
+    public void New(bool jointDiscs = true)
     {
-        _editor.LoadCharacter(TemplateLoader.LoadChibi96());
+        _editor.LoadCharacter(TemplateLoader.LoadChibi96(jointDiscs));
         _animation.SetClips(TemplateLoader.LoadDefaultAnimations());
         CurrentPath = null;
         IsRecovered = false;

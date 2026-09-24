@@ -16,7 +16,9 @@ from make_chibi import Figure
 W, H = 96, 128
 SCALE = 0.5
 CX = 96                                # design x of the body centre line
-OUT = Path(__file__).parent.parent / "src/PixelAniMaker.App/Assets/Templates/chibi96"
+TEMPLATES = Path(__file__).parent.parent / "src/PixelAniMaker.App/Assets/Templates"
+OUT = TEMPLATES / "chibi96"
+JOINT_DISCS = True     # False builds the plain mannequin (no ball joints), see main()
 
 LABELS = {
     "pelvis": "골반", "waist": "허리", "chest": "가슴", "head": "머리",
@@ -33,6 +35,12 @@ PADDING = {"head": 6}                  # extra room for hair and accessories; ot
 
 def ident(x):
     return x
+
+
+def disc(f, centre, r):
+    """Ball joint circle; skipped for the plain mannequin."""
+    if JOINT_DISCS:
+        f.circle(centre, r)
 
 
 def mirror(x):
@@ -61,13 +69,13 @@ def front_limbs(s):
     """One side's limbs; s maps an x authored for the viewer-left side (centre 64) to the canvas."""
     return {
         "thigh": ((s(53), 138), lambda f: f.capsule((s(53), 140), 10, (s(54), 190), 8)),
-        "shin": ((s(54), 195), lambda f: (f.capsule((s(54), 200), 8, (s(55), 235), 5), f.circle((s(54), 195), 6))),
+        "shin": ((s(54), 195), lambda f: (f.capsule((s(54), 200), 8, (s(55), 235), 5), disc(f, (s(54), 195), 6))),
         "foot": ((s(55), 238), lambda f: (f.poly([(s(47), 236), (s(62), 236), (s(64), 246), (s(62), 249), (s(46), 249), (s(44), 246)]),
-                                          f.circle((s(55), 238), 4))),
-        "upper_arm": ((s(43), 80), lambda f: (f.capsule((s(41), 84), 6, (s(37), 118), 5), f.circle((s(43), 80), 7))),
-        "forearm": ((s(37), 122), lambda f: (f.capsule((s(37), 126), 5, (s(34), 148), 4), f.circle((s(37), 122), 5))),
+                                          disc(f, (s(55), 238), 4))),
+        "upper_arm": ((s(43), 80), lambda f: (f.capsule((s(41), 84), 6, (s(37), 118), 5), disc(f, (s(43), 80), 7))),
+        "forearm": ((s(37), 122), lambda f: (f.capsule((s(37), 126), 5, (s(34), 148), 4), disc(f, (s(37), 122), 5))),
         "hand": ((s(34), 151), lambda f: (f.poly([(s(29), 152), (s(39), 152), (s(41), 162), (s(38), 170), (s(31), 171), (s(27), 164)]),
-                                          f.circle((s(34), 151), 3))),
+                                          disc(f, (s(34), 151), 3))),
     }
 
 
@@ -86,13 +94,13 @@ def side_limbs(dx):
     c = CX + dx
     return {
         "thigh": ((c, 138), lambda f: f.capsule((c, 140), 10, (c, 190), 8)),
-        "shin": ((c, 195), lambda f: (f.capsule((c, 200), 8, (c + 1, 235), 5), f.circle((c, 195), 6))),
+        "shin": ((c, 195), lambda f: (f.capsule((c, 200), 8, (c + 1, 235), 5), disc(f, (c, 195), 6))),
         "foot": ((c + 1, 238), lambda f: (f.poly([(c - 16, 238), (c + 6, 236), (c + 8, 246), (c + 6, 249), (c - 16, 249), (c - 18, 245)]),
-                                          f.circle((c + 1, 238), 4))),
-        "upper_arm": ((c + 1, 80), lambda f: (f.capsule((c + 1, 84), 6, (c + 1, 118), 5), f.circle((c + 1, 80), 7))),
-        "forearm": ((c + 1, 122), lambda f: (f.capsule((c + 1, 126), 5, (c, 148), 4), f.circle((c + 1, 122), 5))),
+                                          disc(f, (c + 1, 238), 4))),
+        "upper_arm": ((c + 1, 80), lambda f: (f.capsule((c + 1, 84), 6, (c + 1, 118), 5), disc(f, (c + 1, 80), 7))),
+        "forearm": ((c + 1, 122), lambda f: (f.capsule((c + 1, 126), 5, (c, 148), 4), disc(f, (c + 1, 122), 5))),
         "hand": ((c, 151), lambda f: (f.poly([(c - 4, 152), (c + 5, 152), (c + 6, 162), (c + 3, 170), (c - 3, 171), (c - 6, 163)]),
-                                      f.circle((c, 151), 3))),
+                                      disc(f, (c, 151), 3))),
     }
 
 
@@ -151,6 +159,13 @@ def render_view(view, parts, order):
 
 
 def main():
+    global OUT, JOINT_DISCS
+    for folder, discs in (("chibi96", True), ("chibi96_plain", False)):
+        OUT, JOINT_DISCS = TEMPLATES / folder, discs
+        build_template()
+
+
+def build_template():
     views = {view: render_view(view, *build()) for view, build in VIEWS.items()}
     names = list(views["front"])
     parts = []

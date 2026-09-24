@@ -216,7 +216,7 @@ public sealed class PixelCanvas : SessionControl
     /// <summary>Dashed outline of the active part's image, following its rotation.</summary>
     private void DrawPartBounds(DrawingContext context, PartTransform t)
     {
-        var img = t.View.Image;
+        var img = t.Image;
         System.Numerics.Vector2[] corners = [new(0, 0), new(img.Width, 0), new(img.Width, img.Height), new(0, img.Height)];
         var pts = corners.Select(c => SourceToScreen(t.ToCanvas(c))).ToArray();
         for (int i = 0; i < pts.Length; i++)

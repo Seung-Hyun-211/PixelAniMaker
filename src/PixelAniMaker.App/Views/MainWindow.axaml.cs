@@ -23,8 +23,24 @@ public partial class MainWindow : Window, IFileDialogs
                 RestorePlacement(vm.Project.Settings.Window);
                 ApplyShortcuts(vm);
                 vm.Shortcuts.PropertyChanged += (_, _) => ApplyShortcuts(vm);
+                BuildRecentMenu(vm);
+                vm.RecentFiles.CollectionChanged += (_, _) => BuildRecentMenu(vm);
             }
         };
+    }
+
+    /// <summary>One menu item per recent file (built in code: a container style would also hit the parent item).</summary>
+    private void BuildRecentMenu(MainWindowViewModel vm)
+    {
+        RecentMenu.Items.Clear();
+        foreach (var path in vm.RecentFiles)
+            RecentMenu.Items.Add(new MenuItem
+            {
+                Header = path.Replace("_", "__"), // "_" would otherwise mark an access key and vanish
+                Command = vm.OpenRecentCommand,
+                CommandParameter = path,
+            });
+        RecentMenu.IsEnabled = vm.RecentFiles.Count > 0;
     }
 
     /// <summary>Rebuilds the window's key bindings from the shortcut map.</summary>

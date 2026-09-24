@@ -42,7 +42,7 @@ public sealed class CompositeResult(int width, int height)
 /// </summary>
 public sealed class Compositor
 {
-    private readonly Dictionary<IndexedImage, (int Version, IndexedImage Image)> _upscaled = [];
+    private readonly Dictionary<IndexedImage, RotSprite> _samplers = [];
 
     /// <summary>Renders <paramref name="direction"/> in <paramref name="pose"/> (default: the direction's current pose).</summary>
     public CompositeResult Compose(Character character, Direction direction, PoseData? pose = null)
@@ -62,8 +62,8 @@ public sealed class Compositor
     private void Draw(CompositeResult target, PartTransform t, short owner)
     {
         var (x0, y0, x1, y1) = CanvasBounds(t, target.Width, target.Height);
-        var image = t.View.Image;
-        Func<Vector2, int> sample = t.IsGridAligned ? p => SampleNearest(image, p) : Sampler8x(image);
+        var image = t.Image;
+        Func<Vector2, int> sample = t.IsGridAligned ? p => SampleNearest(image, p) : Sampler(image).Sample;
 
         for (int y = y0; y < y1; y++)
         {
@@ -89,7 +89,7 @@ public sealed class Compositor
 
     private static (int X0, int Y0, int X1, int Y1) CanvasBounds(PartTransform t, int width, int height)
     {
-        var img = t.View.Image;
+        var img = t.Image;
         Vector2[] corners = [new(0, 0), new(img.Width, 0), new(0, img.Height), new(img.Width, img.Height)];
         var pts = corners.Select(t.ToCanvas).ToArray();
         return (
@@ -105,14 +105,11 @@ public sealed class Compositor
         return image.InBounds(x, y) ? image[x, y] : Palette.TransparentIndex;
     }
 
-    private Func<Vector2, int> Sampler8x(IndexedImage image)
+    /// <summary>Cached RotSprite sampler, rebuilt when the image has been edited.</summary>
+    private RotSprite Sampler(IndexedImage image)
     {
-        if (!_upscaled.TryGetValue(image, out var cached) || cached.Version != image.Version)
-        {
-            cached = (image.Version, Scale2x.Upscale8(image));
-            _upscaled[image] = cached;
-        }
-        var up = cached.Image;
-        return p => SampleNearest(up, p * 8);
+        if (!_samplers.TryGetValue(image, out var sampler) || sampler.Version != image.Version)
+            _samplers[image] = sampler = new RotSprite(image);
+        return sampler;
     }
 }
