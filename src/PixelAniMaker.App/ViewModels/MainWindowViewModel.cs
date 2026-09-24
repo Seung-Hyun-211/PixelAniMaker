@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Controls;
 using PixelAniMaker.App.Services;
+using PixelAniMaker.Core.Editing;
 using PixelAniMaker.Core.Rigging;
 
 namespace PixelAniMaker.App.ViewModels;
@@ -69,6 +70,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
             ["Tool.Line"] = (SelectToolCommand, ToolCatalog.Line),
             ["Tool.Rectangle"] = (SelectToolCommand, ToolCatalog.Rectangle),
             ["Tool.Ellipse"] = (SelectToolCommand, ToolCatalog.Ellipse),
+            ["Tool.Select"] = (SelectToolCommand, ToolCatalog.Select),
+            ["ToggleSymmetry"] = (ToggleSymmetryCommand, null),
+            ["DeleteSelection"] = (DeleteSelectionCommand, null),
+            ["Deselect"] = (DeselectCommand, null),
             ["Direction.Front"] = (SetDirectionCommand, Direction.Front),
             ["Direction.Left"] = (SetDirectionCommand, Direction.Left),
             ["Direction.Right"] = (SetDirectionCommand, Direction.Right),
@@ -323,6 +328,22 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     [RelayCommand]
     private void ToggleDimOtherParts() => Session.DimOtherParts = !Session.DimOtherParts;
+
+    [RelayCommand]
+    private void ToggleSymmetry() => Session.Symmetric = !Session.Symmetric;
+
+    /// <summary>The image the selection tool works on: the finished frame in touch-up mode, else the part.</summary>
+    private EditorDocument? SelectionDocument => Session.TouchupMode ? Touchup.Document : Session.ActiveDocument;
+
+    [RelayCommand]
+    private void DeleteSelection() => SelectionDocument?.DeleteSelection();
+
+    [RelayCommand]
+    private void Deselect()
+    {
+        if (SelectionDocument is { } d)
+            d.Selection = null;
+    }
 
     [RelayCommand]
     private void ZoomIn() => Session.ZoomBy(1);

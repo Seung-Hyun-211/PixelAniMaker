@@ -27,6 +27,8 @@ public sealed class PixelCanvas : SessionControl
     private static readonly IPen BorderPen = new Pen(new SolidColorBrush(Color.FromArgb(160, 0, 0, 0)), 1);
     private static readonly IPen HoverPen = new Pen(new SolidColorBrush(Color.FromArgb(200, 255, 255, 255)), 1);
     private static readonly IPen PartBoundsPen = new Pen(new SolidColorBrush(Color.FromArgb(200, 77, 163, 255)), 1, DashStyle.Dash);
+    private static readonly IPen SelectionPen = new Pen(Brushes.White, 1, DashStyle.Dash);
+    private static readonly IPen SelectionShadowPen = new Pen(Brushes.Black, 1);
     private static readonly IPen BonePen = new Pen(new SolidColorBrush(Color.FromArgb(160, 255, 200, 60)), 2);
     private static readonly IBrush JointBrush = new SolidColorBrush(Color.FromRgb(255, 200, 60));
     private static readonly IBrush ActiveJointBrush = new SolidColorBrush(Color.FromRgb(77, 163, 255));
@@ -176,6 +178,7 @@ public sealed class PixelCanvas : SessionControl
             DrawSkeleton(context, s);
         else if (!s.TouchupMode)
             DrawPartBounds(context, s.ActiveTransform);
+        DrawSelection(context, s);
 
         if (_hover is var (hx, hy) && hx >= 0 && hy >= 0 && hx < w && hy < h)
             context.DrawRectangle(null, HoverPen, new Rect(ToScreen(hx, hy) + new Point(0.5, 0.5), new Size(z - 1, z - 1)));
@@ -221,6 +224,25 @@ public sealed class PixelCanvas : SessionControl
         var pts = corners.Select(c => SourceToScreen(t.ToCanvas(c))).ToArray();
         for (int i = 0; i < pts.Length; i++)
             context.DrawLine(PartBoundsPen, pts[i], pts[(i + 1) % pts.Length]);
+    }
+
+    /// <summary>Marching-ants rectangle around the selection (on the part, following its rotation).</summary>
+    private void DrawSelection(DrawingContext context, EditorSession s)
+    {
+        if (s.PoseMode)
+            return;
+        var doc = s.TouchupMode ? Touchup?.Document : s.ActiveDocument;
+        if (doc?.Selection is not { } r)
+            return;
+        System.Numerics.Vector2[] corners = [new(r.X0, r.Y0), new(r.X1 + 1, r.Y0), new(r.X1 + 1, r.Y1 + 1), new(r.X0, r.Y1 + 1)];
+        var pts = s.TouchupMode
+            ? corners.Select(c => ToScreen(c.X, c.Y)).ToArray()
+            : corners.Select(c => SourceToScreen(s.ActiveTransform.ToCanvas(c))).ToArray();
+        for (int i = 0; i < pts.Length; i++)
+        {
+            context.DrawLine(SelectionShadowPen, pts[i], pts[(i + 1) % pts.Length]);
+            context.DrawLine(SelectionPen, pts[i], pts[(i + 1) % pts.Length]);
+        }
     }
 
     /// <summary>Bones between joints and a dot on every joint (the active one highlighted).</summary>

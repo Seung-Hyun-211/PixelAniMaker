@@ -30,6 +30,9 @@ public sealed partial class EditorSession : ObservableObject
     [ObservableProperty] private ToolItem _currentTool = ToolCatalog.Pencil;
     [ObservableProperty] private bool _poseMode;
 
+    /// <summary>Front/back views: strokes are mirrored across the body's centre line (onto the _l/_r counterpart).</summary>
+    [ObservableProperty] private bool _symmetric;
+
     /// <summary>Freehand pencil removes L-corner pixels so lines stay 1px thin.</summary>
     [ObservableProperty] private bool _pixelPerfect = true;
 
@@ -145,7 +148,23 @@ public sealed partial class EditorSession : ObservableObject
 
     partial void OnDirectionChanged(Direction value) => ReopenDocument();
 
-    partial void OnCurrentToolChanged(ToolItem value) => PoseMode = false;
+    partial void OnCurrentToolChanged(ToolItem value)
+    {
+        PoseMode = false;
+        UpdateMirror();
+    }
+
+    partial void OnSymmetricChanged(bool value) => UpdateMirror();
+
+    /// <summary>Mirrors strokes while symmetric editing applies (not for moving a selection).</summary>
+    private void UpdateMirror()
+    {
+        if (ActiveDocument is null)
+            return;
+        ActiveDocument.Mirror = Symmetric && CurrentTool != ToolCatalog.Select
+            ? Core.Rigging.Symmetry.For(Character, ActivePart, Direction)
+            : null;
+    }
 
     partial void OnPoseModeChanged(bool value)
     {
@@ -205,9 +224,11 @@ public sealed partial class EditorSession : ObservableObject
         {
             ActiveDocument.EndStroke();
             ActiveDocument.PixelsChanged -= OnContentChanged;
+            ActiveDocument.SelectionChanged -= OnSelectionChanged;
         }
         ActiveDocument = Character.CreateDocument(image);
         ActiveDocument.PixelsChanged += OnContentChanged;
+        ActiveDocument.SelectionChanged += OnSelectionChanged;
     }
 
     private void OnHistoryChanged(object? sender, EventArgs e)
@@ -225,12 +246,15 @@ public sealed partial class EditorSession : ObservableObject
 
     private void OnPoseChanged(object? sender, EventArgs e) => Refresh();
 
+    private void OnSelectionChanged(object? sender, EventArgs e) => ImageUpdated?.Invoke(this, EventArgs.Empty);
+
     private void Refresh()
     {
         if (Character is null || ActivePart is null)
             return;
         Transforms = Character.ComputeTransforms(Direction);
         AttachDocument(ActiveTransform.Image); // rotating into or out of an angle variant switches the target
+        UpdateMirror();                        // the mirror follows the pose
         var composites = DirectionExtensions.All.ToDictionary(d => d, d => Compositor.Compose(Character, d));
         SourceComposite = composites[Direction.Source()];
 

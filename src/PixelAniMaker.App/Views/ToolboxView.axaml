@@ -44,6 +44,10 @@
         </DataTemplate>
       </ListBox.ItemTemplate>
     </ListBox>
+    <CheckBox IsChecked="{Binding Session.Symmetric}"
+              ToolTip.Tip="정면·후면에서 그리면 몸 중심선 반대편(좌우 짝 파츠)에도 똑같이 그려집니다">
+      <TextBlock Text="{Binding Shortcuts.Texts[ToggleSymmetry], StringFormat='대칭 그리기 ({0})'}" />
+    </CheckBox>
     <CheckBox Content="픽셀 퍼펙트 연필" IsChecked="{Binding Session.PixelPerfect}"
               ToolTip.Tip="연필로 그을 때 계단 모서리의 군더더기 픽셀을 빼서 1px 선을 유지합니다" />
     <CheckBox IsChecked="{Binding Session.ShowGrid}">
@@ -58,7 +62,7 @@
       <TextBlock Text="{Binding Shortcuts.Texts[TogglePose], StringFormat='포즈 모드 ({0})'}" />
     </ToggleButton>
     <TextBlock Foreground="#999999" TextWrapping="Wrap" FontSize="12"
-               Text="그리기: 선택한 파츠에만 찍힘 · 왼쪽 클릭 주 색, 오른쪽 클릭 보조 색&#10;포즈: 파츠를 끌어서 관절 기준 회전, Shift로 15° 단위, Alt+드래그는 선택한 파츠를 회전(가려진 파츠용)&#10;휠: 확대/축소 · 휠 클릭 또는 Space+드래그: 이동" />
+               Text="그리기: 선택한 파츠에만 찍힘 · 왼쪽 클릭 주 색, 오른쪽 클릭 보조 색&#10;선택·이동: 끌어서 영역 선택, 영역 안을 끌면 이동 · Delete 지우기 · Esc 해제&#10;포즈: 파츠를 끌어서 관절 기준 회전, Shift로 15° 단위, Alt+드래그는 선택한 파츠를 회전(가려진 파츠용)&#10;휠: 확대/축소 · 휠 클릭 또는 Space+드래그: 이동" />
   </StackPanel>
   </ScrollViewer>
 </UserControl>

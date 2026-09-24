@@ -52,10 +52,12 @@ public sealed class TouchupSession
     /// <summary>Rebuilds the canvas from the generated frame plus its stored fixes.</summary>
     private void Reload()
     {
+        var selection = Document?.Selection;   // kept across the reload a committed stroke causes
         if (Document is not null)
         {
             Document.EndStroke();
             Document.PixelsChanged -= OnPixelsChanged;
+            Document.SelectionChanged -= OnSelectionChanged;
         }
         Document = null;
 
@@ -77,11 +79,15 @@ public sealed class TouchupSession
         _strokes.Changed += OnStrokeCommitted;
         Document = new EditorDocument(_image, _editor.Character.Palette, _strokes, _editor.Character.Colors);
         Document.PixelsChanged += OnPixelsChanged;
+        Document.Selection = selection;
+        Document.SelectionChanged += OnSelectionChanged;
         Bitmap = CompositeBitmap.Create(final.Width, final.Height);
         Render();
     }
 
     private void OnPixelsChanged(object? sender, EventArgs e) => Render();
+
+    private void OnSelectionChanged(object? sender, EventArgs e) => Updated?.Invoke(this, EventArgs.Empty);
 
     /// <summary>A stroke finished: store the difference to the generated frame as the frame's overrides.</summary>
     private void OnStrokeCommitted(object? sender, EventArgs e)

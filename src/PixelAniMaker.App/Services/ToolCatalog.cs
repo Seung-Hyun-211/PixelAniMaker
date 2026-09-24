@@ -15,6 +15,7 @@ public static class ToolCatalog
     public static ToolItem Line { get; } = new(ShapeTool.Line, "선", "Tool.Line");
     public static ToolItem Rectangle { get; } = new(ShapeTool.Rectangle, "사각형", "Tool.Rectangle");
     public static ToolItem Ellipse { get; } = new(ShapeTool.Ellipse, "원", "Tool.Ellipse");
+    public static ToolItem Select { get; } = new(SelectMoveTool.Instance, "선택·이동", "Tool.Select");
 
-    public static IReadOnlyList<ToolItem> All { get; } = [Pencil, Eraser, Fill, Eyedropper, Line, Rectangle, Ellipse];
+    public static IReadOnlyList<ToolItem> All { get; } = [Pencil, Eraser, Fill, Eyedropper, Line, Rectangle, Ellipse, Select];
 }
