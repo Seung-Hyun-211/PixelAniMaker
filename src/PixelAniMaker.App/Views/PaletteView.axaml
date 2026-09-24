@@ -1,0 +1,55 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PixelAniMaker.App.ViewModels"
+             xmlns:c="using:PixelAniMaker.App.Controls"
+             x:Class="PixelAniMaker.App.Views.PaletteView"
+             x:DataType="vm:PaletteViewModel">
+  <DockPanel Margin="8">
+    <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <StackPanel Spacing="2">
+          <TextBlock Text="주 색" FontSize="11" Foreground="#999999" />
+          <Border Width="40" Height="40" BorderBrush="#888888" BorderThickness="1"
+                  Background="{Binding Primary.Brush, FallbackValue=Transparent}" />
+          <TextBlock Text="{Binding Primary.Hex, FallbackValue=''}" FontSize="11" />
+        </StackPanel>
+        <StackPanel Spacing="2">
+          <TextBlock Text="보조 색" FontSize="11" Foreground="#999999" />
+          <Border Width="40" Height="40" BorderBrush="#888888" BorderThickness="1"
+                  Background="{Binding Secondary.Brush, FallbackValue=Transparent}" />
+          <TextBlock Text="{Binding Secondary.Hex, FallbackValue=''}" FontSize="11" />
+        </StackPanel>
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="4">
+        <TextBox Text="{Binding HexInput}" Width="90" />
+        <Button Content="추가" Command="{Binding AddColorCommand}" />
+        <Button Content="주 색 바꾸기" Command="{Binding ReplacePrimaryCommand}"
+                ToolTip.Tip="주 색을 이 색으로 바꿉니다. 이 색을 쓰는 픽셀도 함께 바뀝니다." />
+      </StackPanel>
+      <TextBlock Text="{Binding Message}" Foreground="#E08080" FontSize="11"
+                 IsVisible="{Binding Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    </StackPanel>
+
+    <ScrollViewer>
+      <ItemsControl ItemsSource="{Binding Swatches}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <WrapPanel />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:SwatchViewModel">
+            <Panel Width="26" Height="26" Margin="1" ToolTip.Tip="{Binding Hex}"
+                   PointerPressed="OnSwatchPressed" Background="Transparent">
+              <Border Margin="2" Background="{x:Static c:CheckerBrushes.Small}"
+                      IsVisible="{Binding IsTransparent}" />
+              <Border Margin="2" Background="{Binding Brush}" />
+              <Border BorderBrush="White" BorderThickness="2" IsVisible="{Binding IsPrimary}" />
+              <Border BorderBrush="#4DA3FF" BorderThickness="2" Margin="3" IsVisible="{Binding IsSecondary}" />
+            </Panel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </DockPanel>
+</UserControl>

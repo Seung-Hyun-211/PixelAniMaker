@@ -1,0 +1,60 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PixelAniMaker.App.ViewModels"
+        xmlns:svc="using:PixelAniMaker.App.Services"
+        x:Class="PixelAniMaker.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{Binding Title}"
+        Width="1400" Height="900"
+        WindowStartupLocation="CenterScreen">
+
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Ctrl+N" Command="{Binding NewDocumentCommand}" />
+    <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
+    <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}" />
+    <KeyBinding Gesture="B" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static svc:ToolCatalog.Pencil}" />
+    <KeyBinding Gesture="E" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static svc:ToolCatalog.Eraser}" />
+    <KeyBinding Gesture="G" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static svc:ToolCatalog.Fill}" />
+    <KeyBinding Gesture="I" Command="{Binding SelectToolCommand}" CommandParameter="{x:Static svc:ToolCatalog.Eyedropper}" />
+    <KeyBinding Gesture="Ctrl+OemQuotes" Command="{Binding ToggleGridCommand}" />
+    <KeyBinding Gesture="T" Command="{Binding ToggleTemplateCommand}" />
+    <KeyBinding Gesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}" />
+    <KeyBinding Gesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}" />
+  </Window.KeyBindings>
+
+  <DockPanel>
+    <Menu DockPanel.Dock="Top">
+      <MenuItem Header="파일(_F)">
+        <MenuItem Header="새로 만들기" InputGesture="Ctrl+N" Command="{Binding NewDocumentCommand}" />
+        <Separator />
+        <MenuItem Header="종료" Click="OnExitClick" />
+      </MenuItem>
+      <MenuItem Header="편집(_E)">
+        <MenuItem Header="되돌리기" InputGesture="Ctrl+Z" Command="{Binding UndoCommand}" />
+        <MenuItem Header="다시 하기" InputGesture="Ctrl+Y" Command="{Binding RedoCommand}" />
+      </MenuItem>
+      <MenuItem Header="보기(_V)">
+        <MenuItem Header="픽셀 격자" InputGesture="Ctrl+OemQuotes" Command="{Binding ToggleGridCommand}"
+                  ToggleType="CheckBox" IsChecked="{Binding Session.ShowGrid, Mode=OneWay}" />
+        <MenuItem Header="템플릿 표시" InputGesture="T" Command="{Binding ToggleTemplateCommand}"
+                  ToggleType="CheckBox" IsChecked="{Binding Session.ShowTemplate, Mode=OneWay}" />
+        <Separator />
+        <MenuItem Header="확대" InputGesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}" />
+        <MenuItem Header="축소" InputGesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}" />
+      </MenuItem>
+      <MenuItem Header="창(_W)">
+        <MenuItem Header="창 배치 초기화" Command="{Binding ResetLayoutCommand}" />
+      </MenuItem>
+    </Menu>
+
+    <Border DockPanel.Dock="Bottom" Padding="10,4" Background="#1E1E22">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Right" Text="{Binding Session.CursorText}" Foreground="#AAAAAA" />
+        <TextBlock Text="{Binding StatusText}" Foreground="#AAAAAA" />
+      </DockPanel>
+    </Border>
+
+    <DockControl Layout="{Binding Layout}" Margin="4" />
+  </DockPanel>
+</Window>

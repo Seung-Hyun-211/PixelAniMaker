@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PixelAniMaker.App.ViewModels"
+             xmlns:c="using:PixelAniMaker.App.Controls"
+             x:Class="PixelAniMaker.App.Views.PreviewView"
+             x:DataType="vm:PreviewViewModel">
+  <ScrollViewer HorizontalScrollBarVisibility="Auto">
+    <StackPanel Orientation="Horizontal" Spacing="16" Margin="12" VerticalAlignment="Top">
+      <StackPanel Spacing="4">
+        <TextBlock Text="×1" FontSize="11" Foreground="#999999" />
+        <c:PixelPreview Session="{Binding Session}" Scale="1" HorizontalAlignment="Left" />
+      </StackPanel>
+      <StackPanel Spacing="4">
+        <TextBlock Text="×2" FontSize="11" Foreground="#999999" />
+        <c:PixelPreview Session="{Binding Session}" Scale="2" HorizontalAlignment="Left" />
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
