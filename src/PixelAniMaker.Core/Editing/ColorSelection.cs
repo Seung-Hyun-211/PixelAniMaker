@@ -13,6 +13,7 @@ public sealed class ColorSelection
     {
         _palette = palette;
         _primary = palette.Count > 1 ? 1 : Palette.TransparentIndex;
+        palette.Changed += (_, _) => KeepInRange();
     }
 
     public event EventHandler? Changed;
@@ -37,6 +38,16 @@ public sealed class ColorSelection
             Secondary = index;
         else
             Primary = index;
+    }
+
+    /// <summary>The palette can shrink (undoing an import); fall back to the last colour.</summary>
+    private void KeepInRange()
+    {
+        int last = _palette.Count - 1;
+        if (_primary > last)
+            Primary = last;
+        if (_secondary > last)
+            Secondary = last;
     }
 
     private void Set(ref int field, int value)

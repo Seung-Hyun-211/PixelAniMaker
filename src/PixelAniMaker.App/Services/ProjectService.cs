@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using PixelAniMaker.Core.Export;
+using PixelAniMaker.Core.Imaging;
 using PixelAniMaker.Core.Project;
 
 namespace PixelAniMaker.App.Services;
@@ -10,6 +11,7 @@ public sealed partial class ProjectService : ObservableObject
     public static readonly FileType ProjectType = new("PixelAniMaker 프로젝트", ProjectFile.Extension);
     public static readonly FileType PngType = new("PNG 이미지", ".png");
     public static readonly FileType GifType = new("GIF 애니메이션", ".gif");
+    public static readonly FileType PaletteType = new("팔레트", [.. PaletteFile.Extensions]);
 
     private readonly EditorSession _editor;
     private readonly AnimationSession _animation;
@@ -106,6 +108,19 @@ public sealed partial class ProjectService : ObservableObject
         File.WriteAllBytes(path, AvaloniaImageCodec.Instance.EncodePng(sheet.Image));
         if (Settings.WriteSheetMetadata)
             File.WriteAllText(Path.ChangeExtension(path, ".json"), sheet.MetadataJson());
+    }
+
+    public IReadOnlyList<Rgba> ReadPalette(string path)
+    {
+        using var stream = File.OpenRead(path);
+        return PaletteFile.Read(path, stream, AvaloniaImageCodec.Instance);
+    }
+
+    /// <summary>Writes the palette without the transparent entry, in the format named by the extension.</summary>
+    public void ExportPalette(string path)
+    {
+        using var stream = File.Create(path);
+        PaletteFile.Write(path, stream, _editor.Character.Palette.Colors.Skip(1).ToList(), AvaloniaImageCodec.Instance, DocumentName);
     }
 
     public void ExportGif(string path)

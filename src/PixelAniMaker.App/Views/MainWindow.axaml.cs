@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using PixelAniMaker.App.Services;
 using PixelAniMaker.App.ViewModels;
@@ -112,7 +113,9 @@ public partial class MainWindow : Window, IFileDialogs
             Title = title,
             SuggestedFileName = suggestedName + type.Extension,
             DefaultExtension = type.Extension.TrimStart('.'),
-            FileTypeChoices = [ToFilter(type)],
+            FileTypeChoices = type.Extensions.Length == 1
+                ? [ToFilter(type)]
+                : type.Extensions.Select(e => ToFilter(type with { Name = $"{type.Name} ({e})", Extensions = [e] })).ToList(),
             ShowOverwritePrompt = true,
         });
         return file?.TryGetLocalPath();
@@ -132,8 +135,34 @@ public partial class MainWindow : Window, IFileDialogs
 
     public Task EditShortcutsAsync(ShortcutMap shortcuts) => new ShortcutsWindow(shortcuts).ShowDialog(this);
 
+    public async Task<PaletteImportChoice> ConfirmPaletteImportAsync(string message, IImage before, IImage after)
+    {
+        var images = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 16 };
+        foreach (var (label, image) in new[] { ("지금", before), ("색 번호대로 교체", after) })
+        {
+            var picture = new Image { Source = image, Width = image.Size.Width * 3, Height = image.Size.Height * 3 };
+            RenderOptions.SetBitmapInterpolationMode(picture, Avalonia.Media.Imaging.BitmapInterpolationMode.None);
+            images.Children.Add(new StackPanel
+            {
+                Spacing = 4,
+                Children =
+                {
+                    new TextBlock { Text = label, Foreground = Brushes.Gray },
+                    new Border { Background = Controls.CheckerBrushes.Large, Child = picture },
+                },
+            });
+        }
+        return await MessageDialog.ShowAsync(this, "팔레트 불러오기", message, images, "색 번호대로 교체", "새 색으로 추가", "취소") switch
+        {
+            0 => PaletteImportChoice.Swap,
+            1 => PaletteImportChoice.Merge,
+            _ => PaletteImportChoice.Cancel,
+        };
+    }
+
     public async Task<bool> ConfirmRecoveryAsync(string message) =>
         await MessageDialog.ShowAsync(this, "작업 복구", message, "복구", "버리기") == 0;
 
-    private static FilePickerFileType ToFilter(FileType type) => new(type.Name) { Patterns = ["*" + type.Extension] };
+    private static FilePickerFileType ToFilter(FileType type) =>
+        new(type.Name) { Patterns = type.Extensions.Select(e => "*" + e).ToList() };
 }

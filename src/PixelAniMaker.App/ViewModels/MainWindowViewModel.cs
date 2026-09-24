@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Controls;
 using PixelAniMaker.App.Services;
 using PixelAniMaker.Core.Editing;
+using PixelAniMaker.Core.Imaging;
 using PixelAniMaker.Core.Rigging;
 
 namespace PixelAniMaker.App.ViewModels;
@@ -247,6 +248,38 @@ public sealed partial class MainWindowViewModel : ObservableObject
         bool ok = await TryAsync(() => Project.Save(path), "저장하지 못했습니다");
         RefreshRecentFiles();
         return ok;
+    }
+
+    [RelayCommand]
+    private Task ExportPalette() => ExportAsync("팔레트 내보내기", ProjectService.PaletteType, Project.DocumentName, Project.ExportPalette);
+
+    /// <summary>Reads a palette file, previews the character with it, then swaps or merges it (undoable).</summary>
+    [RelayCommand]
+    private async Task ImportPalette()
+    {
+        if (Dialogs is null || await Dialogs.PickOpenFileAsync("팔레트 불러오기", ProjectService.PaletteType) is not { } path)
+            return;
+        IReadOnlyList<Rgba> colors = [];
+        if (!await TryAsync(() => colors = Project.ReadPalette(path), "팔레트를 읽지 못했습니다"))
+            return;
+        if (colors.Count == 0)
+        {
+            await Dialogs.ShowErrorAsync("팔레트에 색이 없습니다.");
+            return;
+        }
+
+        var character = Session.Character;
+        var palette = character.Palette;
+        var composite = Session.Compositor.Compose(character, Session.Direction);
+        string message = $"'{Path.GetFileName(path)}'에서 {colors.Count}색을 읽었습니다 (지금 팔레트 {palette.Count - 1}색).\n" +
+                         "색 번호대로 교체: 1번 색부터 차례로 바꿉니다 — 그림은 그대로, 색만 바뀐 변형 캐릭터가 됩니다.\n" +
+                         "새 색으로 추가: 팔레트에 없는 색만 뒤에 붙입니다.";
+        var choice = await Dialogs.ConfirmPaletteImportAsync(message,
+            CompositeBitmap.From(composite, palette), CompositeBitmap.From(composite, PaletteSwap.Preview(palette, colors)));
+        if (choice == PaletteImportChoice.Swap)
+            PaletteSwap.Swap(palette, character.History, colors);
+        else if (choice == PaletteImportChoice.Merge)
+            PaletteSwap.Merge(palette, character.History, colors);
     }
 
     private async Task ExportAsync(string title, FileType type, string suggestedName, Action<string> export)
