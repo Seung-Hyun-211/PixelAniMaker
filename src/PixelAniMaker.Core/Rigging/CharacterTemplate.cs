@@ -7,12 +7,16 @@ namespace PixelAniMaker.Core.Rigging;
 /// <summary>An angle variant image of a part view.</summary>
 public sealed record VariantSpec(int Angle, float PivotX, float PivotY, string Image);
 
+/// <summary>A drawing layer of a part view; the first one uses the view's own image file.</summary>
+public sealed record LayerSpec(string Name, string Image, bool Visible = true);
+
 /// <summary>A named attachment point in base-image pixels.</summary>
 public sealed record AttachmentSpec(string Name, float X, float Y);
 
 /// <summary>A part's look in one direction, as stored in skeleton.json.</summary>
 public sealed record PartViewSpec(int X, int Y, float JointX, float JointY, int Order, string Image,
-    IReadOnlyList<VariantSpec>? Variants = null, IReadOnlyList<AttachmentSpec>? Attachments = null);
+    IReadOnlyList<VariantSpec>? Variants = null, IReadOnlyList<AttachmentSpec>? Attachments = null,
+    IReadOnlyList<LayerSpec>? Layers = null);
 
 /// <summary>
 /// One part entry of skeleton.json. <see cref="Views"/> is keyed "front", "left", "back", plus "right"
@@ -48,13 +52,24 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
     private static IEnumerable<Direction> OwnDirections(Part part) =>
         part.HasOwnRight ? DirectionExtensions.All : DirectionExtensions.Stored;
 
-    /// <summary>Every image a character needs saved: path → image (base images and angle variants).</summary>
+    /// <summary>File of a view's layer: the view's own image for the first layer, "part.layerN.png" for the others.</summary>
+    public static string LayerPath(Direction direction, string part, int layer) =>
+        layer == 0 ? ImagePath(direction, part) : $"{direction.ToString().ToLowerInvariant()}/{part}.layer{layer}.png";
+
+    /// <summary>Every image a character needs saved: path → image (layers and angle variants).</summary>
     public static IEnumerable<(string Path, IndexedImage Image)> Images(Character character) =>
         from p in character.Parts
         from d in OwnDirections(p)
         let v = p.View(d)
-        from item in v.Variants.All.Select(kv => (ImagePath(d, p.Name, kv.Key), kv.Value.Image)).Prepend((ImagePath(d, p.Name), v.Image))
+        from item in v.Layers.All.Select((l, i) => (LayerPath(d, p.Name, i), l.Image))
+            .Concat(v.Variants.All.Select(kv => (ImagePath(d, p.Name, kv.Key), kv.Value.Image)))
         select item;
+
+    /// <summary>Layer list for skeleton.json, or null for a plain single-layer view.</summary>
+    private static List<LayerSpec>? LayerSpecs(PartView view, Direction direction, string part) =>
+        view.Layers.All is [{ Name: PartLayers.BaseName, Visible: true }]
+            ? null
+            : view.Layers.All.Select((l, i) => new LayerSpec(l.Name, LayerPath(direction, part, i), l.Visible)).ToList();
 
     /// <summary>Describes an existing character; images are referenced by <see cref="ImagePath"/>.</summary>
     public static CharacterSpec From(Character character) => new(character.Width, character.Height,
@@ -67,7 +82,7 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
                 var attachments = v.Attachments.All.Select(kv => new AttachmentSpec(kv.Key, kv.Value.X, kv.Value.Y)).ToList();
                 return new PartViewSpec((int)v.RestPosition.X, (int)v.RestPosition.Y, v.RestPivot.X, v.RestPivot.Y,
                     v.DrawOrder, ImagePath(d, p.Name), variants.Count > 0 ? variants : null,
-                    attachments.Count > 0 ? attachments : null);
+                    attachments.Count > 0 ? attachments : null, LayerSpecs(v, d, p.Name));
             }))).ToList());
 
     /// <summary>Builds the character; <paramref name="loadImage"/> decodes an image file named in the spec.</summary>
@@ -92,9 +107,21 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
         string key = Key(direction);
         if (!part.Views.TryGetValue(key, out var v))
             throw new FormatException($"Part '{part.Name}' has no '{key}' view.");
-        var view = new PartView(Load(v.Image), new Vector2(v.X, v.Y), new Vector2(v.JointX, v.JointY), v.Order);
+        var baseImage = Load(v.Image);
+        var view = new PartView(baseImage, new Vector2(v.X, v.Y), new Vector2(v.JointX, v.JointY), v.Order);
         foreach (var variant in v.Variants ?? [])
             view.Variants.Set(variant.Angle, new PartVariant(Load(variant.Image), new Vector2(variant.PivotX, variant.PivotY)));
+        if (v.Layers is { Count: > 0 } layers)
+        {
+            view.Layers.Items.Clear();
+            for (int i = 0; i < layers.Count; i++)
+            {
+                var image = i == 0 ? baseImage : Load(layers[i].Image);
+                if (image.Width != baseImage.Width || image.Height != baseImage.Height)
+                    throw new FormatException($"Layer '{layers[i].Name}' of '{part.Name}' has a different size.");
+                view.Layers.Items.Add(new PartLayer(layers[i].Name, image, layers[i].Visible));
+            }
+        }
         foreach (var a in v.Attachments ?? [])
             view.Attachments.Set(a.Name, new Vector2(a.X, a.Y));
         return view;

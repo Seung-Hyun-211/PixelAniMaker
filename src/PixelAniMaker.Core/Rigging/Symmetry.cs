@@ -22,7 +22,7 @@ public static class Symmetry
     /// Mirror for drawing on <paramref name="part"/>: an image pixel is taken to the canvas, reflected
     /// across the canvas centre line and mapped into the counterpart's image. Null for side views.
     /// </summary>
-    public static PixelMirror? For(Character character, Part part, Direction direction)
+    public static PixelMirror? For(Character character, Part part, Direction direction, int layer = 0)
     {
         if (!Applies(direction))
             return null;
@@ -30,7 +30,7 @@ public static class Symmetry
         var from = transforms[part];
         var to = transforms[Counterpart(character, part)];
         int width = character.Width;
-        return new PixelMirror(to.Image, (x, y) =>
+        return new PixelMirror(to.EditImage(layer), (x, y) =>
         {
             var c = from.ToCanvas(new Vector2(x + 0.5f, y + 0.5f));
             var p = to.ToLocal(new Vector2(width - c.X, c.Y));

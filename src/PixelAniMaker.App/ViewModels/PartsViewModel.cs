@@ -38,7 +38,7 @@ public sealed partial class PartsViewModel : Tool
         {
             if (e.PropertyName == nameof(EditorSession.Character))
                 Attach();
-            else if (e.PropertyName is nameof(EditorSession.ActivePart) or nameof(EditorSession.Direction))
+            else if (e.PropertyName is nameof(EditorSession.ActivePart) or nameof(EditorSession.Direction) or nameof(EditorSession.ActiveLayer))
                 Sync();
         };
         Attach();
@@ -47,6 +47,34 @@ public sealed partial class PartsViewModel : Tool
     public EditorSession Session { get; }
 
     public ObservableCollection<PartItem> Items { get; } = [];
+
+    /// <summary>Layers of the active part, top first (as in other paint programs).</summary>
+    public ObservableCollection<LayerItem> Layers { get; } = [];
+
+    [ObservableProperty] private LayerItem? _selectedLayer;
+
+    partial void OnSelectedLayerChanged(LayerItem? value)
+    {
+        if (!_syncing && value is not null)
+            Session.ActiveLayer = value.Index;
+    }
+
+    [RelayCommand] private void AddLayer() => Session.AddLayer();
+
+    [RelayCommand] private void RemoveLayer() => Session.RemoveActiveLayer();
+
+    [RelayCommand] private void LayerUp() => Session.MoveActiveLayer(1);
+
+    [RelayCommand] private void LayerDown() => Session.MoveActiveLayer(-1);
+
+    private void SyncLayers()
+    {
+        Layers.Clear();
+        var layers = Session.ActiveLayers;
+        for (int i = layers.Count - 1; i >= 0; i--)
+            Layers.Add(new LayerItem(Session, i, layers[i].Name, layers[i].Visible));
+        SelectedLayer = Layers.FirstOrDefault(l => l.Index == Session.ActiveLayerIndex);
+    }
 
     /// <summary>Attachment points of the active part in the current direction.</summary>
     public ObservableCollection<AttachmentItem> Attachments { get; } = [];
@@ -155,6 +183,7 @@ public sealed partial class PartsViewModel : Tool
         OwnRight = Session.ActivePart.HasOwnRight;
         UpdateVariantStatus();
         SyncAttachments();
+        SyncLayers();
         _syncing = false;
     }
 }
