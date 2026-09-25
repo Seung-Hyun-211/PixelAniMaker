@@ -51,7 +51,7 @@ public static class EyeParts
     {
         bool right = name == Right;
         var views = new Dictionary<Direction, PartView>();
-        foreach (var direction in DirectionExtensions.Stored)
+        foreach (var direction in character.StoredDirections)
         {
             var headView = head.View(direction);
             float h = SkullHeight(headView);
@@ -59,7 +59,8 @@ public static class EyeParts
             float y = joint.Y - 0.36f * h;
             // screen side and visibility: front shows *_r on the left, back hides both,
             // the left-facing side view shows the near (left) eye towards the face
-            (float x, bool visible) = direction switch
+            // a 3/4 view starts like the front or back one (redraw to taste)
+            (float x, bool visible) = direction.Fallback() switch
             {
                 Direction.Front => (joint.X + (right ? -1 : 1) * 0.24f * h, true),
                 Direction.Back => (joint.X + (right ? 1 : -1) * 0.24f * h, false),

@@ -146,6 +146,8 @@ public enum Direction
 
 ## 9. 작업 순서
 
+진행 상황: ① 완료 ([패치노트](patchnotes/2026-09-25-direction-model.md)). 구현하면서 정한 이름 — `Direction.FrontLeft`·`FrontRight`·`BackLeft`·`BackRight`, `Character.HasThreeQuarter`·`StoredDirections`·`Directions`, `ThreeQuarterViews.Enable`·`Disable`, `ProjectFile.VersionFor`.
+
 각 단계는 저장소 규칙대로 `feature/...` 브랜치에서 작업한다. 단계마다 테스트·스크린샷·패치노트를 남기고 `main`에 병합한다. 앞 단계만 병합돼도 프로그램이 정상 동작하도록 순서를 잡았다.
 
 | 단계 | 브랜치 | 내용 | 병합 후 사용자에게 보이는 변화 |

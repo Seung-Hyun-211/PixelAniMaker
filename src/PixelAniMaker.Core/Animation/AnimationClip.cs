@@ -36,12 +36,14 @@ public sealed record Keyframe(int Frame, PoseData Pose, Easing Easing = Easing.E
 
 /// <summary>
 /// A named animation: frame count, speed and one keyframe track per stored direction (the Right view
-/// plays the Left track mirrored). Frames between keys are interpolated.
+/// plays the Left track mirrored). Frames between keys are interpolated. The 3/4 tracks are optional:
+/// while one is empty, that view plays the front or back track.
 /// </summary>
 public sealed class AnimationClip : INotifyPropertyChanged
 {
     private readonly Dictionary<Direction, SortedList<int, Keyframe>> _tracks =
-        DirectionExtensions.Stored.ToDictionary(d => d, _ => new SortedList<int, Keyframe>());
+        DirectionExtensions.Stored.Concat(DirectionExtensions.ThreeQuarterStored)
+            .ToDictionary(d => d, _ => new SortedList<int, Keyframe>());
 
     private string _name;
     private int _frameCount;
@@ -72,6 +74,17 @@ public sealed class AnimationClip : INotifyPropertyChanged
 
     public IReadOnlyList<Keyframe> Keys(Direction direction) => [.. _tracks[direction.Source()].Values];
 
+    /// <summary>True when any 3/4 track has keys or any 3/4 frame is touched up (the file then needs format 2).</summary>
+    public bool HasThreeQuarterData =>
+        DirectionExtensions.ThreeQuarterStored.Any(d => _tracks[d].Count > 0) || Touchups.Frames.Any(f => f.Direction.IsThreeQuarter());
+
+    /// <summary>The track played for a direction: its own, or for an empty 3/4 track the front/back one.</summary>
+    private SortedList<int, Keyframe> PlayedTrack(Direction direction)
+    {
+        var track = _tracks[direction.Source()];
+        return track.Count == 0 && direction.IsThreeQuarter() ? _tracks[direction.Fallback()] : track;
+    }
+
     public Keyframe? KeyAt(Direction direction, int frame) => _tracks[direction.Source()].GetValueOrDefault(frame);
 
     public void SetKey(Direction direction, Keyframe key)
@@ -100,7 +113,7 @@ public sealed class AnimationClip : INotifyPropertyChanged
     public PoseData Evaluate(Direction direction, int frame)
     {
         // keys past the end (left over after shortening the clip) are kept but not played
-        var keys = _tracks[direction.Source()].Values.Where(k => k.Frame < FrameCount).ToList();
+        var keys = PlayedTrack(direction).Values.Where(k => k.Frame < FrameCount).ToList();
         if (keys.Count == 0)
             return PoseData.Rest;
 

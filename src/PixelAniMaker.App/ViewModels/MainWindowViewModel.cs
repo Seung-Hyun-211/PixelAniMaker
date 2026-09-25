@@ -314,6 +314,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             Animation.AddClip(clip);
         if (result.UnknownParts.Count > 0)
             await Dialogs.ShowErrorAsync("이 캐릭터에 없는 파츠의 회전은 무시됩니다: " + string.Join(", ", result.UnknownParts));
+        if (result.DroppedThreeQuarter)
+            await Dialogs.ShowMessageAsync("이 캐릭터에는 반측면이 없어서 반측면 키와 손본 픽셀은 가져오지 않았습니다.");
     }
 
     [RelayCommand]

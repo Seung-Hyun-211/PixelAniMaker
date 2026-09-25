@@ -18,7 +18,18 @@ public sealed record ProjectData(Character Character, IReadOnlyList<AnimationCli
 public static class ProjectFile
 {
     public const string Extension = ".dotchar";
-    public const int FormatVersion = 1;
+    /// <summary>The newest format this program reads and writes.</summary>
+    public const int FormatVersion = 2;
+
+    /// <summary>
+    /// Written when a project uses nothing newer than 4 directions, so older versions (which read up
+    /// to 1) keep opening it. Format 2 adds the optional 3/4 views and tracks.
+    /// </summary>
+    public const int ClassicFormatVersion = 1;
+
+    /// <summary>The format version a project is saved with.</summary>
+    public static int VersionFor(ProjectData project) =>
+        project.Character.HasThreeQuarter || project.Clips.Any(c => c.HasThreeQuarterData) ? FormatVersion : ClassicFormatVersion;
 
     private const string ProjectEntry = "project.json";
     private const string SkeletonEntry = "skeleton.json";
@@ -43,7 +54,7 @@ public static class ProjectFile
         using var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true);
 
         var palette = c.Palette.Colors.Skip(1).Select(color => color.ToString()).ToList(); // index 0 is always transparent
-        Write(zip, ProjectEntry, JsonSerializer.Serialize(new ProjectSpec(FormatVersion, palette,
+        Write(zip, ProjectEntry, JsonSerializer.Serialize(new ProjectSpec(VersionFor(project), palette,
             new OutlineSpec(c.Outline.Enabled, c.Outline.OutlineIndex, c.Outline.InnerIndex)), Json));
         Write(zip, SkeletonEntry, CharacterSpec.From(c).ToJson());
         Write(zip, AnimationsEntry, AnimationJson.Serialize(project.Clips));

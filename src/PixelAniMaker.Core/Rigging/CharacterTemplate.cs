@@ -44,15 +44,12 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
 
     public string ToJson() => JsonSerializer.Serialize(this, Json);
 
-    private static string Key(Direction direction) => direction.ToString().ToLowerInvariant();
-
     /// <summary>File name used for a part's image in one direction.</summary>
     public static string ImagePath(Direction direction, string part, int? angle = null) =>
         $"{direction.ToString().ToLowerInvariant()}/{part}{(angle is { } a ? $"@{a}" : "")}.png";
 
-    /// <summary>Directions a part has its own data for (Right only when drawn separately).</summary>
-    private static IEnumerable<Direction> OwnDirections(Part part) =>
-        part.HasOwnRight ? DirectionExtensions.All : DirectionExtensions.Stored;
+    /// <summary>Directions a part has its own data for (mirrored ones only when drawn separately, 3/4 only when on).</summary>
+    private static IEnumerable<Direction> OwnDirections(Part part) => DirectionExtensions.Every.Where(part.HasOwnView);
 
     /// <summary>File of a view's layer: the view's own image for the first layer, "part.layerN.png" for the others.</summary>
     public static string LayerPath(Direction direction, string part, int layer) =>
@@ -92,8 +89,8 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
     {
         var pal = palette ?? new Palette();
         var parts = Parts.ToDictionary(s => s.Name, s => new Part(s.Name, s.Label,
-            DirectionExtensions.All
-                .Where(d => !d.IsMirrored() || s.Views.ContainsKey(Key(d)))
+            DirectionExtensions.Every
+                .Where(d => DirectionExtensions.Stored.Contains(d) || s.Views.ContainsKey(d.Key()))
                 .ToDictionary(d => d, d => BuildView(s, d, loadImage, pal))) { IsDetail = s.Detail == true });
         foreach (var spec in Parts.Where(s => s.Parent is not null))
         {
@@ -106,7 +103,7 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
 
     private static PartView BuildView(PartSpec part, Direction direction, Func<string, RgbaImage> loadImage, Palette palette)
     {
-        string key = Key(direction);
+        string key = direction.Key();
         if (!part.Views.TryGetValue(key, out var v))
             throw new FormatException($"Part '{part.Name}' has no '{key}' view.");
         var baseImage = Load(v.Image);

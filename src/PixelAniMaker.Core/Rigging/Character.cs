@@ -11,8 +11,12 @@ namespace PixelAniMaker.Core.Rigging;
 /// </summary>
 public sealed class Character
 {
-    private readonly Dictionary<Direction, Pose> _poses = DirectionExtensions.Stored.ToDictionary(d => d, _ => new Pose());
+    private static readonly IReadOnlyList<Direction> AllStored = [.. DirectionExtensions.Stored, .. DirectionExtensions.ThreeQuarterStored];
+
+    // a pose for every stored direction, 3/4 included, so turning 3/4 views on never loses poses
+    private readonly Dictionary<Direction, Pose> _poses = AllStored.ToDictionary(d => d, _ => new Pose());
     private readonly List<Part> _parts;
+    private bool _hasThreeQuarter;
 
     public Character(int width, int height, Palette palette, IEnumerable<Part> parts)
     {
@@ -22,6 +26,7 @@ public sealed class Character
         Colors = new ColorSelection(palette);
         _parts = parts.ToList();
         Root = _parts.Single(p => p.Parent is null);
+        _hasThreeQuarter = _parts.Any(p => p.HasOwnView(Direction.FrontLeft));
     }
 
     public int Width { get; }
@@ -38,6 +43,28 @@ public sealed class Character
     public event EventHandler? PartsChanged;
 
     public Part Root { get; }
+
+    /// <summary>True when the character has 3/4 views (see <see cref="ThreeQuarterViews"/>).</summary>
+    public bool HasThreeQuarter
+    {
+        get => _hasThreeQuarter;
+        internal set
+        {
+            if (_hasThreeQuarter == value)
+                return;
+            _hasThreeQuarter = value;
+            DirectionsChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>Raised when 3/4 views are turned on or off.</summary>
+    public event EventHandler? DirectionsChanged;
+
+    /// <summary>Directions with their own pictures and poses: the classic three, plus the two 3/4 ones.</summary>
+    public IReadOnlyList<Direction> StoredDirections => HasThreeQuarter ? AllStored : DirectionExtensions.Stored;
+
+    /// <summary>Directions the character is shown in, in sheet order.</summary>
+    public IReadOnlyList<Direction> Directions => HasThreeQuarter ? DirectionExtensions.Every : DirectionExtensions.All;
 
     /// <summary>Raised when any direction's pose changes.</summary>
     public event EventHandler? PoseChanged

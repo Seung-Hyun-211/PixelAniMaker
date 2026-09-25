@@ -30,6 +30,20 @@ public sealed class PartView(IndexedImage image, Vector2 restPosition, Vector2 r
     /// <summary>Named points (weapon grip, effect origin …) in base-image pixels.</summary>
     public AttachmentPoints Attachments { get; } = new();
 
+    /// <summary>A deep copy: same joints, layers, angle variants and attachment points, with copied images.</summary>
+    public PartView Copy()
+    {
+        var copy = new PartView(Layers[0].Image.Clone(), RestPosition, RestPivot, DrawOrder);
+        copy.Layers.Items.Clear();
+        foreach (var layer in Layers.All)
+            copy.Layers.Items.Add(new PartLayer(layer.Name, layer.Image.Clone(), layer.Visible));
+        foreach (var (angle, variant) in Variants.All)
+            copy.Variants.Set(angle, variant with { Image = variant.Image.Clone() });
+        foreach (var (name, point) in Attachments.All)
+            copy.Attachments.Set(name, point);
+        return copy;
+    }
+
     /// <summary>The image to draw at a rotation (radians): a variant near that angle, or the base image.</summary>
     public (IndexedImage Image, Vector2 Pivot, float Angle) Pick(float radians)
     {
@@ -42,14 +56,15 @@ public sealed class PartView(IndexedImage image, Vector2 restPosition, Vector2 r
 
 /// <summary>
 /// One bone of the skeleton, with its look in every stored direction. The Right view mirrors the
-/// Left view unless the part has its own right image (<see cref="HasOwnRight"/>).
+/// Left view unless the part has its own right image (<see cref="HasOwnRight"/>); the same goes for the
+/// right-facing 3/4 views. 3/4 views are optional: without them the front or back view is used.
 /// </summary>
 public sealed class Part
 {
     private readonly List<Part> _children = [];
     private readonly Dictionary<Direction, PartView> _views;
 
-    /// <param name="views">Every stored direction, plus optionally <see cref="Direction.Right"/>.</param>
+    /// <param name="views">Every classic stored direction, plus optionally mirrored and 3/4 views.</param>
     public Part(string name, string label, IReadOnlyDictionary<Direction, PartView> views)
     {
         foreach (var direction in DirectionExtensions.Stored)
@@ -75,22 +90,30 @@ public sealed class Part
     public int Depth => Parent is null ? 0 : Parent.Depth + 1;
 
     /// <summary>
-    /// The view drawn for <paramref name="direction"/>. Right uses its own view when there is one,
-    /// otherwise the Left view. Either way it is in Left-view coordinates; the renderer mirrors it.
+    /// The view drawn for <paramref name="direction"/>. A mirrored direction uses its own view when
+    /// there is one, otherwise its source view; either way it is in source coordinates and the renderer
+    /// mirrors it. A 3/4 direction without a view falls back to the front or back view.
     /// </summary>
     public PartView View(Direction direction) =>
-        _views.TryGetValue(direction, out var own) ? own : _views[direction.Source()];
+        _views.TryGetValue(direction, out var own) ? own
+        : _views.TryGetValue(direction.Source(), out var source) ? source
+        : _views[direction.Source().Fallback()];
 
     /// <summary>True when the Right view is drawn separately instead of mirroring the Left view.</summary>
     public bool HasOwnRight => _views.ContainsKey(Direction.Right);
 
-    /// <summary>Gives the part its own right view, or (null) goes back to mirroring the Left view.</summary>
-    internal void SetOwnRight(PartView? view)
+    /// <summary>True when the part stores a view for exactly this direction (no mirroring or fallback).</summary>
+    public bool HasOwnView(Direction direction) => _views.ContainsKey(direction);
+
+    /// <summary>Sets or (null) removes the view stored for a mirrored or 3/4 direction.</summary>
+    internal void SetView(Direction direction, PartView? view)
     {
+        if (DirectionExtensions.Stored.Contains(direction))
+            throw new ArgumentException($"The {direction} view cannot be replaced.", nameof(direction));
         if (view is null)
-            _views.Remove(Direction.Right);
+            _views.Remove(direction);
         else
-            _views[Direction.Right] = view;
+            _views[direction] = view;
     }
 
     internal void Detach()

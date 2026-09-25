@@ -56,8 +56,9 @@ public static class AnimationJson
         return clip;
     }
 
+    // classic tracks are always written (as before); 3/4 tracks only when they have keys
     private static ClipSpec ToSpec(AnimationClip clip) => new(clip.Name, clip.FrameCount, clip.Fps, clip.Loop,
-        DirectionExtensions.Stored.ToDictionary(
+        DirectionExtensions.Stored.Concat(DirectionExtensions.ThreeQuarterStored.Where(d => clip.Keys(d).Count > 0)).ToDictionary(
             d => d.ToString().ToLowerInvariant(),
             d => clip.Keys(d).Select(k => new KeySpec(
                 k.Frame,

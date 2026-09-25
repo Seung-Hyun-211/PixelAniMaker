@@ -143,6 +143,19 @@ public class GoldenTests
     public void Four_direction_project_saves_and_exports_as_recorded() => AssertMatchesGolden(Outputs(Build()));
 
     [Fact]
+    public void Turning_3_4_views_on_and_off_again_leaves_the_output_as_recorded()
+    {
+        if (Updating)
+            return;
+        var project = Build();
+        var history = new UndoHistory();
+        ThreeQuarterViews.Enable(project.Character, history);
+        project.Clips[0].SetKey(Direction.FrontLeft, new Keyframe(1, Pose(("arm_r", 60))));
+        ThreeQuarterViews.Disable(project.Character, project.Clips, history);
+        AssertMatchesGolden(Outputs(project));
+    }
+
+    [Fact]
     public void Recorded_project_loads_and_saves_back_unchanged()
     {
         if (Updating)
