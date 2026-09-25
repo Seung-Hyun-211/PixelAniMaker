@@ -26,6 +26,9 @@ public sealed partial class PartsViewModel : Tool
     [ObservableProperty] private string _variantMessage = "";
     [ObservableProperty] private bool _ownRight;
     [ObservableProperty] private bool _isRightView;
+    [ObservableProperty] private bool _isDetailPart;
+    [ObservableProperty] private decimal? _detailX;
+    [ObservableProperty] private decimal? _detailY;
 
     public PartsViewModel(EditorSession session)
     {
@@ -96,6 +99,16 @@ public sealed partial class PartsViewModel : Tool
     {
         if (!_syncing)
             Session.SetOwnRight(value);
+    }
+
+    partial void OnDetailXChanged(decimal? value) => ApplyDetailPosition();
+
+    partial void OnDetailYChanged(decimal? value) => ApplyDetailPosition();
+
+    private void ApplyDetailPosition()
+    {
+        if (!_syncing && DetailX is { } x && DetailY is { } y)
+            Session.MoveActiveDetailTo(new System.Numerics.Vector2((float)x, (float)y));
     }
 
     partial void OnOffsetXChanged(decimal? value) => ApplyOffset();
@@ -188,6 +201,10 @@ public sealed partial class PartsViewModel : Tool
         OffsetY = (decimal)Math.Round(Session.CurrentPose.Offset.Y);
         IsRightView = Session.Direction.IsMirrored();
         OwnRight = Session.ActivePart.HasOwnRight;
+        var detail = Session.ActiveDetailPosition;
+        IsDetailPart = detail is not null;
+        DetailX = detail is { } d ? (decimal)Math.Round(d.X, 1) : null;
+        DetailY = detail is { } e ? (decimal)Math.Round(e.Y, 1) : null;
         UpdateVariantStatus();
         SyncAttachments();
         SyncLayers();

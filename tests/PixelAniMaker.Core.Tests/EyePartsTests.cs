@@ -1,3 +1,4 @@
+using System.Numerics;
 using PixelAniMaker.Core.Imaging;
 using PixelAniMaker.Core.Project;
 using PixelAniMaker.Core.Rigging;
@@ -111,6 +112,57 @@ public class EyePartsTests
         Assert.Equal(front.Image.Pixels.ToArray().Select(i => c.Palette[i]),
             lf.Image.Pixels.ToArray().Select(i => loaded.Palette[i]));
         Assert.False(loaded.Find("head")!.IsDetail);
+    }
+
+    [Fact]
+    public void Moving_an_eye_shifts_its_image_and_joint_in_that_direction_only_and_is_undoable()
+    {
+        var c = HeadAndBody();
+        EyeParts.Add(c);
+        var eye = c.Find(EyeParts.Right)!;
+        var front = eye.View(Direction.Front);
+        var (pos, pivot) = (front.RestPosition, front.RestPivot);
+        var backPivot = eye.View(Direction.Back).RestPivot;
+        var before = new Compositor().Compose(c, Direction.Front);
+
+        DetailMove.Apply(eye, Direction.Front, new Vector2(2.4f, -1f), c.History);   // rounds to whole pixels
+        Assert.Equal(pos + new Vector2(2, -1), front.RestPosition);
+        Assert.Equal(pivot + new Vector2(2, -1), front.RestPivot);
+        Assert.Equal(backPivot, eye.View(Direction.Back).RestPivot);
+        var after = new Compositor().Compose(c, Direction.Front);
+        Assert.NotEqual(before.Owners, after.Owners);
+
+        c.History.Undo();
+        Assert.Equal(pos, front.RestPosition);
+        Assert.Equal(before.Indices, new Compositor().Compose(c, Direction.Front).Indices);
+    }
+
+    [Fact]
+    public void Moving_an_eye_in_the_mirrored_view_moves_the_view_both_sides_show()
+    {
+        var c = HeadAndBody();
+        EyeParts.Add(c);
+        var eye = c.Find(EyeParts.Left)!;
+        var pivot = eye.View(Direction.Left).RestPivot;
+        DetailMove.Apply(eye, Direction.Right, new Vector2(-3, 0), c.History);
+        Assert.Equal(pivot + new Vector2(-3, 0), eye.View(Direction.Left).RestPivot);
+        Assert.Same(eye.View(Direction.Left), eye.View(Direction.Right));
+    }
+
+    [Fact]
+    public void Only_detail_parts_move_and_moved_eyes_survive_save_and_load()
+    {
+        var c = HeadAndBody();
+        Assert.Throws<InvalidOperationException>(() => DetailMove.Apply(c.Find("head")!, Direction.Front, Vector2.One, c.History));
+
+        EyeParts.Add(c);
+        DetailMove.Apply(c.Find(EyeParts.Left)!, Direction.Front, new Vector2(1, 2), c.History);
+        var moved = c.Find(EyeParts.Left)!.View(Direction.Front).RestPivot;
+        using var ms = new MemoryStream();
+        ProjectFile.Save(new ProjectData(c, []), ms, new RawCodec());
+        ms.Position = 0;
+        var loaded = ProjectFile.Load(ms, new RawCodec()).Character;
+        Assert.Equal(moved, loaded.Find(EyeParts.Left)!.View(Direction.Front).RestPivot);
     }
 
     [Fact]

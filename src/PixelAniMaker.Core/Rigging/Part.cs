@@ -17,9 +17,16 @@ public sealed class PartView(IndexedImage image, Vector2 restPosition, Vector2 r
     /// <summary>The visible layers flattened — what is drawn and rotated.</summary>
     public IndexedImage Image => Layers.Flattened;
 
-    public Vector2 RestPosition { get; } = restPosition;
-    public Vector2 RestPivot { get; } = restPivot;
+    public Vector2 RestPosition { get; private set; } = restPosition;
+    public Vector2 RestPivot { get; private set; } = restPivot;
     public int DrawOrder { get; } = drawOrder;
+
+    /// <summary>Shifts the image and its joint together (see <see cref="DetailMove"/>).</summary>
+    internal void MoveBy(Vector2 delta)
+    {
+        RestPosition += delta;
+        RestPivot += delta;
+    }
 
     /// <summary>Joint position inside the image.</summary>
     public Vector2 LocalPivot => RestPivot - RestPosition;

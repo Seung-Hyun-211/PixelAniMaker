@@ -276,6 +276,17 @@ public sealed partial class EditorSession : ObservableObject
 
     public void RemoveEyes() => EyeParts.Remove(Character);
 
+    /// <summary>Joint of the active part in display coordinates when it is a detail part (eye), else null.</summary>
+    public Vector2? ActiveDetailPosition => ActivePart.IsDetail ? FromSource(ActivePart.View(Direction).RestPivot) : null;
+
+    /// <summary>Moves the active detail part so its joint lands on <paramref name="display"/> (whole pixels, undoable).</summary>
+    public void MoveActiveDetailTo(Vector2 display)
+    {
+        if (!ActivePart.IsDetail)
+            return;
+        DetailMove.Apply(ActivePart, Direction, FromSource(display) - ActivePart.View(Direction).RestPivot, Character.History);
+    }
+
     private void OnPartsChanged(object? sender, EventArgs e)
     {
         if (!Character.Parts.Contains(ActivePart))

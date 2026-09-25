@@ -18,6 +18,17 @@
         <TextBlock Text="Y" VerticalAlignment="Center" />
         <NumericUpDown Value="{Binding OffsetY}" Minimum="-64" Maximum="64" Increment="1" FormatString="0" Width="95" />
       </StackPanel>
+      <StackPanel Spacing="4" IsVisible="{Binding IsDetailPart}"
+                  ToolTip.Tip="이 방향에서 눈 파츠의 위치 (관절 = 눈 가운데, 캔버스 px). 방향마다 따로 정하고, 되돌리기가 됩니다.">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <TextBlock Text="눈 X" VerticalAlignment="Center" Width="32" />
+          <NumericUpDown Value="{Binding DetailX}" Increment="1" FormatString="0" Minimum="-512" Maximum="512" Width="130" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <TextBlock Text="눈 Y" VerticalAlignment="Center" Width="32" />
+          <NumericUpDown Value="{Binding DetailY}" Increment="1" FormatString="0" Minimum="-512" Maximum="512" Width="130" />
+        </StackPanel>
+      </StackPanel>
       <CheckBox Content="우측면 따로 그리기" IsChecked="{Binding OwnRight}" IsVisible="{Binding IsRightView}"
                 ToolTip.Tip="끄면 이 파츠의 우측면은 좌측면을 좌우 반전해 씁니다. 켜면 좌측면을 복사한 별도 이미지에 그립니다 (비대칭 디자인용). 다시 끄면 따로 그린 이미지는 버려집니다 (되돌리기 가능)." />
       <TextBlock Text="{Binding VariantStatus}" FontSize="11" Foreground="#999999" TextWrapping="Wrap" />
