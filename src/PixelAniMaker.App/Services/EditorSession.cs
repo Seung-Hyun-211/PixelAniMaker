@@ -81,6 +81,38 @@ public sealed partial class EditorSession : ObservableObject
         }
     }
 
+    /// <summary>Automatic shading on composites (a darker band on the edges away from the light).</summary>
+    public bool AutoShading
+    {
+        get => Character.Shading.Enabled;
+        set
+        {
+            Character.Shading.Enabled = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>Light from the upper right instead of the upper left.</summary>
+    public bool ShadingFromRight
+    {
+        get => Character.Shading.Light == LightFrom.TopRight;
+        set
+        {
+            Character.Shading.Light = value ? LightFrom.TopRight : LightFrom.TopLeft;
+            OnPropertyChanged();
+        }
+    }
+
+    public decimal ShadingWidth
+    {
+        get => Character.Shading.Width;
+        set
+        {
+            Character.Shading.Width = (int)value;
+            OnPropertyChanged();
+        }
+    }
+
     public WriteableBitmap PreviewBitmap(Direction direction) => _previewBitmaps[direction];
 
     /// <summary>Shared compositor (keeps the rotation caches warm for the canvas and animation frames).</summary>
@@ -106,6 +138,7 @@ public sealed partial class EditorSession : ObservableObject
             Character.History.Changed -= OnHistoryChanged;
             Character.Palette.Changed -= OnContentChanged;
             Character.Outline.Changed -= OnContentChanged;
+            Character.Shading.Changed -= OnContentChanged;
             Character.PoseChanged -= OnPoseChanged;
             Character.PartsChanged -= OnPartsChanged;
             Character.DirectionsChanged -= OnDirectionsChanged;
@@ -114,6 +147,7 @@ public sealed partial class EditorSession : ObservableObject
         character.History.Changed += OnHistoryChanged;
         character.Palette.Changed += OnContentChanged;
         character.Outline.Changed += OnContentChanged;
+        character.Shading.Changed += OnContentChanged;
         character.PoseChanged += OnPoseChanged;
         character.PartsChanged += OnPartsChanged;
         character.DirectionsChanged += OnDirectionsChanged;
@@ -126,6 +160,9 @@ public sealed partial class EditorSession : ObservableObject
 
         Character = character;
         OnPropertyChanged(nameof(AutoOutline));
+        OnPropertyChanged(nameof(AutoShading));
+        OnPropertyChanged(nameof(ShadingFromRight));
+        OnPropertyChanged(nameof(ShadingWidth));
         OnPropertyChanged(nameof(HasEyes));
         OnPropertyChanged(nameof(CanAddEyes));
         ActivePart = character.Find("chest") ?? character.Root;

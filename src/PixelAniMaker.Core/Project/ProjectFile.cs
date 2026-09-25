@@ -38,7 +38,12 @@ public static class ProjectFile
 
     private sealed record OutlineSpec(bool Enabled, int OutlineIndex, int InnerIndex);
 
-    private sealed record ProjectSpec(int FormatVersion, List<string> Palette, OutlineSpec Outline);
+    /// <summary>Automatic shading; written only while it is on (older versions ignore it).</summary>
+    private sealed record ShadingSpec(bool Enabled, string Light, int Width);
+
+    private sealed record ProjectSpec(int FormatVersion, List<string> Palette, OutlineSpec Outline,
+        [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+        ShadingSpec? Shading = null);
 
     private static readonly JsonSerializerOptions Json = new()
     {
@@ -55,7 +60,8 @@ public static class ProjectFile
 
         var palette = c.Palette.Colors.Skip(1).Select(color => color.ToString()).ToList(); // index 0 is always transparent
         Write(zip, ProjectEntry, JsonSerializer.Serialize(new ProjectSpec(VersionFor(project), palette,
-            new OutlineSpec(c.Outline.Enabled, c.Outline.OutlineIndex, c.Outline.InnerIndex)), Json));
+            new OutlineSpec(c.Outline.Enabled, c.Outline.OutlineIndex, c.Outline.InnerIndex),
+            c.Shading.Enabled ? new ShadingSpec(true, c.Shading.Light.ToString(), c.Shading.Width) : null), Json));
         Write(zip, SkeletonEntry, CharacterSpec.From(c).ToJson());
         Write(zip, AnimationsEntry, AnimationJson.Serialize(project.Clips));
 
@@ -87,6 +93,12 @@ public static class ProjectFile
         character.Outline.OutlineIndex = project.Outline.OutlineIndex;
         character.Outline.InnerIndex = project.Outline.InnerIndex;
         character.Outline.Enabled = project.Outline.Enabled;
+        if (project.Shading is { } shading)
+        {
+            character.Shading.Light = Enum.TryParse<LightFrom>(shading.Light, ignoreCase: true, out var light) ? light : LightFrom.TopLeft;
+            character.Shading.Width = shading.Width;
+            character.Shading.Enabled = shading.Enabled;
+        }
 
         var clips = zip.GetEntry(AnimationsEntry) is null ? [] : AnimationJson.Parse(Read(zip, AnimationsEntry));
         return new ProjectData(character, clips);

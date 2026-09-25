@@ -54,8 +54,12 @@ public sealed class Compositor
         var order = character.DrawOrder(direction).ToList();
         foreach (var part in order.Where(p => hidden is null || !hidden.Contains(p)))
             Draw(result, transforms[part], (short)character.IndexOf(part));
+        var rank = RankByOwner(character, order);
+        if (character.Shading.Enabled)
+            ShadingPass.Apply(result, rank, character.Palette, character.Shading, character.Outline.Enabled,
+                character.Outline.Enabled ? new HashSet<int> { character.Outline.OutlineIndex, character.Outline.InnerIndex } : []);
         if (character.Outline.Enabled)
-            OutlinePass.Apply(result, RankByOwner(character, order), character.Outline);
+            OutlinePass.Apply(result, rank, character.Outline);
         if (direction.IsMirrored())
             result.MirrorHorizontally();
         return result;

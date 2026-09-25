@@ -36,6 +36,9 @@ public sealed class Character
     public ColorSelection Colors { get; }
     public OutlineSettings Outline { get; } = new();
 
+    /// <summary>Automatic shading of composites (off unless turned on).</summary>
+    public ShadingSettings Shading { get; } = new();
+
     /// <summary>All parts in a fixed order; indices into this list identify parts in composites.</summary>
     public IReadOnlyList<Part> Parts => _parts;
 
