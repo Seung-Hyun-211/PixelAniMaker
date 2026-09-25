@@ -40,10 +40,15 @@ public sealed partial class ProjectService : ObservableObject
     public event EventHandler? DocumentReset;
 
     /// <param name="jointDiscs">False starts from the plain mannequin without ball-joint circles.</param>
-    public void New(bool jointDiscs = true)
+    /// <param name="clips">
+    /// The clips to start with (default: every default clip). An empty list gives one blank clip,
+    /// since the timeline always keeps at least one.
+    /// </param>
+    public void New(bool jointDiscs = true, IReadOnlyList<AnimationClip>? clips = null)
     {
         _editor.LoadCharacter(TemplateLoader.LoadChibi96(jointDiscs));
-        _animation.SetClips(TemplateLoader.LoadDefaultAnimations());
+        clips ??= TemplateLoader.LoadDefaultAnimations();
+        _animation.SetClips(clips.Count > 0 ? clips : [new AnimationClip(Localizer.T("새 동작"), 8)]);
         CurrentPath = null;
         IsRecovered = false;
         DocumentReset?.Invoke(this, EventArgs.Empty);

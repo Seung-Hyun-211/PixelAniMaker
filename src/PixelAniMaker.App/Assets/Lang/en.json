@@ -6,6 +6,8 @@
   "창(_W)": "_Window",
   "새로 만들기": "New",
   "새로 만들기 (관절 원 없는 마네킹)": "New (mannequin without joint discs)",
+  "만들기": "Create",
+  "만들 동작을 고르세요.\n고르지 않은 동작은 나중에 다른 프로젝트에서 가져오거나 새로 만들 수 있습니다.": "Pick the animations to create.\nYou can import the others from another project or make new ones later.",
   "열기": "Open",
   "열기...": "Open...",
   "최근 파일": "Recent files",
