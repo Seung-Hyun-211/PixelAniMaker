@@ -1,0 +1,98 @@
+{
+  "animations": [
+    {
+      "name": "wave",
+      "frames": 4,
+      "fps": 8,
+      "loop": true,
+      "tracks": {
+        "front": [
+          {
+            "frame": 0,
+            "easing": "EaseInOut",
+            "rotations": {
+              "arm_r": 30
+            }
+          },
+          {
+            "frame": 2,
+            "easing": "Linear",
+            "offset": [
+              0,
+              -1
+            ],
+            "rotations": {
+              "arm_r": 120
+            }
+          }
+        ],
+        "left": [
+          {
+            "frame": 0,
+            "easing": "EaseInOut",
+            "rotations": {
+              "arm_l": -20
+            }
+          },
+          {
+            "frame": 2,
+            "easing": "Step",
+            "rotations": {
+              "body": 5,
+              "head": -10
+            }
+          }
+        ],
+        "back": [
+          {
+            "frame": 1,
+            "easing": "EaseInOut",
+            "rotations": {
+              "arm_l": 45
+            }
+          }
+        ]
+      },
+      "touchups": [
+        {
+          "direction": "right",
+          "frame": 1,
+          "pixels": [
+            [
+              5,
+              5,
+              1
+            ],
+            [
+              6,
+              5,
+              0
+            ]
+          ]
+        },
+        {
+          "direction": "back",
+          "frame": 2,
+          "pixels": [
+            [
+              10,
+              20,
+              2
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "idle",
+      "frames": 2,
+      "fps": 6,
+      "loop": false,
+      "tracks": {
+        "front": [],
+        "left": [],
+        "back": []
+      }
+    }
+  ]
+}
