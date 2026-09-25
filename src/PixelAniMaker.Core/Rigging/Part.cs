@@ -97,7 +97,7 @@ public sealed class Part
     }
 
     public string Name { get; }
-    public string Label { get; }
+    public string Label { get; internal set; }
 
     /// <summary>
     /// A detail drawn on its parent (e.g. an eye on the head): it follows the parent's outline instead

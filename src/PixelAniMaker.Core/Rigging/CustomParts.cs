@@ -113,6 +113,23 @@ public static class CustomParts
         return links.Select(l => l.Part).ToList();
     }
 
+    public const int MaxLabelLength = 40;
+
+    /// <summary>
+    /// Renames an added part's shown name (the file name stays), as one undo step; false for template parts
+    /// and for empty or unchanged names.
+    /// </summary>
+    public static bool Rename(Character character, Part part, string label)
+    {
+        label = label.Trim();
+        if (!part.IsCustom || label.Length == 0 || label == part.Label)
+            return false;
+        if (label.Length > MaxLabelLength)
+            label = label[..MaxLabelLength];
+        character.History.Do(new PartLabelChange(character, part, part.Label, label));
+        return true;
+    }
+
     /// <summary>True when <paramref name="part"/> was added by the user (and can be removed).</summary>
     public static bool CanRemove(Part part) => part.IsCustom && part.Parent is not null;
 
@@ -278,5 +295,21 @@ public static class CustomParts
             }
             return list;
         }
+    }
+}
+
+/// <summary>Undoable change of a part's shown name.</summary>
+public sealed class PartLabelChange(Character character, Part part, string before, string after) : History.IUndoableAction
+{
+    public string Name => "파츠 이름";
+
+    public void Undo() => Set(before);
+
+    public void Redo() => Set(after);
+
+    private void Set(string label)
+    {
+        part.Label = label;
+        character.NotifyPartsChanged();
     }
 }

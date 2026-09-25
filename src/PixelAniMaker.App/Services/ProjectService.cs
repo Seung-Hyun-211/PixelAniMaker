@@ -167,6 +167,10 @@ public sealed partial class ProjectService : ObservableObject
         AnimationGif.Write(stream, _editor.Character, clip, _editor.Compositor, Settings.GifScale, ExportDirections);
     }
 
+    /// <summary>A warning when exported frames of the current clip or all clips touch the canvas edge (null when none).</summary>
+    public string? EdgeWarning(bool allClips) =>
+        EdgeCheck.Summary(EdgeCheck.Find(_editor.Character, ClipsToExport(allClips), _editor.Compositor, ExportDirections));
+
     /// <summary>Rows of exported sheets and GIFs: the classic four, or eight with 3/4 views when the setting is on.</summary>
     private IReadOnlyList<Core.Rigging.Direction> ExportDirections => _editor.Character.ExportDirections(Settings.ExportThreeQuarter);
 

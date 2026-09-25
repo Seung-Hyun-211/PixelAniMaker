@@ -214,8 +214,9 @@ public sealed partial class EditorSession : ObservableObject
     public bool ResizeCanvas(CanvasMargins margins, IEnumerable<Core.Animation.AnimationClip> clips) =>
         CanvasResize.Apply(Character, clips, margins, Character.History);
 
-    private void OnCanvasSizeChanged(object? sender, EventArgs e)
+    private void OnCanvasSizeChanged(object? sender, CanvasShift shift)
     {
+        Reference.Shift(shift);
         CreateBitmaps(Character);
         OnPropertyChanged(nameof(CanvasSize));
         Refresh();
@@ -237,11 +238,12 @@ public sealed partial class EditorSession : ObservableObject
             PoseChange.Apply(CurrentPose, Character.History, p => p.Set(part.Name, part.ClampRotation(degrees)));
     }
 
-    /// <summary>Moves the active part (with its detail parts) in this direction's drawing order (undoable).</summary>
-    public bool MoveActiveDrawOrder(DrawOrderMove move) =>
-        !IsLocked(ActivePart) && DrawOrderEdit.Move(Character, ActivePart, Direction, move, Character.History);
+    /// <summary>Moves the active part (with its detail parts, and optionally the parts below it) in this direction's drawing order (undoable).</summary>
+    public bool MoveActiveDrawOrder(DrawOrderMove move, bool withChildren) =>
+        !IsLocked(ActivePart) && DrawOrderEdit.Move(Character, ActivePart, Direction, move, Character.History, withChildren);
 
-    public bool CanMoveActiveDrawOrder(DrawOrderMove move) => DrawOrderEdit.CanMove(Character, ActivePart, Direction, move);
+    public bool CanMoveActiveDrawOrder(DrawOrderMove move, bool withChildren) =>
+        DrawOrderEdit.CanMove(Character, ActivePart, Direction, move, withChildren);
 
     /// <summary>Parts as they are drawn now in this direction, back to front (the current pose's order changes included).</summary>
     public IReadOnlyList<Part> DrawnOrder =>
@@ -501,6 +503,9 @@ public sealed partial class EditorSession : ObservableObject
         var links = CustomParts.Add(Character, ActivePart, options);
         ActivePart = links[0];
     }
+
+    /// <summary>Renames the active added part's shown name (undoable).</summary>
+    public bool RenameActivePart(string label) => CustomParts.Rename(Character, ActivePart, label);
 
     /// <summary>True when the active part was added by the user and can be removed.</summary>
     public bool CanRemoveActivePart => CustomParts.CanRemove(ActivePart);

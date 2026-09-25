@@ -60,9 +60,11 @@ public sealed partial class PartsViewModel : Tool
     [ObservableProperty] private decimal? _limitMin;
     [ObservableProperty] private decimal? _limitMax;
     [ObservableProperty] private bool _isCustomPart;
+    [ObservableProperty] private string _customLabel = "";
     [ObservableProperty] private bool _canOrderForward;
     [ObservableProperty] private bool _canOrderBackward;
     [ObservableProperty] private bool _canReorder;
+    [ObservableProperty] private bool _orderWithChildren = true;
     [ObservableProperty] private string _drawOrderText = "";
     [ObservableProperty] private int _orderAnchorIndex;
     [ObservableProperty] private string _poseOrderText = "";
@@ -276,6 +278,9 @@ public sealed partial class PartsViewModel : Tool
     [RelayCommand]
     private void RemoveCustomPart() => Session.RemoveActivePart();
 
+    [RelayCommand]
+    private void RenameCustomPart() => Session.RenameActivePart(CustomLabel);
+
     /// <summary>This direction's parts as drawn now, front first (detail parts indented).</summary>
     public ObservableCollection<string> DrawOrderItems { get; } = [];
 
@@ -286,14 +291,16 @@ public sealed partial class PartsViewModel : Tool
 
     /// <summary>Parameter: a <see cref="DrawOrderMove"/> name.</summary>
     [RelayCommand]
-    private void MoveDrawOrder(string move) => Session.MoveActiveDrawOrder(Enum.Parse<DrawOrderMove>(move));
+    private void MoveDrawOrder(string move) => Session.MoveActiveDrawOrder(Enum.Parse<DrawOrderMove>(move), OrderWithChildren);
+
+    partial void OnOrderWithChildrenChanged(bool value) => SyncDrawOrder();
 
     /// <summary>Parameter: "Front" or "Behind" the chosen anchor, in the current pose only.</summary>
     [RelayCommand]
     private void SetPoseOrder(string where)
     {
         if (OrderAnchorIndex >= 0 && OrderAnchorIndex < _orderAnchorParts.Count)
-            Session.SetActivePoseOrder(new OrderOverride(_orderAnchorParts[OrderAnchorIndex].Name, where == "Front"));
+            Session.SetActivePoseOrder(OrderOverride.Create(_orderAnchorParts[OrderAnchorIndex].Name, where == "Front", OrderWithChildren));
     }
 
     [RelayCommand]
@@ -304,13 +311,16 @@ public sealed partial class PartsViewModel : Tool
         var part = Session.ActivePart;
         var drawn = Session.DrawnOrder;
         CanReorder = !part.IsDetail;
-        CanOrderForward = Session.CanMoveActiveDrawOrder(DrawOrderMove.Forward);
-        CanOrderBackward = Session.CanMoveActiveDrawOrder(DrawOrderMove.Backward);
+        CanOrderForward = Session.CanMoveActiveDrawOrder(DrawOrderMove.Forward, OrderWithChildren);
+        CanOrderBackward = Session.CanMoveActiveDrawOrder(DrawOrderMove.Backward, OrderWithChildren);
 
         var heads = drawn.Where(p => !p.IsDetail).ToList();
         var head = DrawOrderEdit.UnitHead(part);
-        int i = heads.IndexOf(head);
-        string behind = i > 0 ? heads[i - 1].Label : "없음", front = i >= 0 && i < heads.Count - 1 ? heads[i + 1].Label : "없음";
+        // neighbours outside the block that moves (the part, and the parts below it when they move along)
+        bool InBlock(Part p) => p == head || OrderWithChildren && IsBelow(p, head);
+        int first = heads.FindIndex(InBlock), last = heads.FindLastIndex(InBlock);
+        string behind = heads.Take(Math.Max(first, 0)).LastOrDefault(p => !InBlock(p))?.Label ?? "없음";
+        string front = last < 0 ? "없음" : heads.Skip(last + 1).FirstOrDefault(p => !InBlock(p))?.Label ?? "없음";
         DrawOrderText = part.IsDetail ? $"세부 파츠: 부모({head.Label})를 따라감" : $"바로 뒤: {behind}  ·  바로 앞: {front}";
 
         var items = drawn.Reverse().Select(p => (p == part ? "▶ " : "   ") + (p.IsDetail ? "   " : "") + p.Label).ToList();
@@ -339,7 +349,15 @@ public sealed partial class PartsViewModel : Tool
         else if (OrderAnchorIndex < 0 || OrderAnchorIndex >= _orderAnchorParts.Count)
             OrderAnchorIndex = 0;
         PoseOrderText = order is null ? "이 포즈: 방향 순서대로"
-            : $"이 포즈: {Session.Character.Find(order.Anchor)?.Label ?? order.Anchor} {(order.Front ? "앞" : "뒤")}";
+            : $"이 포즈: {Session.Character.Find(order.Anchor)?.Label ?? order.Anchor} {(order.Front ? "앞" : "뒤")}{(order.WithChildren ? " (아래 파츠 함께)" : "")}";
+    }
+
+    private static bool IsBelow(Part part, Part ancestor)
+    {
+        for (var p = part.Parent; p is not null; p = p.Parent)
+            if (p == ancestor)
+                return true;
+        return false;
     }
 
     [RelayCommand]
@@ -417,6 +435,7 @@ public sealed partial class PartsViewModel : Tool
         var detail = Session.ActivePartPosition;
         IsMovablePart = detail is not null;
         IsCustomPart = Session.CanRemoveActivePart;
+        CustomLabel = Session.ActivePart.Label;
         var sway = Session.ActivePart.Secondary;
         HasSecondary = sway is not null;
         SecondaryModeIndex = (int)(sway?.Mode ?? SecondaryMode.Deform);

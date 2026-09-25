@@ -32,14 +32,17 @@ public sealed class Character
     public int Width { get; private set; }
     public int Height { get; private set; }
 
-    /// <summary>Raised after <see cref="Width"/> or <see cref="Height"/> changed (see <see cref="CanvasResize"/>).</summary>
-    public event EventHandler? CanvasSizeChanged;
+    /// <summary>
+    /// Raised after <see cref="Width"/> or <see cref="Height"/> changed (see <see cref="CanvasResize"/>), with how
+    /// far the drawing moved on the canvas (things placed on the canvas, like reference pictures, follow it).
+    /// </summary>
+    public event EventHandler<CanvasShift>? CanvasSizeChanged;
 
-    internal void SetCanvasSize(int width, int height)
+    internal void SetCanvasSize(int width, int height, CanvasShift shift)
     {
         Width = width;
         Height = height;
-        CanvasSizeChanged?.Invoke(this, EventArgs.Empty);
+        CanvasSizeChanged?.Invoke(this, shift);
     }
     public Palette Palette { get; }
     public UndoHistory History { get; } = new();
@@ -107,6 +110,9 @@ public sealed class Character
         _parts.Insert(Math.Clamp(index ?? _parts.Count, 0, _parts.Count), part);
         PartsChanged?.Invoke(this, EventArgs.Empty);
     }
+
+    /// <summary>Tells views that part names or the part list changed.</summary>
+    internal void NotifyPartsChanged() => PartsChanged?.Invoke(this, EventArgs.Empty);
 
     /// <summary>Removes a part that has no children (never the root).</summary>
     internal void RemovePart(Part part)

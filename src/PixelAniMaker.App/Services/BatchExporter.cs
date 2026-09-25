@@ -35,6 +35,8 @@ public static class BatchExporter
                 project.ExportGif(gif);
                 log.WriteLine($"gif:   {gif}");
             }
+            if (project.EdgeWarning(allClips: true) is { } warning)
+                log.WriteLine($"warning: {warning}");
             if (frames)
             {
                 int count = project.ExportFrames(Path.Combine(folder, $"{name}.png"), allClips: true);

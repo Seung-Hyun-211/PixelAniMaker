@@ -101,6 +101,13 @@ public sealed class AnimationClip : INotifyPropertyChanged
 
     public IReadOnlyList<Keyframe> Keys(Direction direction) => [.. _tracks[direction.Source()].Values];
 
+    /// <summary>
+    /// Keys past the last frame, left over after the clip was shortened. They are kept (lengthening the clip
+    /// brings them back) but not played; see <see cref="KeysPastEndChange"/> to delete them.
+    /// </summary>
+    public IReadOnlyList<(Direction Direction, Keyframe Key)> KeysPastEnd =>
+        _tracks.SelectMany(t => t.Value.Values.Where(k => k.Frame >= FrameCount).Select(k => (t.Key, k))).ToList();
+
     /// <summary>True when any 3/4 track has keys or any 3/4 frame is touched up (the file then needs format 2).</summary>
     public bool HasThreeQuarterData =>
         DirectionExtensions.ThreeQuarterStored.Any(d => _tracks[d].Count > 0) || Touchups.Frames.Any(f => f.Direction.IsThreeQuarter());
@@ -236,5 +243,33 @@ public sealed class KeyframeChange(AnimationClip clip, Direction direction, int 
             return;
         var change = new KeyframeChange(clip, direction, frame, before, key);
         history.Do(change);
+    }
+}
+
+/// <summary>Undoable deletion of a clip's keys past its last frame (<see cref="AnimationClip.KeysPastEnd"/>).</summary>
+public sealed class KeysPastEndChange(AnimationClip clip, IReadOnlyList<(Direction Direction, Keyframe Key)> keys) : IUndoableAction
+{
+    public string Name => "범위 밖 키 지우기";
+
+    public void Undo()
+    {
+        foreach (var (direction, key) in keys)
+            clip.SetKey(direction, key);
+    }
+
+    public void Redo()
+    {
+        foreach (var (direction, key) in keys)
+            clip.RemoveKey(direction, key.Frame);
+    }
+
+    /// <summary>Deletes the keys past the end as one undo step; false when there are none.</summary>
+    public static bool Apply(AnimationClip clip, UndoHistory history)
+    {
+        var keys = clip.KeysPastEnd;
+        if (keys.Count == 0)
+            return false;
+        history.Do(new KeysPastEndChange(clip, keys));
+        return true;
     }
 }

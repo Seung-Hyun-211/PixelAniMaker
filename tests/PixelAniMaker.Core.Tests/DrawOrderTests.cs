@@ -40,6 +40,19 @@ public class DrawOrderTests
     }
 
     [Fact]
+    public void With_children_the_parts_below_move_too()
+    {
+        var c = Body();
+        Assert.True(DrawOrderEdit.Move(c, c.Find("chest")!, Direction.Front, DrawOrderMove.ToBack, c.History));
+        Assert.Equal(["chest", "bust", "pelvis", "head", "eye_r", "eye_l"], Order(c, Direction.Front));
+        c.History.Undo();
+        Assert.True(DrawOrderEdit.Move(c, c.Find("chest")!, Direction.Front, DrawOrderMove.ToBack, c.History, withChildren: true));
+        Assert.Equal(["chest", "bust", "head", "eye_r", "eye_l", "pelvis"], Order(c, Direction.Front));
+        // nothing but its own children in front of it: cannot go further forward with them
+        Assert.False(DrawOrderEdit.CanMove(c, c.Find("pelvis")!, Direction.Front, DrawOrderMove.Forward, withChildren: true));
+    }
+
+    [Fact]
     public void Ends_and_detail_parts_cannot_move()
     {
         var c = Body();
@@ -115,6 +128,27 @@ public class PoseDrawOrderTests
     }
 
     [Fact]
+    public void A_pose_order_can_take_the_parts_below_along_and_saves_that_only_when_used()
+    {
+        var c = Body();
+        var pose = PoseData.Rest with { Order = new Dictionary<string, OrderOverride> { ["chest"] = OrderOverride.Create("pelvis", false, true) } };
+        Assert.Equal(["chest", "head", "pelvis"], Drawn(c, pose));
+        pose = PoseData.Rest with { Order = new Dictionary<string, OrderOverride> { ["chest"] = OrderOverride.Create("head", true, true) } };
+        Assert.Equal(["pelvis", "chest", "head"], Drawn(c, pose));   // the anchor is one of its own children: ignored
+
+        var clip = new AnimationClip("c", 1);
+        clip.SetKey(Direction.Front, new Keyframe(0, PoseData.Rest with { Order = new Dictionary<string, OrderOverride>
+        {
+            ["chest"] = OrderOverride.Create("pelvis", false, true),
+            ["head"] = OrderOverride.Create("pelvis", true, false),
+        } }, Easing.Linear));
+        var json = AnimationJson.Serialize([clip]);
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(json, "\"children\": true"));
+        Assert.DoesNotContain("withChildren", json);
+        Assert.True(AnimationJson.Parse(json)[0].Evaluate(Direction.Front, 0).OrderOf("chest")!.WithChildren);
+    }
+
+    [Fact]
     public void Between_keys_the_earlier_key_order_holds_and_keys_save_it()
     {
         var clip = new AnimationClip("swing", 4);
@@ -128,5 +162,27 @@ public class PoseDrawOrderTests
         var loaded = AnimationJson.Parse(json)[0];
         Assert.Equal(new OrderOverride("head", true), loaded.Evaluate(Direction.Front, 0).OrderOf("pelvis"));
         Assert.DoesNotContain("\"order\"", AnimationJson.Serialize([new AnimationClip("plain", 2)]));
+    }
+}
+
+public class KeysPastEndTests
+{
+    [Fact]
+    public void Keys_past_the_end_are_listed_and_can_be_deleted_with_undo()
+    {
+        var clip = new AnimationClip("walk", 8);
+        clip.SetKey(Direction.Front, new Keyframe(6, PoseData.Rest, Easing.Linear));
+        clip.SetKey(Direction.Left, new Keyframe(7, PoseData.Rest, Easing.Linear));
+        clip.SetKey(Direction.Left, new Keyframe(2, PoseData.Rest, Easing.Linear));
+        clip.FrameCount = 4;
+        Assert.Equal(2, clip.KeysPastEnd.Count);
+
+        var history = new PixelAniMaker.Core.History.UndoHistory();
+        Assert.True(KeysPastEndChange.Apply(clip, history));
+        Assert.Empty(clip.KeysPastEnd);
+        Assert.Single(clip.Keys(Direction.Left));
+        Assert.False(KeysPastEndChange.Apply(clip, history));
+        history.Undo();
+        Assert.Equal(2, clip.KeysPastEnd.Count);
     }
 }

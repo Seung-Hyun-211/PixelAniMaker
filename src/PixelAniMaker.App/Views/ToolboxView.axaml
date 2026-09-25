@@ -29,7 +29,7 @@
       </ListBox.ItemTemplate>
     </ListBox>
     <TextBlock Text="도구" FontSize="11" Foreground="#999999" />
-    <ListBox ItemsSource="{Binding Tools}" SelectedItem="{Binding Session.CurrentTool}">
+    <ListBox ItemsSource="{Binding Tools}" SelectedItem="{Binding Session.CurrentTool}" Tapped="OnToolTapped">
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="svc:ToolItem">
           <TextBlock>

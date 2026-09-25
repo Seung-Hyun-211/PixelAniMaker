@@ -28,6 +28,11 @@
         <NumericUpDown Value="{Binding Animation.CurrentClip.Fps, FallbackValue=10}" Minimum="1" Maximum="60" Increment="1" FormatString="0" Width="100" />
       </StackPanel>
       <CheckBox Content="반복" IsChecked="{Binding Animation.CurrentClip.Loop, FallbackValue=False}" />
+      <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasKeysPastEnd}"
+                  ToolTip.Tip="프레임 수를 줄여서 마지막 프레임 뒤에 남은 키입니다. 재생·내보내기에는 쓰이지 않고, 프레임을 다시 늘리면 돌아옵니다.">
+        <TextBlock Text="{Binding KeysPastEndText}" VerticalAlignment="Center" Foreground="#999999" />
+        <Button Content="범위 밖 키 지우기" Command="{Binding ClearKeysPastEndCommand}" />
+      </StackPanel>
     </WrapPanel>
 
     <!-- key row -->
@@ -70,6 +75,8 @@
               ToolTip.Tip="현재 방향·프레임의 손본 픽셀을 지웁니다 (되돌리기 가능)" />
       <ToggleButton Content="미리보기 재생" IsChecked="{Binding Animation.IsPlaying}" />
       <TextBlock Text="{Binding KeyStatus}" VerticalAlignment="Center" Foreground="#E0B060" Margin="10,0,0,0" />
+      <TextBlock Text="{Binding EdgeHint}" VerticalAlignment="Center" Foreground="#E08080" Margin="10,0,0,0"
+                 ToolTip.Tip="이 프레임의 그림이 캔버스 끝에 닿아 내보낼 때 잘릴 수 있습니다." />
     </WrapPanel>
 
     <!-- frame bar -->

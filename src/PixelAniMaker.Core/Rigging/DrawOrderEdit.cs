@@ -29,11 +29,22 @@ public static class DrawOrderEdit
         return part;
     }
 
-    /// <summary>The parts that move with <paramref name="part"/>'s unit, in drawing order.</summary>
-    private static List<Part> Unit(IReadOnlyList<Part> sequence, Part part)
+    /// <summary>
+    /// The parts that move with <paramref name="part"/>'s unit, in drawing order: the part and its detail parts,
+    /// plus every part below it when <paramref name="withChildren"/> (a whole arm from the upper arm).
+    /// </summary>
+    private static List<Part> Unit(IReadOnlyList<Part> sequence, Part part, bool withChildren = false)
     {
         var head = UnitHead(part);
-        return sequence.Where(p => UnitHead(p) == head).ToList();
+        return sequence.Where(p => UnitHead(p) == head || withChildren && IsBelow(p, head)).ToList();
+    }
+
+    private static bool IsBelow(Part part, Part ancestor)
+    {
+        for (var p = part.Parent; p is not null; p = p.Parent)
+            if (p == ancestor)
+                return true;
+        return false;
     }
 
     /// <summary>Parts back to front where <paramref name="direction"/> takes its order from (the source of a mirrored direction).</summary>
@@ -41,9 +52,9 @@ public static class DrawOrderEdit
         character.DrawOrder(direction.Source()).ToList();
 
     /// <summary>The sequence after moving <paramref name="part"/>'s unit, or null when it cannot move that way.</summary>
-    public static IReadOnlyList<Part>? Moved(IReadOnlyList<Part> sequence, Part part, DrawOrderMove move)
+    public static IReadOnlyList<Part>? Moved(IReadOnlyList<Part> sequence, Part part, DrawOrderMove move, bool withChildren = false)
     {
-        var unit = Unit(sequence, part);
+        var unit = Unit(sequence, part, withChildren);
         var head = unit.FirstOrDefault(p => p == UnitHead(part));
         if (head is null)
             return null;
@@ -94,12 +105,11 @@ public static class DrawOrderEdit
         var result = sequence.ToList();
         foreach (var (name, order) in overrides.OrderBy(o => o.Key, StringComparer.Ordinal))
         {
-            if (character.Find(name) is not { IsDetail: false } part || character.Find(order.Anchor) is not { } anchor
-                || UnitHead(anchor) == part)
+            if (character.Find(name) is not { IsDetail: false } part || character.Find(order.Anchor) is not { } anchor)
                 continue;
             var anchorHead = UnitHead(anchor);
-            var unit = Unit(result, part);
-            if (unit.Count == 0 || !result.Any(p => UnitHead(p) == anchorHead))
+            var unit = Unit(result, part, order.WithChildren);
+            if (unit.Count == 0 || unit.Contains(anchorHead) || !result.Any(p => UnitHead(p) == anchorHead))
                 continue;
             result.RemoveAll(unit.Contains);
             int first = result.FindIndex(p => UnitHead(p) == anchorHead), last = result.FindLastIndex(p => UnitHead(p) == anchorHead);
@@ -108,13 +118,17 @@ public static class DrawOrderEdit
         return result;
     }
 
-    public static bool CanMove(Character character, Part part, Direction direction, DrawOrderMove move) =>
-        !part.IsDetail && Moved(Sequence(character, direction), part, move) is not null;
+    public static bool CanMove(Character character, Part part, Direction direction, DrawOrderMove move, bool withChildren = false) =>
+        !part.IsDetail && Moved(Sequence(character, direction), part, move, withChildren) is not null;
 
-    /// <summary>Moves the part (with its detail parts) in the direction's drawing order as one undo step.</summary>
-    public static bool Move(Character character, Part part, Direction direction, DrawOrderMove move, UndoHistory history)
+    /// <summary>
+    /// Moves the part (with its detail parts, and the parts below it when <paramref name="withChildren"/>) in
+    /// the direction's drawing order as one undo step.
+    /// </summary>
+    public static bool Move(Character character, Part part, Direction direction, DrawOrderMove move, UndoHistory history,
+        bool withChildren = false)
     {
-        if (part.IsDetail || Moved(Sequence(character, direction), part, move) is not { } sequence)
+        if (part.IsDetail || Moved(Sequence(character, direction), part, move, withChildren) is not { } sequence)
             return false;
         history.Do(new DrawOrderChange(Renumber(character, direction.Source(), sequence)));
         return true;

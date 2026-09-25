@@ -4,6 +4,19 @@ using PixelAniMaker.Core.History;
 
 namespace PixelAniMaker.Core.Rigging;
 
+/// <summary>
+/// How far the drawing moved on the canvas after a resize: <paramref name="X"/> in normal directions,
+/// <paramref name="MirroredX"/> in mirrored ones (they flip the whole frame), <paramref name="Y"/> in all.
+/// </summary>
+public sealed class CanvasShift(int x, int mirroredX, int y) : EventArgs
+{
+    public int X { get; } = x;
+    public int MirroredX { get; } = mirroredX;
+    public int Y { get; } = y;
+
+    public int XFor(Direction direction) => direction.IsMirrored() ? MirroredX : X;
+}
+
 /// <summary>Pixels added (negative: removed) on each side of the canvas.</summary>
 public sealed record CanvasMargins(int Left, int Top, int Right, int Bottom)
 {
@@ -61,18 +74,19 @@ public sealed class CanvasResizeChange(Character character, IReadOnlyList<Animat
     private void Shift(int sign)
     {
         // mirrored directions are drawn by flipping the whole frame, so their content moves by the right margin
-        var source = new Vector2(margins.Left, margins.Top) * sign;
+        var shift = new CanvasShift(margins.Left * sign, margins.Right * sign, margins.Top * sign);
+        var source = new Vector2(shift.X, shift.Y);
         foreach (var view in character.Parts.SelectMany(p => DirectionExtensions.Every.Where(p.HasOwnView).Select(p.View)).Distinct())
             view.MoveBy(source);
         foreach (var clip in clips)
             foreach (var (direction, frame) in clip.Touchups.Frames.ToList())
             {
-                int dx = (direction.IsMirrored() ? margins.Right : margins.Left) * sign, dy = margins.Top * sign;
+                int dx = shift.XFor(direction), dy = shift.Y;
                 var moved = new PixelOverrides(clip.Touchups.Get(direction, frame).Select(kv =>
                     KeyValuePair.Create((kv.Key.X + dx, kv.Key.Y + dy), kv.Value)));
                 clip.Touchups.Set(direction, frame, moved);
             }
         int w = character.Width + (margins.Left + margins.Right) * sign, h = character.Height + (margins.Top + margins.Bottom) * sign;
-        character.SetCanvasSize(w, h);
+        character.SetCanvasSize(w, h, shift);
     }
 }

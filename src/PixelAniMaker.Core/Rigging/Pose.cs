@@ -2,8 +2,18 @@ using System.Numerics;
 
 namespace PixelAniMaker.Core.Rigging;
 
-/// <summary>In this pose, draw the part (with its detail parts) just in front of or behind <paramref name="Anchor"/>.</summary>
-public sealed record OrderOverride(string Anchor, bool Front);
+/// <summary>
+/// In this pose, draw the part (with its detail parts, and the parts below it when <paramref name="Children"/>)
+/// just in front of or behind <paramref name="Anchor"/>. <paramref name="Children"/> is null when false, so
+/// saved keys only carry it when it is used.
+/// </summary>
+public sealed record OrderOverride(string Anchor, bool Front, bool? Children = null)
+{
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool WithChildren => Children == true;
+
+    public static OrderOverride Create(string anchor, bool front, bool withChildren) => new(anchor, front, withChildren ? true : null);
+}
 
 /// <summary>
 /// An immutable pose: joint rotations (degrees, clockwise on screen) plus a whole-body offset in pixels,

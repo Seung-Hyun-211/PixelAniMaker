@@ -66,6 +66,16 @@ public sealed partial class ReferenceLayer : ObservableObject
         NotifyCurrentChanged();
     }
 
+    /// <summary>Moves every direction's picture with the drawing after a canvas resize.</summary>
+    public void Shift(CanvasShift shift)
+    {
+        foreach (var (direction, image) in _images)
+        {
+            image.X += shift.XFor(direction);
+            image.Y += shift.Y;
+        }
+    }
+
     public void Clear()
     {
         if (!_images.Remove(Direction, out var old))

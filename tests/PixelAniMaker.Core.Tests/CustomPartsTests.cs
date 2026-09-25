@@ -152,3 +152,30 @@ public class CustomPartsTests
         Assert.Contains(composed.Owners.ToArray(), o => o == c.IndexOf(links[2]));
     }
 }
+
+public class CustomPartRenameTests
+{
+    [Fact]
+    public void Added_parts_can_be_renamed_with_undo_and_the_name_is_saved()
+    {
+        var c = BustPartTests.Body();
+        var tail = CustomParts.Add(c, c.Find("pelvis")!, new CustomPartOptions(CustomPartKind.Tail, CustomPlacement.BackSide, 1))[0];
+        int changed = 0;
+        c.PartsChanged += (_, _) => changed++;
+
+        Assert.True(CustomParts.Rename(c, tail, "  여우 꼬리  "));
+        Assert.Equal("여우 꼬리", tail.Label);
+        Assert.Equal("tail1", tail.Name);                    // file names stay
+        Assert.Equal(1, changed);
+        Assert.False(CustomParts.Rename(c, tail, "   "));
+        Assert.False(CustomParts.Rename(c, c.Find("head")!, "머리2"));
+        Assert.Equal(new string('가', CustomParts.MaxLabelLength), (CustomParts.Rename(c, tail, new string('가', 99)), tail.Label).Item2);
+        c.History.Undo();
+        Assert.Equal("여우 꼬리", tail.Label);
+
+        using var ms = new MemoryStream();
+        PixelAniMaker.Core.Project.ProjectFile.Save(new PixelAniMaker.Core.Project.ProjectData(c, []), ms, new RawCodec());
+        ms.Position = 0;
+        Assert.Equal("여우 꼬리", PixelAniMaker.Core.Project.ProjectFile.Load(ms, new RawCodec()).Character.Find("tail1")!.Label);
+    }
+}

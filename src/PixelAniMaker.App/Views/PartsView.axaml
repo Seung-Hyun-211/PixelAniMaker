@@ -37,6 +37,8 @@
       <StackPanel Spacing="4" IsEnabled="{Binding !Session.IsActivePartLocked}">
         <TextBlock Text="그리는 순서 (이 방향)" FontSize="11" Foreground="#999999"
                    ToolTip.Tip="겹치는 파츠 중 이 파츠를 앞이나 뒤에 그립니다. 이 방향 전체에 적용되고(동작의 모든 프레임), 세부 파츠(눈·가슴 볼륨)는 함께 옮겨집니다. 우측면처럼 반전되는 방향은 원래 방향의 순서를 바꿉니다. 되돌리기가 되고, 프로젝트에 저장됩니다." />
+        <CheckBox Content="아래 파츠도 함께 (상완 → 전완·손)" IsChecked="{Binding OrderWithChildren}" IsEnabled="{Binding CanReorder}"
+                  ToolTip.Tip="켜면 이 파츠에 달린 아래 파츠(뼈대의 자식)도 한 덩어리로 옮깁니다. 팔·다리 전체를 몸 앞뒤로 보낼 때. 이 방향 순서와 이 포즈 순서 모두에 적용됩니다." />
         <StackPanel Orientation="Horizontal" Spacing="4" IsEnabled="{Binding CanReorder}">
           <Button Content="맨 뒤" Command="{Binding MoveDrawOrderCommand}" CommandParameter="ToBack" IsEnabled="{Binding CanOrderBackward}" />
           <Button Content="뒤로" Command="{Binding MoveDrawOrderCommand}" CommandParameter="Backward" IsEnabled="{Binding CanOrderBackward}" />
@@ -192,6 +194,11 @@
       <StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="모든 마디를 합친 길이 (px). 장신구는 지름">
         <TextBlock Text="길이" VerticalAlignment="Center" Width="48" />
         <NumericUpDown Value="{Binding CustomLength}" Minimum="4" Maximum="512" Increment="1" FormatString="0" Width="130" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsCustomPart}"
+                  ToolTip.Tip="추가한 파츠의 표시 이름 (파일 이름은 그대로). 되돌리기가 되고, 프로젝트에 저장됩니다.">
+        <TextBox Text="{Binding CustomLabel}" Width="140" MaxLength="40" />
+        <Button Content="이름 바꾸기" Command="{Binding RenameCustomPartCommand}" />
       </StackPanel>
       <StackPanel Orientation="Horizontal" Spacing="6">
         <Button Content="파츠 추가" Command="{Binding AddCustomPartCommand}" />

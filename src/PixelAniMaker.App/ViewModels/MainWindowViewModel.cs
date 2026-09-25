@@ -238,11 +238,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     [RelayCommand]
     private Task ExportCurrentSheet() => ExportAsync("현재 동작 시트 내보내기", ProjectService.PngType,
-        $"{Project.DocumentName}_{Animation.CurrentClip?.Name}", path => Project.ExportSheet(path, allClips: false));
+        $"{Project.DocumentName}_{Animation.CurrentClip?.Name}", path => Project.ExportSheet(path, allClips: false), allClips: false);
 
     [RelayCommand]
     private Task ExportAllSheet() => ExportAsync("전체 동작 시트 내보내기", ProjectService.PngType,
-        $"{Project.DocumentName}_all", path => Project.ExportSheet(path, allClips: true));
+        $"{Project.DocumentName}_all", path => Project.ExportSheet(path, allClips: true), allClips: true);
 
     [RelayCommand]
     private Task ExportCurrentFrames() => ExportFramesAsync(allClips: false);
@@ -258,12 +258,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         int count = 0;
         if (await TryAsync(() => count = Project.ExportFrames(path, allClips), "내보내지 못했습니다"))
-            await Dialogs.ShowMessageAsync($"PNG {count}개를 저장했습니다.\n{Path.GetDirectoryName(path)}");
+            await Dialogs.ShowMessageAsync($"PNG {count}개를 저장했습니다.\n{Path.GetDirectoryName(path)}"
+                + (Project.EdgeWarning(allClips) is { } warning ? "\n\n" + warning : ""));
     }
 
     [RelayCommand]
     private Task ExportGif() => ExportAsync("GIF 내보내기", ProjectService.GifType,
-        $"{Project.DocumentName}_{Animation.CurrentClip?.Name}", Project.ExportGif);
+        $"{Project.DocumentName}_{Animation.CurrentClip?.Name}", Project.ExportGif, allClips: false);
 
     /// <summary>
     /// First thing after the window opens: offer to recover work left by a crash, otherwise open the
@@ -405,10 +406,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
             PaletteSwap.Merge(palette, character.History, colors);
     }
 
-    private async Task ExportAsync(string title, FileType type, string suggestedName, Action<string> export)
+    /// <param name="allClips">Set for sheet and GIF exports: after writing, warns when their frames touch the canvas edge.</param>
+    private async Task ExportAsync(string title, FileType type, string suggestedName, Action<string> export, bool? allClips = null)
     {
-        if (Dialogs is not null && await Dialogs.PickSaveFileAsync(title, type, suggestedName) is { } path)
-            await TryAsync(() => export(path), "내보내지 못했습니다");
+        if (Dialogs is not null && await Dialogs.PickSaveFileAsync(title, type, suggestedName) is { } path
+            && await TryAsync(() => export(path), "내보내지 못했습니다")
+            && allClips is { } all && Project.EdgeWarning(all) is { } warning)
+            await Dialogs.ShowMessageAsync(warning);
     }
 
     private async Task<bool> TryAsync(Action action, string failure)
