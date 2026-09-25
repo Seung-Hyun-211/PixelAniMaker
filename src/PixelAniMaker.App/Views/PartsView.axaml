@@ -64,7 +64,7 @@
         </StackPanel>
       </StackPanel>
       <StackPanel Spacing="4" IsVisible="{Binding IsDetailPart}" IsEnabled="{Binding !Session.IsActivePartLocked}"
-                  ToolTip.Tip="이 방향에서 세부 파츠(눈·가슴 볼륨)의 위치 (관절 = 파츠 가운데, 캔버스 px). 방향마다 따로 정하고, 되돌리기가 됩니다.">
+                  ToolTip.Tip="이 방향에서 세부 파츠(눈·가슴 볼륨)나 추가한 파츠의 위치 (관절, 캔버스 px). 방향마다 따로 정하고, 되돌리기가 됩니다. 추가한 파츠는 아래 마디가 함께 옮겨집니다.">
         <StackPanel Orientation="Horizontal" Spacing="6">
           <TextBlock Text="위치 X" VerticalAlignment="Center" Width="48" />
           <NumericUpDown Value="{Binding DetailX}" Increment="1" FormatString="0" Minimum="-512" Maximum="512" Width="130" />
@@ -145,6 +145,30 @@
         <Button Content="대" Command="{Binding AddBustCommand}" CommandParameter="Large" />
       </StackPanel>
       <Button Content="가슴 볼륨 삭제" Command="{Binding RemoveBustCommand}" IsVisible="{Binding Session.HasBust}" />
+      <TextBlock Text="파츠 추가 (고른 파츠에 붙음)" FontSize="11" Foreground="#999999" TextWrapping="Wrap" Margin="0,6,0,0"
+                 ToolTip.Tip="머리카락 가닥·꼬리·망토 자락·장신구를 지금 고른 파츠의 자식으로 추가합니다. 방향마다 부모의 주 색으로 간단한 시작 그림이 생기고, 그 위에 다시 그립니다. 마디가 여럿이면 마디마다 파츠가 생기고 흔들림(회전형)이 마디마다 늦게 따라갑니다. 되돌리기가 되고, 프로젝트에 저장됩니다." />
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <TextBlock Text="종류" VerticalAlignment="Center" Width="48" />
+        <ComboBox ItemsSource="{Binding CustomKinds}" SelectedIndex="{Binding CustomKindIndex}" Width="130" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6"
+                  ToolTip.Tip="부모 앞·뒤: 모든 방향에서 부모 바로 앞이나 뒤에 그립니다. 등 쪽: 정면·측면에서는 맨 뒤, 후면에서는 맨 앞 (망토, 꼬리, 뒷머리).">
+        <TextBlock Text="놓는 곳" VerticalAlignment="Center" Width="48" />
+        <ComboBox ItemsSource="{Binding CustomPlacements}" SelectedIndex="{Binding CustomPlacementIndex}" Width="130" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6" IsEnabled="{Binding CustomHasSegments}">
+        <TextBlock Text="마디" VerticalAlignment="Center" Width="48" />
+        <NumericUpDown Value="{Binding CustomSegments}" Minimum="1" Maximum="4" Increment="1" FormatString="0" Width="130" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="모든 마디를 합친 길이 (px). 장신구는 지름">
+        <TextBlock Text="길이" VerticalAlignment="Center" Width="48" />
+        <NumericUpDown Value="{Binding CustomLength}" Minimum="4" Maximum="512" Increment="1" FormatString="0" Width="130" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <Button Content="파츠 추가" Command="{Binding AddCustomPartCommand}" />
+        <Button Content="이 파츠 삭제" Command="{Binding RemoveCustomPartCommand}" IsVisible="{Binding IsCustomPart}"
+                ToolTip.Tip="추가한 파츠와 그 아래 마디를 지웁니다 (템플릿 파츠는 지울 수 없음). 되돌리기가 됩니다." />
+      </StackPanel>
     </StackPanel>
     </ScrollViewer>
     <GridSplitter Grid.Row="1" ResizeDirection="Rows" />

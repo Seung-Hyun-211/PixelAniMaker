@@ -59,6 +59,11 @@ public sealed partial class PartsViewModel : Tool
     [ObservableProperty] private bool _hasLimit;
     [ObservableProperty] private decimal? _limitMin;
     [ObservableProperty] private decimal? _limitMax;
+    [ObservableProperty] private bool _isCustomPart;
+    [ObservableProperty] private int _customKindIndex;
+    [ObservableProperty] private int _customPlacementIndex = (int)CustomParts.DefaultPlacement(CustomPartKind.Hair);
+    [ObservableProperty] private decimal? _customSegments = CustomParts.DefaultSegments(CustomPartKind.Hair);
+    [ObservableProperty] private decimal? _customLength;
 
     public PartsViewModel(EditorSession session)
     {
@@ -226,6 +231,34 @@ public sealed partial class PartsViewModel : Tool
     [RelayCommand]
     private void RemoveBust() => Session.RemoveBust();
 
+    /// <summary>Choices for <see cref="CustomKindIndex"/>, in <see cref="CustomPartKind"/> order.</summary>
+    public IReadOnlyList<string> CustomKinds { get; } = ["머리카락 가닥", "꼬리", "망토 자락", "장신구"];
+
+    /// <summary>Choices for <see cref="CustomPlacementIndex"/>, in <see cref="CustomPlacement"/> order.</summary>
+    public IReadOnlyList<string> CustomPlacements { get; } = ["부모 앞", "부모 뒤", "등 쪽"];
+
+    private CustomPartKind CustomKind => (CustomPartKind)Math.Clamp(CustomKindIndex, 0, 3);
+
+    /// <summary>Accessories are one piece.</summary>
+    public bool CustomHasSegments => CustomKind != CustomPartKind.Accessory;
+
+    /// <summary>A new kind brings its own placement, links and length.</summary>
+    partial void OnCustomKindIndexChanged(int value)
+    {
+        CustomPlacementIndex = (int)CustomParts.DefaultPlacement(CustomKind);
+        CustomSegments = CustomParts.DefaultSegments(CustomKind);
+        CustomLength = CustomParts.DefaultLength(CustomKind, Session.Character.Height);
+        OnPropertyChanged(nameof(CustomHasSegments));
+    }
+
+    [RelayCommand]
+    private void AddCustomPart() => Session.AddCustomPart(new CustomPartOptions(CustomKind,
+        (CustomPlacement)Math.Clamp(CustomPlacementIndex, 0, 2), (int)(CustomSegments ?? 1),
+        CustomLength is { } length ? (int)length : null));
+
+    [RelayCommand]
+    private void RemoveCustomPart() => Session.RemoveActivePart();
+
     [RelayCommand]
     private void ResetPose() => Session.ResetPose();
 
@@ -272,6 +305,7 @@ public sealed partial class PartsViewModel : Tool
         _character = Session.Character;
         _character.PoseChanged += OnPoseChanged;
 
+        CustomLength = CustomParts.DefaultLength(CustomKind, Session.Character.Height);
         Items.Clear();
         foreach (var part in Session.Character.Hierarchy())
             Items.Add(new PartItem(Session, part));
@@ -299,6 +333,7 @@ public sealed partial class PartsViewModel : Tool
         OwnRight = Session.Direction.IsMirrored() && Session.ActivePart.HasOwnView(Session.Direction);
         var detail = Session.ActiveDetailPosition;
         IsDetailPart = detail is not null;
+        IsCustomPart = Session.CanRemoveActivePart;
         var sway = Session.ActivePart.Secondary;
         HasSecondary = sway is not null;
         SecondaryModeIndex = (int)(sway?.Mode ?? SecondaryMode.Deform);

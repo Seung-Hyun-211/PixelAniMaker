@@ -85,13 +85,16 @@ public sealed class Character
 
     public Part? Find(string name) => Parts.FirstOrDefault(p => p.Name == name);
 
-    /// <summary>Adds <paramref name="part"/> as the last child of <paramref name="parent"/>, at the end of <see cref="Parts"/>.</summary>
-    internal void AddPart(Part part, Part parent)
+    /// <summary>
+    /// Adds <paramref name="part"/> as the last child of <paramref name="parent"/>, at the end of <see cref="Parts"/>
+    /// or at <paramref name="index"/> (to put a removed part back where it was: the list order breaks draw-order ties).
+    /// </summary>
+    internal void AddPart(Part part, Part parent, int? index = null)
     {
         if (Find(part.Name) is not null)
             throw new InvalidOperationException($"There is already a part named '{part.Name}'.");
         part.AttachTo(parent);
-        _parts.Add(part);
+        _parts.Insert(Math.Clamp(index ?? _parts.Count, 0, _parts.Count), part);
         PartsChanged?.Invoke(this, EventArgs.Empty);
     }
 

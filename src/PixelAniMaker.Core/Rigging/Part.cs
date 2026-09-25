@@ -91,6 +91,12 @@ public sealed class Part
     /// </summary>
     public bool IsDetail { get; init; }
 
+    /// <summary>A part the user added (hair strand, tail, cape …); only these can be removed again.</summary>
+    public bool IsCustom { get; init; }
+
+    /// <summary>Detail and added parts can be moved per direction (image and joint together).</summary>
+    public bool IsMovable => IsDetail || IsCustom;
+
     /// <summary>Secondary motion (sway) added when frames are made (null = none). The same in every direction.</summary>
     public Animation.SecondarySettings? Secondary { get; internal set; }
 

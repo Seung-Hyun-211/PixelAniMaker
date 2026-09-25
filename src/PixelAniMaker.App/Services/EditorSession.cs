@@ -457,13 +457,31 @@ public sealed partial class EditorSession : ObservableObject
 
     public void RemoveBust() => BustPart.Remove(Character);
 
-    /// <summary>Joint of the active part in display coordinates when it is a detail part (eye, bust), else null.</summary>
-    public Vector2? ActiveDetailPosition => ActivePart.IsDetail ? FromSource(ActivePart.View(Direction).RestPivot) : null;
+    /// <summary>Adds a part (all its links) under the active part (undoable) and selects its first link to draw on.</summary>
+    public void AddCustomPart(CustomPartOptions options)
+    {
+        var links = CustomParts.Add(Character, ActivePart, options);
+        ActivePart = links[0];
+    }
 
-    /// <summary>Moves the active detail part so its joint lands on <paramref name="display"/> (whole pixels, undoable).</summary>
+    /// <summary>True when the active part was added by the user and can be removed.</summary>
+    public bool CanRemoveActivePart => CustomParts.CanRemove(ActivePart);
+
+    /// <summary>Removes the active added part and the links under it (undoable); selects its parent.</summary>
+    public void RemoveActivePart()
+    {
+        var parent = ActivePart.Parent;
+        if (CustomParts.Remove(Character, ActivePart) && parent is not null)
+            ActivePart = parent;
+    }
+
+    /// <summary>Joint of the active part in display coordinates when it can be moved (eye, bust, added part), else null.</summary>
+    public Vector2? ActiveDetailPosition => ActivePart.IsMovable ? FromSource(ActivePart.View(Direction).RestPivot) : null;
+
+    /// <summary>Moves the active movable part so its joint lands on <paramref name="display"/> (whole pixels, undoable).</summary>
     public void MoveActiveDetailTo(Vector2 display)
     {
-        if (!ActivePart.IsDetail || IsLocked(ActivePart))
+        if (!ActivePart.IsMovable || IsLocked(ActivePart))
             return;
         DetailMove.Apply(ActivePart, Direction, FromSource(display) - ActivePart.View(Direction).RestPivot, Character.History);
     }
