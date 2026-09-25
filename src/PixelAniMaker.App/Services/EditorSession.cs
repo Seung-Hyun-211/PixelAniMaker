@@ -139,12 +139,18 @@ public sealed partial class EditorSession : ObservableObject
         Zoom = ZoomSteps[Math.Clamp(i + steps, 0, ZoomSteps.Length - 1)];
     }
 
-    /// <summary>Rotates a joint in the current direction as one undoable step (not for locked parts).</summary>
+    /// <summary>
+    /// Rotates a joint in the current direction as one undoable step, within the part's rotation limit
+    /// (not for locked parts).
+    /// </summary>
     public void SetRotation(Part part, double degrees)
     {
         if (!IsLocked(part))
-            PoseChange.Apply(CurrentPose, Character.History, p => p.Set(part.Name, degrees));
+            PoseChange.Apply(CurrentPose, Character.History, p => p.Set(part.Name, part.ClampRotation(degrees)));
     }
+
+    /// <summary>Sets or (null) removes the active part's allowed rotation, as one undoable step.</summary>
+    public void SetActiveRotationLimit(RotationLimit? limit) => RotationLimitChange.Apply(ActivePart, Character.History, limit);
 
     // ------------------------------------------------------------------ hide / lock (editing aids, not saved)
 

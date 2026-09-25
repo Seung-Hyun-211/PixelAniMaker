@@ -49,6 +49,9 @@ public sealed partial class PartsViewModel : Tool
     [ObservableProperty] private bool _isDetailPart;
     [ObservableProperty] private decimal? _detailX;
     [ObservableProperty] private decimal? _detailY;
+    [ObservableProperty] private bool _hasLimit;
+    [ObservableProperty] private decimal? _limitMin;
+    [ObservableProperty] private decimal? _limitMax;
 
     public PartsViewModel(EditorSession session)
     {
@@ -112,7 +115,31 @@ public sealed partial class PartsViewModel : Tool
     partial void OnRotationChanged(decimal? value)
     {
         if (!_syncing && value is { } degrees)
+        {
             Session.SetRotation(Session.ActivePart, (double)degrees);
+            // show the clamped angle even when the pose did not change; posted, because the control
+            // ignores a new value while it is still handing over the typed one
+            Avalonia.Threading.Dispatcher.UIThread.Post(Sync);
+        }
+    }
+
+    /// <summary>Turning the limit on starts from ±90°, widened to include the current rotation.</summary>
+    partial void OnHasLimitChanged(bool value)
+    {
+        if (_syncing)
+            return;
+        double current = Session.CurrentPose.Get(Session.ActivePart.Name);
+        Session.SetActiveRotationLimit(value ? new RotationLimit(Math.Min(-90, current), Math.Max(90, current)) : null);
+    }
+
+    partial void OnLimitMinChanged(decimal? value) => ApplyLimit();
+
+    partial void OnLimitMaxChanged(decimal? value) => ApplyLimit();
+
+    private void ApplyLimit()
+    {
+        if (!_syncing && HasLimit && LimitMin is { } min && LimitMax is { } max)
+            Session.SetActiveRotationLimit(new RotationLimit((double)min, (double)max));
     }
 
     partial void OnOwnRightChanged(bool value)
@@ -223,6 +250,10 @@ public sealed partial class PartsViewModel : Tool
         OwnRight = Session.Direction.IsMirrored() && Session.ActivePart.HasOwnView(Session.Direction);
         var detail = Session.ActiveDetailPosition;
         IsDetailPart = detail is not null;
+        var limit = Session.ActivePart.Limit;
+        HasLimit = limit is not null;
+        LimitMin = limit is { } l ? (decimal)l.Min : null;
+        LimitMax = limit is { } m ? (decimal)m.Max : null;
         DetailX = detail is { } d ? (decimal)Math.Round(d.X, 1) : null;
         DetailY = detail is { } e ? (decimal)Math.Round(e.Y, 1) : null;
         UpdateVariantStatus();

@@ -82,7 +82,8 @@ internal sealed class DrawInteraction(EditorSession session) : ICanvasInteractio
 /// <summary>
 /// Picks the part under the cursor and rotates it around its joint while dragging. With Alt, or when
 /// nothing is under the cursor, rotates the selected part (for parts hidden behind others).
-/// Shift snaps to 15°. The whole drag is one undo step. A locked part is selected but not rotated.
+/// Shift snaps to 15°. The whole drag is one undo step. A locked part is selected but not rotated, and
+/// a part with a rotation limit stops at its ends.
 /// </summary>
 internal sealed class PoseInteraction(EditorSession session) : ICanvasInteraction
 {
@@ -115,7 +116,7 @@ internal sealed class PoseInteraction(EditorSession session) : ICanvasInteractio
     public void Move(CanvasInput input)
     {
         if (_part is not null)
-            session.CurrentPose.Set(_part.Name, Rotation(input.Point, input.Snap));
+            session.CurrentPose.Set(_part.Name, _part.ClampRotation(Rotation(input.Point, input.Snap)));
     }
 
     public void End()

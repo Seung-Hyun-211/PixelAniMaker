@@ -14,6 +14,20 @@
                        FormatString="0.#" Width="120" />
         <TextBlock Text="°" VerticalAlignment="Center" />
       </StackPanel>
+      <StackPanel Spacing="4" IsEnabled="{Binding !Session.IsActivePartLocked}"
+                  ToolTip.Tip="이 파츠가 돌아갈 수 있는 각도 (모든 방향 공통). 캔버스에서 돌리거나 회전 칸에 넣을 때 이 범위 끝에서 멈춥니다. 이미 저장한 키는 바뀌지 않습니다. 되돌리기가 되고, 프로젝트에 저장됩니다.">
+        <CheckBox Content="회전 범위 제한" IsChecked="{Binding HasLimit}" />
+        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasLimit}">
+          <TextBlock Text="최소" VerticalAlignment="Center" Width="32" />
+          <NumericUpDown Value="{Binding LimitMin}" Minimum="-180" Maximum="180" Increment="5" FormatString="0.#" Width="130" />
+          <TextBlock Text="°" VerticalAlignment="Center" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasLimit}">
+          <TextBlock Text="최대" VerticalAlignment="Center" Width="32" />
+          <NumericUpDown Value="{Binding LimitMax}" Minimum="-180" Maximum="180" Increment="5" FormatString="0.#" Width="130" />
+          <TextBlock Text="°" VerticalAlignment="Center" />
+        </StackPanel>
+      </StackPanel>
       <StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="몸 전체 위치 (px). 점프·숨쉬기 등에 사용">
         <TextBlock Text="몸 X" VerticalAlignment="Center" />
         <NumericUpDown Value="{Binding OffsetX}" Minimum="-64" Maximum="64" Increment="1" FormatString="0" Width="95" />

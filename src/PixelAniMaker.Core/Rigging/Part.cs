@@ -91,6 +91,12 @@ public sealed class Part
     /// </summary>
     public bool IsDetail { get; init; }
 
+    /// <summary>Allowed joint rotation while editing (null = any angle). The same in every direction.</summary>
+    public RotationLimit? Limit { get; internal set; }
+
+    /// <summary><paramref name="degrees"/> limited to <see cref="Limit"/> (normalized either way).</summary>
+    public double ClampRotation(double degrees) => Limit?.Clamp(degrees) ?? Pose.Normalize(degrees);
+
     public Part? Parent { get; private set; }
     public IReadOnlyList<Part> Children => _children;
 
