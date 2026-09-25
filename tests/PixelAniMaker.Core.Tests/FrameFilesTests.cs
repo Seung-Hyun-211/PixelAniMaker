@@ -46,7 +46,7 @@ public class FrameFilesTests
         Assert.Equal("a_walk_run_front_12.png", names[11]);
         Assert.Equal("a_walk_run_2_front_01.png", names[12]);
         Assert.Equal(names.Count, names.Distinct().Count());
-        Assert.Equal(FrameFiles.Build(c, [new AnimationClip("idle", 100)], new Compositor(), "a", [Direction.Front])[0].FileName,
-            "a_idle_front_001.png");
+        Assert.Equal("a_idle_front_001.png",
+            FrameFiles.Build(c, [new AnimationClip("idle", 100)], new Compositor(), "a", [Direction.Front])[0].FileName);
     }
 }

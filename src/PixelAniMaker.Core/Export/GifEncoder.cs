@@ -13,7 +13,12 @@ public static class GifEncoder
     /// <param name="frames">Palette indices, row-major, <paramref name="width"/>×<paramref name="height"/> each.</param>
     /// <param name="delayMs">Time per frame (GIF stores hundredths of a second).</param>
     public static void Encode(Stream output, int width, int height, IReadOnlyList<Rgba> palette,
-        IEnumerable<byte[]> frames, int delayMs, bool loop)
+        IEnumerable<byte[]> frames, int delayMs, bool loop) =>
+        Encode(output, width, height, palette, frames, _ => delayMs, loop);
+
+    /// <param name="delayMs">Time of each frame by index (GIF stores hundredths of a second).</param>
+    public static void Encode(Stream output, int width, int height, IReadOnlyList<Rgba> palette,
+        IEnumerable<byte[]> frames, Func<int, int> delayMs, bool loop)
     {
         if (palette.Count > MaxColors)
             throw new NotSupportedException($"GIF supports at most {MaxColors} colours; the palette has {palette.Count}.");
@@ -42,9 +47,10 @@ public static class GifEncoder
             w.Write([0x03, 0x01, 0x00, 0x00, 0x00]); // loop count 0 = forever
         }
 
-        ushort delay = (ushort)Math.Max(1, (delayMs + 5) / 10);
+        int index = 0;
         foreach (var frame in frames)
         {
+            ushort delay = (ushort)Math.Max(1, (delayMs(index++) + 5) / 10);
             if (frame.Length != width * height)
                 throw new ArgumentException("Frame size does not match the image size.", nameof(frames));
             // graphic control: disposal 2 (restore background), transparent index 0

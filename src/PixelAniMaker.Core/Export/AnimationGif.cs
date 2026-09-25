@@ -3,7 +3,7 @@ using PixelAniMaker.Core.Rigging;
 
 namespace PixelAniMaker.Core.Export;
 
-/// <summary>Writes one clip as an animated GIF with the directions side by side (default: the classic four).</summary>
+/// <summary>Writes one clip as an animated GIF with the directions side by side (default: the classic four); held frames stay longer.</summary>
 public static class AnimationGif
 {
     public static void Write(Stream output, Character character, AnimationClip clip, Compositor compositor, int scale = 2,
@@ -28,6 +28,6 @@ public static class AnimationGif
             return pixels;
         });
 
-        GifEncoder.Encode(output, width, height, character.Palette.Colors, frames, 1000 / clip.Fps, clip.Loop);
+        GifEncoder.Encode(output, width, height, character.Palette.Colors, frames, clip.DurationMs, clip.Loop);
     }
 }

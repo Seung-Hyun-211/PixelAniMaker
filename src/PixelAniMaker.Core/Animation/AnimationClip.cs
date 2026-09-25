@@ -45,6 +45,8 @@ public sealed class AnimationClip : INotifyPropertyChanged
         DirectionExtensions.Stored.Concat(DirectionExtensions.ThreeQuarterStored)
             .ToDictionary(d => d, _ => new SortedList<int, Keyframe>());
 
+    private readonly SortedDictionary<int, int> _holds = [];
+
     private string _name;
     private int _frameCount;
     private int _fps;
@@ -67,6 +69,31 @@ public sealed class AnimationClip : INotifyPropertyChanged
     public int FrameCount { get => _frameCount; set => Set(ref _frameCount, Math.Max(1, value)); }
     public int Fps { get => _fps; set => Set(ref _fps, Math.Max(1, value)); }
     public bool Loop { get => _loop; set => Set(ref _loop, value); }
+
+    /// <summary>Longest hold a frame can have, in ticks.</summary>
+    public const int MaxHold = 16;
+
+    /// <summary>How many ticks (1/<see cref="Fps"/> s each) <paramref name="frame"/> stays on screen; 1 unless held longer.</summary>
+    public int Hold(int frame) => _holds.GetValueOrDefault(frame, 1);
+
+    /// <summary>Frames held longer than one tick (frame → ticks), inside the clip only.</summary>
+    public IReadOnlyDictionary<int, int> Holds => _holds.Where(h => h.Key < FrameCount).ToDictionary(h => h.Key, h => h.Value);
+
+    public void SetHold(int frame, int ticks)
+    {
+        ticks = Math.Clamp(ticks, 1, MaxHold);
+        if (Hold(frame) == ticks)
+            return;
+        if (ticks == 1)
+            _holds.Remove(frame);
+        else
+            _holds[frame] = ticks;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Holds)));
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Display time of <paramref name="frame"/> in milliseconds (whole ms, as in sheet JSON).</summary>
+    public int DurationMs(int frame) => Hold(frame) * 1000 / Fps;
 
     /// <summary>The direction's keys in frame order (a copy).</summary>
     /// <summary>Hand-painted pixel fixes on top of the generated frames.</summary>
@@ -93,13 +120,15 @@ public sealed class AnimationClip : INotifyPropertyChanged
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>A copy with the same settings and keys (touch-ups are not copied).</summary>
+    /// <summary>A copy with the same settings, frame holds and keys (touch-ups are not copied).</summary>
     public AnimationClip CopyAs(string name)
     {
         var copy = new AnimationClip(name, FrameCount, Fps, Loop);
         foreach (var (direction, track) in _tracks)
             foreach (var key in track.Values)
                 copy._tracks[direction][key.Frame] = key;
+        foreach (var (frame, ticks) in _holds)
+            copy._holds[frame] = ticks;
         return copy;
     }
 

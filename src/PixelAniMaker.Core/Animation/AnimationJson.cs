@@ -13,8 +13,9 @@ public static class AnimationJson
     /// <summary>One touched-up frame: pixels as [x, y, paletteIndex] (index 0 erases).</summary>
     private sealed record TouchupSpec(string Direction, int Frame, List<int[]> Pixels);
 
+    /// <param name="Holds">Frames shown longer than one tick: frame number → ticks (omitted when none; older versions ignore it).</param>
     private sealed record ClipSpec(string Name, int Frames, int Fps, bool Loop, Dictionary<string, List<KeySpec>> Tracks,
-        List<TouchupSpec>? Touchups = null);
+        List<TouchupSpec>? Touchups = null, Dictionary<int, int>? Holds = null);
 
     private sealed record FileSpec(List<ClipSpec> Animations);
 
@@ -46,6 +47,8 @@ public static class AnimationJson
             foreach (var k in keys)
                 clip.SetKey(direction, new Keyframe(k.Frame, ToPose(k), ParseEasing(k.Easing)));
         }
+        foreach (var (frame, ticks) in spec.Holds ?? [])
+            clip.SetHold(frame, ticks);
         foreach (var t in spec.Touchups ?? [])
         {
             if (!Enum.TryParse<Direction>(t.Direction, ignoreCase: true, out var direction))
@@ -70,7 +73,8 @@ public static class AnimationJson
                 .Select(f => new TouchupSpec(f.Direction.ToString().ToLowerInvariant(), f.Frame,
                     clip.Touchups.Get(f.Direction, f.Frame).Select(p => new[] { p.Key.X, p.Key.Y, (int)p.Value }).ToList()))
                 .ToList()
-            : null);
+            : null,
+        clip.Holds.Count > 0 ? new Dictionary<int, int>(clip.Holds) : null);
 
     private static PoseData ToPose(KeySpec k) =>
         new(k.Rotations ?? [], k.Offset is [var x, var y] ? new Vector2(x, y) : Vector2.Zero);

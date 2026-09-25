@@ -233,13 +233,15 @@ public sealed partial class AnimationSession : ObservableObject
         _playTimer.Stop();
         if (CurrentClip is not { } clip || !IsPlaying)
             return;
-        _playTimer.Interval = TimeSpan.FromSeconds(1.0 / clip.Fps);
+        _playTimer.Interval = TimeSpan.FromMilliseconds(clip.Hold(PlaybackFrame % clip.FrameCount) * 1000.0 / clip.Fps);
         _playTimer.Start();
     }
 
     private void AdvancePlayback()
     {
-        if (CurrentClip is { } clip)
-            PlaybackFrame = (PlaybackFrame + 1) % clip.FrameCount;
+        if (CurrentClip is not { } clip)
+            return;
+        PlaybackFrame = (PlaybackFrame + 1) % clip.FrameCount;
+        UpdatePlayTimer();   // the next frame may be held longer
     }
 }

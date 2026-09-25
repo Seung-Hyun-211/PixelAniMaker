@@ -50,7 +50,7 @@ public sealed record SpriteSheet(RgbaImage Image, int CellWidth, int CellHeight,
                 for (int f = 0; f < clip.FrameCount; f++)
                 {
                     Blit(baked[d][f], character.Palette, image, f * w, row * h);
-                    frames.Add(new SheetFrame(f * w, row * h, 1000 / clip.Fps, FrameAttachments(character, d, clip.Evaluate(d, f))));
+                    frames.Add(new SheetFrame(f * w, row * h, clip.DurationMs(f), FrameAttachments(character, d, clip.Evaluate(d, f))));
                 }
                 byDirection[d.ToString().ToLowerInvariant()] = frames;
                 row++;
