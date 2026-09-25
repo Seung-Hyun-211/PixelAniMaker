@@ -435,6 +435,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void AddThreeQuarter() => Session.AddThreeQuarter();
 
+    /// <summary>Fills every clip's empty 3/4 tracks from its front/back and side keys (one undo step).</summary>
+    [RelayCommand]
+    private async Task DraftThreeQuarter()
+    {
+        if (!Core.Animation.ThreeQuarterDraft.Apply(Animation.Clips, Session.Character.History) && Dialogs is not null)
+            await Dialogs.ShowMessageAsync("채울 반측면 트랙이 없습니다. 반측면 키가 이미 있거나, 정면·측면 키가 없는 동작만 있습니다.");
+    }
+
     /// <summary>Removes the 3/4 views and the clips' 3/4 keys and touch-ups (undoable).</summary>
     [RelayCommand]
     private void RemoveThreeQuarter() => Session.RemoveThreeQuarter(Animation.Clips);

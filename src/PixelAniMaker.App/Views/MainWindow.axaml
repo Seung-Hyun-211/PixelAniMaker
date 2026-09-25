@@ -64,6 +64,9 @@
       <MenuItem Header="애니메이션(_A)">
         <MenuItem Header="키 저장" InputGesture="{Binding Shortcuts.Gestures[SaveKey]}" Command="{Binding SaveKeyCommand}" />
         <MenuItem Header="키 삭제" Command="{Binding DeleteKeyCommand}" />
+        <MenuItem Header="반측면 동작 초안 (빈 반측면 트랙 채우기)" Command="{Binding DraftThreeQuarterCommand}"
+                  IsVisible="{Binding Session.HasThreeQuarter}"
+                  ToolTip.Tip="모든 동작의 비어 있는 반측면 트랙을 채웁니다. 팔은 측면 키를, 나머지는 정면(후면)과 측면의 중간값을 씁니다. 이미 키가 있는 반측면 트랙은 그대로 둡니다 (되돌리기 한 번)." />
         <Separator />
         <MenuItem Header="이전 프레임" InputGesture="{Binding Shortcuts.Gestures[PreviousFrame]}" Command="{Binding PreviousFrameCommand}" />
         <MenuItem Header="다음 프레임" InputGesture="{Binding Shortcuts.Gestures[NextFrame]}" Command="{Binding NextFrameCommand}" />
