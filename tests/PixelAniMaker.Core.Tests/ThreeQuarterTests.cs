@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Numerics;
 using System.Text;
 using PixelAniMaker.Core.Animation;
+using PixelAniMaker.Core.Export;
 using PixelAniMaker.Core.History;
 using PixelAniMaker.Core.Imaging;
 using PixelAniMaker.Core.Project;
@@ -189,6 +190,47 @@ public class ThreeQuarterTests
         var toViews = ClipImport.Import([clip], [], withViews);
         Assert.False(toViews.DroppedThreeQuarter);
         Assert.Single(toViews.Clips[0].Keys(Direction.FrontLeft));
+    }
+
+    [Fact]
+    public void An_eight_direction_sheet_keeps_each_clips_classic_rows_first_and_adds_3_4_rows_after()
+    {
+        var project = GoldenTests.Build();
+        var c = project.Character;
+        ThreeQuarterViews.Enable(c, new UndoHistory());
+        c.Find("body")!.View(Direction.FrontLeft).Image.Set(2, 2, c.Palette.GetOrAdd(new Rgba(255, 0, 0)));
+
+        var four = SpriteSheet.Build(c, project.Clips, new Compositor());
+        var eight = SpriteSheet.Build(c, project.Clips, new Compositor(), c.ExportDirections(includeThreeQuarter: true));
+        Assert.Equal(four.Image.Width, eight.Image.Width);
+        Assert.Equal(four.Image.Height * 2, eight.Image.Height);
+        int rowPixels = four.Image.Width * c.Height;
+        for (int clip = 0; clip < project.Clips.Count; clip++)
+            Assert.True(four.Image.Pixels.AsSpan(clip * 4 * rowPixels, 4 * rowPixels)
+                .SequenceEqual(eight.Image.Pixels.AsSpan(clip * 8 * rowPixels, 4 * rowPixels)), $"clip {clip}: classic rows differ");
+
+        var clipDirections = eight.Clips[0].Directions.Keys.ToList();
+        Assert.Equal(["front", "left", "right", "back", "frontleft", "frontright", "backleft", "backright"], clipDirections);
+        Assert.Equal(["front", "left", "right", "back"], four.Clips[0].Directions.Keys.ToList());
+        Assert.Equal(4 * c.Height, eight.Clips[0].Directions["frontleft"][0].Y);   // row 5 of the first clip
+    }
+
+    [Fact]
+    public void Characters_without_3_4_views_export_four_directions_even_when_eight_are_asked_for()
+    {
+        var c = GoldenTests.Build().Character;
+        Assert.Equal(DirectionExtensions.All, c.ExportDirections(includeThreeQuarter: true));
+        ThreeQuarterViews.Enable(c, new UndoHistory());
+        Assert.Equal(DirectionExtensions.All, c.ExportDirections(includeThreeQuarter: false));
+        Assert.Equal(DirectionExtensions.Every, c.ExportDirections(includeThreeQuarter: true));
+
+        using var four = new MemoryStream();
+        using var eight = new MemoryStream();
+        var clip = GoldenTests.Build().Clips[0];
+        AnimationGif.Write(four, c, clip, new Compositor(), 1);
+        AnimationGif.Write(eight, c, clip, new Compositor(), 1, DirectionExtensions.Every);
+        Assert.Equal(c.Width * 4, BitConverter.ToUInt16(four.ToArray(), 6));    // GIF logical screen width
+        Assert.Equal(c.Width * 8, BitConverter.ToUInt16(eight.ToArray(), 6));
     }
 
     [Fact]

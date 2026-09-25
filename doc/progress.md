@@ -61,7 +61,7 @@
 | --- | --- | --- |
 | ① 방향 모델 | 완료 (화면·결과물 변화 없음, 기준 파일 회귀 테스트) | [①](patchnotes/2026-09-25-direction-model.md) |
 | (추가) 눈 위치 옮기기 | 완료 | [눈 위치](patchnotes/2026-09-25-eye-position.md) |
-| ② 내보내기 방향 수 | 대기 | |
+| ② 내보내기 방향 수 | 완료 | [②](patchnotes/2026-09-25-three-quarter-export.md) |
 | ③ 화면 | 완료 (②보다 먼저 진행 — 내보내기는 아직 4방향) | [③](patchnotes/2026-09-25-three-quarter-ui.md) |
 | ④ 반측면 템플릿 | 대기 | |
 

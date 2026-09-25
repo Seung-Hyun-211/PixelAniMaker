@@ -14,8 +14,9 @@ public sealed record SheetFrame(int X, int Y, int DurationMs, IReadOnlyList<Shee
 public sealed record SheetClip(string Name, int Fps, bool Loop, IReadOnlyDictionary<string, IReadOnlyList<SheetFrame>> Directions);
 
 /// <summary>
-/// A sprite sheet: every clip gets four rows (front, left, right, back), one column per frame, all
-/// cells the canvas size. <see cref="OriginX"/>/<see cref="OriginY"/> is the feet position inside a cell.
+/// A sprite sheet: every clip gets one row per exported direction — the classic four (front, left,
+/// right, back), then with 3/4 views front-left, front-right, back-left, back-right — one column per
+/// frame, all cells the canvas size. <see cref="OriginX"/>/<see cref="OriginY"/> is the feet position inside a cell.
 /// </summary>
 public sealed record SpriteSheet(RgbaImage Image, int CellWidth, int CellHeight, int OriginX, int OriginY, IReadOnlyList<SheetClip> Clips)
 {
@@ -27,20 +28,23 @@ public sealed record SpriteSheet(RgbaImage Image, int CellWidth, int CellHeight,
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
-    public static SpriteSheet Build(Character character, IReadOnlyList<AnimationClip> clips, Compositor compositor)
+    /// <param name="directions">Rows per clip, in order (default: the classic four).</param>
+    public static SpriteSheet Build(Character character, IReadOnlyList<AnimationClip> clips, Compositor compositor,
+        IReadOnlyList<Direction>? directions = null)
     {
+        directions ??= DirectionExtensions.All;
         int w = character.Width, h = character.Height;
         int columns = Math.Max(1, clips.Max(c => c.FrameCount));
-        int rows = clips.Count * DirectionExtensions.All.Count;
+        int rows = clips.Count * directions.Count;
         var image = RgbaImage.Blank(columns * w, rows * h);
         var sheetClips = new List<SheetClip>();
 
         int row = 0;
         foreach (var clip in clips)
         {
-            var baked = SpriteBaker.Bake(character, clip, compositor);
-            var directions = new Dictionary<string, IReadOnlyList<SheetFrame>>();
-            foreach (var d in DirectionExtensions.All)
+            var baked = SpriteBaker.Bake(character, clip, compositor, directions: directions);
+            var byDirection = new Dictionary<string, IReadOnlyList<SheetFrame>>();
+            foreach (var d in directions)
             {
                 var frames = new List<SheetFrame>();
                 for (int f = 0; f < clip.FrameCount; f++)
@@ -48,10 +52,10 @@ public sealed record SpriteSheet(RgbaImage Image, int CellWidth, int CellHeight,
                     Blit(baked[d][f], character.Palette, image, f * w, row * h);
                     frames.Add(new SheetFrame(f * w, row * h, 1000 / clip.Fps, FrameAttachments(character, d, clip.Evaluate(d, f))));
                 }
-                directions[d.ToString().ToLowerInvariant()] = frames;
+                byDirection[d.ToString().ToLowerInvariant()] = frames;
                 row++;
             }
-            sheetClips.Add(new SheetClip(clip.Name, clip.Fps, clip.Loop, directions));
+            sheetClips.Add(new SheetClip(clip.Name, clip.Fps, clip.Loop, byDirection));
         }
 
         var (ox, oy) = FeetOrigin(character, compositor);

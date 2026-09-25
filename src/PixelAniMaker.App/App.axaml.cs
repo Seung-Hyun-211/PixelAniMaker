@@ -19,7 +19,7 @@ public partial class App : Application
             var args = CommandLine.Parse(desktop.Args ?? []);
             Localizer.Initialize(AppSettings.Load().Language);
             if (args.IsExport)
-                Dispatcher.UIThread.Post(() => desktop.Shutdown(BatchExporter.Run(args.ExportPath!, args.OutputFolder, Console.Out)));
+                Dispatcher.UIThread.Post(() => desktop.Shutdown(BatchExporter.Run(args.ExportPath!, args.OutputFolder, Console.Out, args.Directions)));
             else
                 desktop.MainWindow = CreateMainWindow(args.OpenPath);
         }

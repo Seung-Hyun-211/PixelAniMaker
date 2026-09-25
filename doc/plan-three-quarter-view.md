@@ -153,7 +153,7 @@ public enum Direction
 
 ## 9. 작업 순서
 
-진행 상황: ① 완료 ([패치노트](patchnotes/2026-09-25-direction-model.md)), ③ 완료 ([패치노트](patchnotes/2026-09-25-three-quarter-ui.md), 반측면을 앱에서 바로 쓸 수 있게 ②보다 먼저 진행). ④의 반측면 몸·머리는 scratchpad 시안으로 먼저 시험했다 (위 7절, 저장소에는 아직 없음). 반측면 눈을 다듬는 데 필요한 **눈 위치 옮기기**는 추가했다 ([패치노트](patchnotes/2026-09-25-eye-position.md)). 실제 작업은 세션 작업 브랜치(`claude/work-environment-setup-a3u93e`)에서 하고 있으며, 아래 브랜치 이름은 `main`에 나눠 병합할 때의 단위다. 구현하면서 정한 이름 — `Direction.FrontLeft`·`FrontRight`·`BackLeft`·`BackRight`, `Character.HasThreeQuarter`·`StoredDirections`·`Directions`, `ThreeQuarterViews.Enable`·`Disable`, `ProjectFile.VersionFor`.
+진행 상황: ① 완료 ([패치노트](patchnotes/2026-09-25-direction-model.md)), ③ 완료 ([패치노트](patchnotes/2026-09-25-three-quarter-ui.md), 반측면을 앱에서 바로 쓸 수 있게 ②보다 먼저 진행), ② 완료 ([패치노트](patchnotes/2026-09-25-three-quarter-export.md)). ④의 반측면 몸·머리는 scratchpad 시안으로 먼저 시험했다 (위 7절, 저장소에는 아직 없음). 반측면 눈을 다듬는 데 필요한 **눈 위치 옮기기**는 추가했다 ([패치노트](patchnotes/2026-09-25-eye-position.md)). 실제 작업은 세션 작업 브랜치(`claude/work-environment-setup-a3u93e`)에서 하고 있으며, 아래 브랜치 이름은 `main`에 나눠 병합할 때의 단위다. 구현하면서 정한 이름 — `Direction.FrontLeft`·`FrontRight`·`BackLeft`·`BackRight`, `Character.HasThreeQuarter`·`StoredDirections`·`Directions`, `ThreeQuarterViews.Enable`·`Disable`, `ProjectFile.VersionFor`.
 
 각 단계는 저장소 규칙대로 `feature/...` 브랜치에서 작업한다. 단계마다 테스트·스크린샷·패치노트를 남기고 `main`에 병합한다. 앞 단계만 병합돼도 프로그램이 정상 동작하도록 순서를 잡았다.
 

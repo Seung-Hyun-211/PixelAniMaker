@@ -111,7 +111,7 @@ public sealed partial class ProjectService : ObservableObject
         var clips = allClips ? _animation.Clips.ToList() : _animation.CurrentClip is { } c ? [c] : [];
         if (clips.Count == 0)
             throw new InvalidOperationException("내보낼 동작이 없습니다.");
-        var sheet = SpriteSheet.Build(_editor.Character, clips, _editor.Compositor);
+        var sheet = SpriteSheet.Build(_editor.Character, clips, _editor.Compositor, ExportDirections);
         File.WriteAllBytes(path, AvaloniaImageCodec.Instance.EncodePng(sheet.Image));
         if (Settings.WriteSheetMetadata)
             File.WriteAllText(Path.ChangeExtension(path, ".json"), sheet.MetadataJson());
@@ -142,8 +142,11 @@ public sealed partial class ProjectService : ObservableObject
         if (_animation.CurrentClip is not { } clip)
             throw new InvalidOperationException("내보낼 동작이 없습니다.");
         using var stream = File.Create(path);
-        AnimationGif.Write(stream, _editor.Character, clip, _editor.Compositor, Settings.GifScale);
+        AnimationGif.Write(stream, _editor.Character, clip, _editor.Compositor, Settings.GifScale, ExportDirections);
     }
+
+    /// <summary>Rows of exported sheets and GIFs: the classic four, or eight with 3/4 views when the setting is on.</summary>
+    private IReadOnlyList<Core.Rigging.Direction> ExportDirections => _editor.Character.ExportDirections(Settings.ExportThreeQuarter);
 
     partial void OnCurrentPathChanged(string? value) => OnPropertyChanged(nameof(DocumentName));
 

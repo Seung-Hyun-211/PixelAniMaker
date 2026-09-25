@@ -66,6 +66,10 @@ public sealed class Character
     /// <summary>Directions the character is shown in, in sheet order.</summary>
     public IReadOnlyList<Direction> Directions => HasThreeQuarter ? DirectionExtensions.Every : DirectionExtensions.All;
 
+    /// <summary>Directions to export: the classic four, or all eight when asked for and the character has 3/4 views.</summary>
+    public IReadOnlyList<Direction> ExportDirections(bool includeThreeQuarter) =>
+        includeThreeQuarter && HasThreeQuarter ? DirectionExtensions.Every : DirectionExtensions.All;
+
     /// <summary>Raised when any direction's pose changes.</summary>
     public event EventHandler? PoseChanged
     {

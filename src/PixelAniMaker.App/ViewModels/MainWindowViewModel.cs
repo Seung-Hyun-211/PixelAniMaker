@@ -130,6 +130,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public ObservableCollection<string> RecentFiles { get; } = [];
 
+    public bool ExportThreeQuarter
+    {
+        get => Project.Settings.ExportThreeQuarter;
+        set
+        {
+            Project.Settings.ExportThreeQuarter = value;
+            Project.Settings.Save();
+            OnPropertyChanged();
+        }
+    }
+
     public bool WriteSheetMetadata
     {
         get => Project.Settings.WriteSheetMetadata;

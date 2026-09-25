@@ -17,6 +17,9 @@ public sealed class AppSettings
     /// <summary>Write a .json frame description next to exported sprite sheets.</summary>
     public bool WriteSheetMetadata { get; set; } = true;
 
+    /// <summary>Export 3/4 rows too (8 directions) when the character has 3/4 views; off = the classic four.</summary>
+    public bool ExportThreeQuarter { get; set; }
+
     /// <summary>Scale of exported GIFs.</summary>
     public int GifScale { get; set; } = 2;
 

@@ -6,13 +6,14 @@ namespace PixelAniMaker.App.Services;
 public static class BatchExporter
 {
     /// <returns>Process exit code: 0 on success, 1 on failure.</returns>
-    public static int Run(string projectPath, string? outputFolder, TextWriter log)
+    /// <param name="directions">4, or 8 to add the 3/4 rows when the character has 3/4 views.</param>
+    public static int Run(string projectPath, string? outputFolder, TextWriter log, int directions = 4)
     {
         try
         {
             var editor = new EditorSession();
             var animation = new AnimationSession(editor);
-            var project = new ProjectService(editor, animation, new AppSettings { WriteSheetMetadata = true });
+            var project = new ProjectService(editor, animation, new AppSettings { WriteSheetMetadata = true, ExportThreeQuarter = directions == 8 });
             project.Open(projectPath, rememberRecent: false);
 
             string folder = outputFolder ?? Path.GetDirectoryName(Path.GetFullPath(projectPath))!;

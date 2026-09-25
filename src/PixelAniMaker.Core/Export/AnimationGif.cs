@@ -3,17 +3,18 @@ using PixelAniMaker.Core.Rigging;
 
 namespace PixelAniMaker.Core.Export;
 
-/// <summary>Writes one clip as an animated GIF with the four directions side by side.</summary>
+/// <summary>Writes one clip as an animated GIF with the directions side by side (default: the classic four).</summary>
 public static class AnimationGif
 {
-    public static void Write(Stream output, Character character, AnimationClip clip, Compositor compositor, int scale = 2)
+    public static void Write(Stream output, Character character, AnimationClip clip, Compositor compositor, int scale = 2,
+        IReadOnlyList<Direction>? directions = null)
     {
         scale = Math.Max(1, scale);
         int cw = character.Width, ch = character.Height;
-        var directions = DirectionExtensions.All;
+        directions ??= DirectionExtensions.All;
         int width = cw * directions.Count * scale, height = ch * scale;
 
-        var baked = SpriteBaker.Bake(character, clip, compositor);
+        var baked = SpriteBaker.Bake(character, clip, compositor, directions: directions);
         var frames = Enumerable.Range(0, clip.FrameCount).Select(f =>
         {
             var pixels = new byte[width * height];
