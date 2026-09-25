@@ -35,13 +35,13 @@
         <NumericUpDown Value="{Binding OffsetY}" Minimum="-64" Maximum="64" Increment="1" FormatString="0" Width="95" />
       </StackPanel>
       <StackPanel Spacing="4" IsVisible="{Binding IsDetailPart}" IsEnabled="{Binding !Session.IsActivePartLocked}"
-                  ToolTip.Tip="이 방향에서 눈 파츠의 위치 (관절 = 눈 가운데, 캔버스 px). 방향마다 따로 정하고, 되돌리기가 됩니다.">
+                  ToolTip.Tip="이 방향에서 세부 파츠(눈·가슴 볼륨)의 위치 (관절 = 파츠 가운데, 캔버스 px). 방향마다 따로 정하고, 되돌리기가 됩니다.">
         <StackPanel Orientation="Horizontal" Spacing="6">
-          <TextBlock Text="눈 X" VerticalAlignment="Center" Width="32" />
+          <TextBlock Text="위치 X" VerticalAlignment="Center" Width="48" />
           <NumericUpDown Value="{Binding DetailX}" Increment="1" FormatString="0" Minimum="-512" Maximum="512" Width="130" />
         </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="6">
-          <TextBlock Text="눈 Y" VerticalAlignment="Center" Width="32" />
+          <TextBlock Text="위치 Y" VerticalAlignment="Center" Width="48" />
           <NumericUpDown Value="{Binding DetailY}" Increment="1" FormatString="0" Minimum="-512" Maximum="512" Width="130" />
         </StackPanel>
       </StackPanel>
@@ -108,6 +108,14 @@
                 ToolTip.Tip="머리에 붙는 눈 파츠(눈 R·눈 L)를 따로 만듭니다. 얼굴과 따로 그리고 바꿀 수 있고, 머리와 만나는 곳에는 선이 생기지 않습니다." />
         <Button Content="눈 파츠 삭제" Command="{Binding RemoveEyesCommand}" IsVisible="{Binding Session.HasEyes}" />
       </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding Session.CanAddBust}"
+                  ToolTip.Tip="가슴에 붙는 가슴 볼륨 파츠를 만듭니다 (여성 캐릭터용). 쇄골부터 갈비뼈까지의 물방울 모양 시작 그림이 방향마다 생기고, 가슴과 만나는 곳에는 선이 생기지 않습니다. 크기를 고르세요.">
+        <TextBlock Text="가슴 볼륨 추가" VerticalAlignment="Center" />
+        <Button Content="소" Command="{Binding AddBustCommand}" CommandParameter="Small" />
+        <Button Content="중" Command="{Binding AddBustCommand}" CommandParameter="Medium" />
+        <Button Content="대" Command="{Binding AddBustCommand}" CommandParameter="Large" />
+      </StackPanel>
+      <Button Content="가슴 볼륨 삭제" Command="{Binding RemoveBustCommand}" IsVisible="{Binding Session.HasBust}" />
     </StackPanel>
     </ScrollViewer>
     <GridSplitter Grid.Row="1" ResizeDirection="Rows" />

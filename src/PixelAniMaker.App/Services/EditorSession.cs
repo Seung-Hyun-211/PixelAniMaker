@@ -169,6 +169,8 @@ public sealed partial class EditorSession : ObservableObject
         OnPropertyChanged(nameof(ShadingWidth));
         OnPropertyChanged(nameof(HasEyes));
         OnPropertyChanged(nameof(CanAddEyes));
+        OnPropertyChanged(nameof(HasBust));
+        OnPropertyChanged(nameof(CanAddBust));
         ActivePart = character.Find("chest") ?? character.Root;
         OnDirectionsChanged(this, EventArgs.Empty);   // the new character may not have the current (3/4) direction
         HistoryChanged?.Invoke(this, EventArgs.Empty);
@@ -414,7 +416,21 @@ public sealed partial class EditorSession : ObservableObject
 
     public void RemoveEyes() => EyeParts.Remove(Character);
 
-    /// <summary>Joint of the active part in display coordinates when it is a detail part (eye), else null.</summary>
+    public bool HasBust => BustPart.Has(Character);
+
+    public bool CanAddBust => BustPart.CanAdd(Character);
+
+    /// <summary>Adds the bust part (undoable) and selects it to draw on.</summary>
+    public void AddBust(BustSize size)
+    {
+        BustPart.Add(Character, size);
+        if (Character.Find(BustPart.Name) is { } bust)
+            ActivePart = bust;
+    }
+
+    public void RemoveBust() => BustPart.Remove(Character);
+
+    /// <summary>Joint of the active part in display coordinates when it is a detail part (eye, bust), else null.</summary>
     public Vector2? ActiveDetailPosition => ActivePart.IsDetail ? FromSource(ActivePart.View(Direction).RestPivot) : null;
 
     /// <summary>Moves the active detail part so its joint lands on <paramref name="display"/> (whole pixels, undoable).</summary>
@@ -433,6 +449,8 @@ public sealed partial class EditorSession : ObservableObject
         _lockedParts.RemoveWhere(p => !Character.Parts.Contains(p));
         OnPropertyChanged(nameof(HasEyes));
         OnPropertyChanged(nameof(CanAddEyes));
+        OnPropertyChanged(nameof(HasBust));
+        OnPropertyChanged(nameof(CanAddBust));
         PartsChanged?.Invoke(this, EventArgs.Empty);
     }
 

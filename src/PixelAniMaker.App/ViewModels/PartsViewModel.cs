@@ -177,6 +177,13 @@ public sealed partial class PartsViewModel : Tool
     [RelayCommand]
     private void RemoveEyes() => Session.RemoveEyes();
 
+    /// <summary>Parameter: "Small", "Medium" or "Large".</summary>
+    [RelayCommand]
+    private void AddBust(string size) => Session.AddBust(Enum.Parse<BustSize>(size));
+
+    [RelayCommand]
+    private void RemoveBust() => Session.RemoveBust();
+
     [RelayCommand]
     private void ResetPose() => Session.ResetPose();
 

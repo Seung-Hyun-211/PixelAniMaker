@@ -1,6 +1,6 @@
 # 계획: 가슴 볼륨 파츠 (여성 캐릭터용 선택 파츠)
 
-작성: 2026-09-25 · 상태: **설계** (구현 전) · 관련: [눈 파츠](patchnotes/2026-09-25-eye-parts.md), [눈 위치](patchnotes/2026-09-25-eye-position.md), [설계 문서](design.md)
+작성: 2026-09-25 · 상태: **구현됨** ([패치노트](patchnotes/2026-09-25-bust-part.md)) — 모양은 시작 그림이며, 이후 직접 다듬을 예정 · 관련: [눈 파츠](patchnotes/2026-09-25-eye-parts.md), [눈 위치](patchnotes/2026-09-25-eye-position.md), [설계 문서](design.md)
 
 ## 1. 목적
 

@@ -1,5 +1,4 @@
 using System.Numerics;
-using PixelAniMaker.Core.History;
 using PixelAniMaker.Core.Imaging;
 
 namespace PixelAniMaker.Core.Rigging;
@@ -28,24 +27,11 @@ public static class EyeParts
         if (!CanAdd(character))
             return;
         var head = character.Find(HeadName)!;
-        var change = new PartsChange(character, "눈 파츠 추가",
-            [(Create(character, head, Right), head), (Create(character, head, Left), head)], adding: true);
-        change.Redo();
-        character.History.Push(change);
+        DetailParts.Add(character, "눈 파츠 추가", [(Create(character, head, Right), head), (Create(character, head, Left), head)]);
     }
 
     /// <summary>Removes the eye parts (undoable).</summary>
-    public static void Remove(Character character)
-    {
-        var eyes = new[] { character.Find(Right), character.Find(Left) }
-            .Where(p => p is { Parent: not null, Children.Count: 0 })
-            .Select(p => (p!, p!.Parent!)).ToList();
-        if (eyes.Count == 0)
-            return;
-        var change = new PartsChange(character, "눈 파츠 삭제", eyes, adding: false);
-        change.Redo();
-        character.History.Push(change);
-    }
+    public static void Remove(Character character) => DetailParts.Remove(character, "눈 파츠 삭제", Right, Left);
 
     private static Part Create(Character character, Part head, string name)
     {
@@ -104,26 +90,5 @@ public static class EyeParts
                 if (image[x, y] != Palette.TransparentIndex)
                     return Math.Max(6, head.RestPivot.Y - (head.RestPosition.Y + y));
         return 30;
-    }
-}
-
-/// <summary>Undoable addition or removal of leaf parts (e.g. the eyes).</summary>
-public sealed class PartsChange(Character character, string name, IReadOnlyList<(Part Part, Part Parent)> parts, bool adding)
-    : IUndoableAction
-{
-    public string Name => name;
-
-    public void Undo() => Apply(!adding);
-
-    public void Redo() => Apply(adding);
-
-    private void Apply(bool add)
-    {
-        if (add)
-            foreach (var (part, parent) in parts)
-                character.AddPart(part, parent);
-        else
-            foreach (var (part, _) in parts.Reverse())
-                character.RemovePart(part);
     }
 }
