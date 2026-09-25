@@ -106,12 +106,12 @@ public class CustomPartsTests
         var frontBefore = links.Select(p => p.View(Direction.Front).RestPivot).ToList();
         var leftBefore = links.Select(p => p.View(Direction.Left).RestPivot).ToList();
 
-        DetailMove.Apply(links[0], Direction.Front, new Vector2(3, -2), c.History);
+        PartMove.Apply(links[0], Direction.Front, new Vector2(3, -2), c.History);
         Assert.Equal(frontBefore.Select(p => p + new Vector2(3, -2)), links.Select(p => p.View(Direction.Front).RestPivot));
         Assert.Equal(leftBefore, links.Select(p => p.View(Direction.Left).RestPivot));
         c.History.Undo();
         Assert.Equal(frontBefore, links.Select(p => p.View(Direction.Front).RestPivot));
-        Assert.Throws<InvalidOperationException>(() => DetailMove.Apply(c.Find("head")!, Direction.Front, Vector2.One, c.History));
+        Assert.Throws<InvalidOperationException>(() => PartMove.Apply(c.Find("head")!, Direction.Front, Vector2.One, c.History));
     }
 
     [Fact]

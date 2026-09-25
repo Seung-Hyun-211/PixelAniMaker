@@ -51,8 +51,8 @@
 | --- | --- |
 | `Core/Rigging/CustomParts` (새로) | 종류·놓는 곳·옵션, 추가(마디 전부 한 번에), 삭제(아래 마디까지), 이름, 시작 모양 |
 | `Core/Rigging/Part` | `IsCustom`, `IsMovable` |
-| `Core/Rigging/DetailMove` | 추가한 파츠도 옮김, 아래 마디를 함께 |
-| `Core/Rigging/DetailParts` (`PartsChange`) | 삭제를 되돌리면 파츠 목록의 원래 자리로 |
+| `Core/Rigging/PartMove` (이전 `DetailMove`) | 추가한 파츠도 옮김, 아래 마디를 함께 |
+| `Core/Rigging/OptionalParts` (이전 `DetailParts`, `PartsChange`) | 삭제를 되돌리면 파츠 목록의 원래 자리로 |
 | `Core/Rigging/Character` | `AddPart(..., index)` |
 | `Core/Rigging/CharacterTemplate` | `custom` 읽기·쓰기 |
 | `App/Services/EditorSession`, `ViewModels/PartsViewModel`, `Views/PartsView` | 파츠 추가 영역, 이 파츠 삭제, 위치 X/Y를 추가한 파츠에도 |

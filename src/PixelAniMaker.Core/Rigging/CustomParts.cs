@@ -109,7 +109,7 @@ public static class CustomParts
             };
             links.Add((part, i == 0 ? parent : links[^1].Part));
         }
-        DetailParts.Add(character, $"{KindLabel(options.Kind)} 추가", links);
+        OptionalParts.Add(character, $"{KindLabel(options.Kind)} 추가", links);
         return links.Select(l => l.Part).ToList();
     }
 
@@ -119,23 +119,11 @@ public static class CustomParts
     /// <summary>Removes an added part and the links under it as one undo step; false for template parts.</summary>
     public static bool Remove(Character character, Part part)
     {
-        if (!CanRemove(part))
+        var parts = part.SelfAndDescendants().ToList();
+        if (!CanRemove(part) || parts.Any(p => !p.IsCustom))
             return false;
-        var subtree = Subtree(part).ToList();
-        if (subtree.Any(p => !p.IsCustom))
-            return false;
-        var change = new PartsChange(character, $"{part.Label} 삭제", subtree.Select(p => (p, p.Parent!)).ToList(), adding: false);
-        change.Redo();
-        character.History.Push(change);
+        OptionalParts.Remove(character, $"{part.Label} 삭제", parts);
         return true;
-    }
-
-    private static IEnumerable<Part> Subtree(Part part)
-    {
-        yield return part;
-        foreach (var child in part.Children)
-            foreach (var p in Subtree(child))
-                yield return p;
     }
 
     private static int NextNumber(Character character, CustomPartKind kind)
@@ -148,12 +136,8 @@ public static class CustomParts
     }
 
     /// <summary>The parent's most used colour (front view), or a neutral grey when it is empty.</summary>
-    private static int MainColour(Character character, Part parent)
-    {
-        var image = parent.View(Direction.Front).Image;
-        var used = image.Pixels.ToArray().Where(i => i != Palette.TransparentIndex).GroupBy(i => (int)i).MaxBy(g => g.Count());
-        return used?.Key ?? character.Palette.GetOrAdd(new Rgba(170, 170, 184));
-    }
+    private static int MainColour(Character character, Part parent) =>
+        parent.View(Direction.Front).MainColour() ?? character.Palette.GetOrAdd(new Rgba(170, 170, 184));
 
     /// <summary>The whole starting shape in one direction: where it hangs, which way, how wide; cut into links.</summary>
     private sealed record Shape(CustomPartKind Kind, Vector2 Anchor, Vector2 Down, float Length, float TopHalf, float BottomHalf, int Order)
@@ -283,18 +267,15 @@ public static class CustomParts
             return Vector2.DistanceSquared(p, a + ab * t) <= r * r;
         }
 
-        /// <summary>Drawn pixels of a view in canvas coordinates (the whole image when nothing is drawn).</summary>
+        /// <summary>Drawn pixels of a view in canvas coordinates (the image corners when nothing is drawn).</summary>
         private static List<(int X, int Y)> Drawn(PartView view)
         {
-            var image = view.Image;
-            int ox = (int)view.RestPosition.X, oy = (int)view.RestPosition.Y;
-            var list = new List<(int X, int Y)>();
-            for (int y = 0; y < image.Height; y++)
-                for (int x = 0; x < image.Width; x++)
-                    if (image[x, y] != Palette.TransparentIndex)
-                        list.Add((ox + x, oy + y));
+            var list = view.DrawnPixels().Select(p => (p.X, p.Y)).ToList();
             if (list.Count == 0)
-                list.AddRange([(ox, oy), (ox + image.Width - 1, oy + image.Height - 1)]);
+            {
+                int x = (int)view.RestPosition.X, y = (int)view.RestPosition.Y;
+                list.AddRange([(x, y), (x + view.Image.Width - 1, y + view.Image.Height - 1)]);
+            }
             return list;
         }
     }

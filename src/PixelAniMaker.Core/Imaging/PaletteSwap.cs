@@ -50,7 +50,6 @@ public sealed class PaletteSwap(Palette palette, string name, IReadOnlyList<Rgba
         if (before.SequenceEqual(after))
             return;
         var change = new PaletteSwap(palette, name, before, after);
-        change.Redo();
-        history.Push(change);
+        history.Do(change);
     }
 }

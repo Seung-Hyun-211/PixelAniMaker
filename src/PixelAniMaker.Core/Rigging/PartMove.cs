@@ -9,7 +9,7 @@ namespace PixelAniMaker.Core.Rigging;
 /// (the rest of a chain). The template skeleton's own joints stay where the template put them.
 /// A mirrored direction without its own view moves its source view (the view both show).
 /// </summary>
-public sealed class DetailMove(IReadOnlyList<PartView> views, Vector2 delta) : IUndoableAction
+public sealed class PartMove(IReadOnlyList<PartView> views, Vector2 delta) : IUndoableAction
 {
     public string Name => "파츠 위치";
 
@@ -33,19 +33,8 @@ public sealed class DetailMove(IReadOnlyList<PartView> views, Vector2 delta) : I
         delta = new Vector2(MathF.Round(delta.X), MathF.Round(delta.Y));
         if (delta == Vector2.Zero)
             return;
-        var views = Moved(part).Select(p => p.View(direction)).Distinct().ToList();
-        var move = new DetailMove(views, delta);
-        move.Redo();
-        history.Push(move);
-    }
-
-    /// <summary>The part, and for an added part its added descendants.</summary>
-    private static IEnumerable<Part> Moved(Part part)
-    {
-        yield return part;
-        if (part.IsCustom)
-            foreach (var child in part.Children.Where(c => c.IsCustom))
-                foreach (var p in Moved(child))
-                    yield return p;
+        // an added part takes the links under it along (only added parts hang under added parts)
+        IEnumerable<Part> moved = part.IsCustom ? part.SelfAndDescendants() : [part];
+        history.Do(new PartMove(moved.Select(p => p.View(direction)).Distinct().ToList(), delta));
     }
 }

@@ -44,7 +44,6 @@ public sealed class RotationLimitChange(Part part, RotationLimit? before, Rotati
         if (part.Limit == limit)
             return;
         var change = new RotationLimitChange(part, part.Limit, limit);
-        change.Redo();
-        history.Push(change);
+        history.Do(change);
     }
 }

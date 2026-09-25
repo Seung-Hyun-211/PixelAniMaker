@@ -57,7 +57,7 @@
 | --- | --- |
 | `Core/Rigging/CustomParts` (새로) | `CustomPartKind`, `CustomPlacement`, `CustomPartOptions`, `Add`(마디 전부, 한 번에 되돌리기), `Remove`(아래 마디까지), 이름 짓기, 시작 모양 |
 | `Core/Rigging/Part` | `IsCustom`, `IsMovable`(세부 파츠 또는 추가한 파츠) |
-| `Core/Rigging/DetailMove` | 추가한 파츠도 옮길 수 있게, 아래 마디를 함께 |
+| `Core/Rigging/PartMove` (이전 `DetailMove`) | 추가한 파츠도 옮길 수 있게, 아래 마디를 함께 |
 | `Core/Rigging/CharacterTemplate` | `custom` 읽기·쓰기 |
 | `App` 세션·파츠 창 | "파츠 추가" 영역(종류, 위치, 마디, 길이, 추가), 고른 파츠가 추가한 파츠면 "이 파츠 삭제", 위치 X/Y |
 

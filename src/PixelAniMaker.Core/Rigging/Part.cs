@@ -21,7 +21,7 @@ public sealed class PartView(IndexedImage image, Vector2 restPosition, Vector2 r
     public Vector2 RestPivot { get; private set; } = restPivot;
     public int DrawOrder { get; } = drawOrder;
 
-    /// <summary>Shifts the image and its joint together (see <see cref="DetailMove"/>).</summary>
+    /// <summary>Shifts the image and its joint together (see <see cref="PartMove"/>).</summary>
     internal void MoveBy(Vector2 delta)
     {
         RestPosition += delta;
@@ -30,6 +30,20 @@ public sealed class PartView(IndexedImage image, Vector2 restPosition, Vector2 r
 
     /// <summary>Joint position inside the image.</summary>
     public Vector2 LocalPivot => RestPivot - RestPosition;
+
+    /// <summary>Drawn (non-transparent) pixels of the flattened image, in canvas coordinates at rest.</summary>
+    public IEnumerable<(int X, int Y, int Index)> DrawnPixels()
+    {
+        var image = Image;
+        int ox = (int)RestPosition.X, oy = (int)RestPosition.Y;
+        for (int y = 0; y < image.Height; y++)
+            for (int x = 0; x < image.Width; x++)
+                if (image[x, y] is var index and not Palette.TransparentIndex)
+                    yield return (ox + x, oy + y, index);
+    }
+
+    /// <summary>The most used colour of the drawing, or null when nothing is drawn.</summary>
+    public int? MainColour() => DrawnPixels().GroupBy(p => p.Index).MaxBy(g => g.Count())?.Key;
 
     /// <summary>Hand-drawn replacement images for 45° steps of rotation.</summary>
     public AngleVariants Variants { get; } = new();
@@ -110,6 +124,15 @@ public sealed class Part
     public IReadOnlyList<Part> Children => _children;
 
     public int Depth => Parent is null ? 0 : Parent.Depth + 1;
+
+    /// <summary>This part, then its children and theirs (parent before children).</summary>
+    public IEnumerable<Part> SelfAndDescendants()
+    {
+        yield return this;
+        foreach (var child in _children)
+            foreach (var part in child.SelfAndDescendants())
+                yield return part;
+    }
 
     /// <summary>
     /// The view drawn for <paramref name="direction"/>. A mirrored direction uses its own view when

@@ -232,7 +232,6 @@ public sealed class KeyframeChange(AnimationClip clip, Direction direction, int 
         if (before == key || (before is null && key is null))
             return;
         var change = new KeyframeChange(clip, direction, frame, before, key);
-        change.Redo();
-        history.Push(change);
+        history.Do(change);
     }
 }

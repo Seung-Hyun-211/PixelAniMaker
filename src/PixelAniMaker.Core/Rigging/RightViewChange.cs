@@ -31,7 +31,6 @@ public sealed class RightViewChange(Part part, PartView? before, PartView? after
         var before = separate ? null : part.View(direction);
         var after = separate ? part.View(direction.Source()).Copy() : null;
         var change = new RightViewChange(part, before, after, direction);
-        change.Redo();
-        history.Push(change);
+        history.Do(change);
     }
 }

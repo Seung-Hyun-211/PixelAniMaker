@@ -98,7 +98,7 @@
 
 | 위치 | 내용 |
 | --- | --- |
-| `Core/Rigging/DetailParts` (새로, 공통) | 눈 파츠 코드에서 공통 부분을 뺌: 세부 파츠 추가·삭제(`PartsChange` 재사용), 부모 이미지 재기, 빈 캔버스와 타원 그리기 도우미 |
+| `Core/Rigging/DetailParts` (새로, 공통 · 이후 `OptionalParts`) | 눈 파츠 코드에서 공통 부분을 뺌: 세부 파츠 추가·삭제(`PartsChange` 재사용), 부모 이미지 재기, 빈 캔버스와 타원 그리기 도우미 |
 | `Core/Rigging/EyeParts` | 공통 부분을 쓰도록 정리. 결과는 지금과 같음 (눈 테스트 그대로 통과해야 함) |
 | `Core/Rigging/BustPart` (새로) | `Has`, `CanAdd`, `Add(character, BustSize)`, `Remove`. 4절의 방향별 규칙. `BustSize { Small, Medium, Large }` |
 | `App/Services/EditorSession` | `HasBust`, `CanAddBust`, `AddBust(size)`, `RemoveBust`. 세부 파츠 위치 문구 |

@@ -43,8 +43,7 @@ public static class ThreeQuarterViews
 
     private static void Apply(ThreeQuarterChange change, UndoHistory history)
     {
-        change.Redo();
-        history.Push(change);
+        history.Do(change);
     }
 
     private static Dictionary<Part, Dictionary<Direction, PartView>> Snapshot(Character character) =>

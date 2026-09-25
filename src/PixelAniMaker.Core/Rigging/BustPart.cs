@@ -33,10 +33,10 @@ public static class BustPart
         if (!CanAdd(character))
             return;
         var chest = character.Find(ChestName)!;
-        DetailParts.Add(character, "가슴 볼륨 추가", [(Create(character, chest, size), chest)]);
+        OptionalParts.Add(character, "가슴 볼륨 추가", [(Create(character, chest, size), chest)]);
     }
 
-    public static void Remove(Character character) => DetailParts.Remove(character, "가슴 볼륨 삭제", Name);
+    public static void Remove(Character character) => OptionalParts.Remove(character, "가슴 볼륨 삭제", Name);
 
     /// <summary>Thickness along the teardrop, 0 at the collarbone and the ribs, 1 at the fullest point.</summary>
     public static float Profile(float t) =>
@@ -59,7 +59,7 @@ public static class BustPart
         float y0 = top + Top * h, y1 = top + Bottom * h;
         float k = Scale(size), halfWidth = 0.19f * w * k, depth = 0.22f * w * k;
 
-        int skin = MostUsed(front.Values);
+        int skin = chest.View(Direction.Front).MainColour()!.Value;
         int line = ShadingPass.DarkerColours(character.Palette, new HashSet<int>()) is var d && skin < d.Length && d[skin] is { } dark
             ? dark
             : character.Palette.GetOrAdd(Darken(character.Palette[skin]));
@@ -144,18 +144,8 @@ public static class BustPart
     }
 
     /// <summary>Drawn pixels of a view in character coordinates → palette index.</summary>
-    private static Dictionary<(int X, int Y), int> Mask(PartView view)
-    {
-        var mask = new Dictionary<(int X, int Y), int>();
-        var image = view.Image;
-        for (int y = 0; y < image.Height; y++)
-            for (int x = 0; x < image.Width; x++)
-                if (image[x, y] != Palette.TransparentIndex)
-                    mask[((int)view.RestPosition.X + x, (int)view.RestPosition.Y + y)] = image[x, y];
-        return mask;
-    }
-
-    private static int MostUsed(IEnumerable<int> indices) => indices.GroupBy(i => i).MaxBy(g => g.Count())!.Key;
+    private static Dictionary<(int X, int Y), int> Mask(PartView view) =>
+        view.DrawnPixels().ToDictionary(p => (p.X, p.Y), p => p.Index);
 
     private static Rgba Darken(Rgba c) => new((byte)(c.R * 3 / 4), (byte)(c.G * 3 / 4), (byte)(c.B * 3 / 4));
 

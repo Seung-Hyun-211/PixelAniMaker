@@ -24,9 +24,9 @@
 
 | 위치 | 내용 |
 | --- | --- |
-| `Core/Rigging/DetailMove` | 세부 파츠 이동 (이미지·관절 함께, 정수 px), 되돌리기 |
+| `Core/Rigging/DetailMove` (이후 `PartMove`로 이름 바꿈) | 세부 파츠 이동 (이미지·관절 함께, 정수 px), 되돌리기 |
 | `Core/Rigging/Part` (`PartView`) | 위치·관절을 내부에서만 옮길 수 있게 (`MoveBy`) |
-| `App/Services/EditorSession` | `ActiveDetailPosition`, `MoveActiveDetailTo` (반전 방향 좌표 변환) |
+| `App/Services/EditorSession` | `ActiveDetailPosition`, `MoveActiveDetailTo` (이후 `ActivePartPosition`, `MoveActivePartTo`) (반전 방향 좌표 변환) |
 | `App/ViewModels/PartsViewModel`, `Views/PartsView` | 눈 X / 눈 Y (눈 파츠를 골랐을 때만) |
 | 테스트 | 143개 통과 (새 3개: 이동·되돌리기·다른 방향 불변, 반전 방향 이동, 뼈대 파츠 거부·저장 후 유지) |
 

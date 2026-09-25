@@ -159,7 +159,6 @@ public sealed class SecondaryChange(Part part, SecondarySettings? before, Second
         if (part.Secondary == settings)
             return;
         var change = new SecondaryChange(part, part.Secondary, settings);
-        change.Redo();
-        history.Push(change);
+        history.Do(change);
     }
 }

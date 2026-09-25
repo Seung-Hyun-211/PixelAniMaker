@@ -27,11 +27,11 @@ public static class EyeParts
         if (!CanAdd(character))
             return;
         var head = character.Find(HeadName)!;
-        DetailParts.Add(character, "눈 파츠 추가", [(Create(character, head, Right), head), (Create(character, head, Left), head)]);
+        OptionalParts.Add(character, "눈 파츠 추가", [(Create(character, head, Right), head), (Create(character, head, Left), head)]);
     }
 
     /// <summary>Removes the eye parts (undoable).</summary>
-    public static void Remove(Character character) => DetailParts.Remove(character, "눈 파츠 삭제", Right, Left);
+    public static void Remove(Character character) => OptionalParts.Remove(character, "눈 파츠 삭제", Right, Left);
 
     private static Part Create(Character character, Part head, string name)
     {
@@ -82,13 +82,6 @@ public static class EyeParts
     private static float Square(float v) => v * v;
 
     /// <summary>From the first drawn row of the head image down to the neck joint.</summary>
-    private static float SkullHeight(PartView head)
-    {
-        var image = head.Image;
-        for (int y = 0; y < image.Height; y++)
-            for (int x = 0; x < image.Width; x++)
-                if (image[x, y] != Palette.TransparentIndex)
-                    return Math.Max(6, head.RestPivot.Y - (head.RestPosition.Y + y));
-        return 30;
-    }
+    private static float SkullHeight(PartView head) =>
+        head.DrawnPixels().Select(p => (int?)p.Y).Min() is { } top ? Math.Max(6, head.RestPivot.Y - top) : 30;
 }

@@ -125,7 +125,7 @@ public class EyePartsTests
         var backPivot = eye.View(Direction.Back).RestPivot;
         var before = new Compositor().Compose(c, Direction.Front);
 
-        DetailMove.Apply(eye, Direction.Front, new Vector2(2.4f, -1f), c.History);   // rounds to whole pixels
+        PartMove.Apply(eye, Direction.Front, new Vector2(2.4f, -1f), c.History);   // rounds to whole pixels
         Assert.Equal(pos + new Vector2(2, -1), front.RestPosition);
         Assert.Equal(pivot + new Vector2(2, -1), front.RestPivot);
         Assert.Equal(backPivot, eye.View(Direction.Back).RestPivot);
@@ -144,7 +144,7 @@ public class EyePartsTests
         EyeParts.Add(c);
         var eye = c.Find(EyeParts.Left)!;
         var pivot = eye.View(Direction.Left).RestPivot;
-        DetailMove.Apply(eye, Direction.Right, new Vector2(-3, 0), c.History);
+        PartMove.Apply(eye, Direction.Right, new Vector2(-3, 0), c.History);
         Assert.Equal(pivot + new Vector2(-3, 0), eye.View(Direction.Left).RestPivot);
         Assert.Same(eye.View(Direction.Left), eye.View(Direction.Right));
     }
@@ -153,10 +153,10 @@ public class EyePartsTests
     public void Only_detail_parts_move_and_moved_eyes_survive_save_and_load()
     {
         var c = HeadAndBody();
-        Assert.Throws<InvalidOperationException>(() => DetailMove.Apply(c.Find("head")!, Direction.Front, Vector2.One, c.History));
+        Assert.Throws<InvalidOperationException>(() => PartMove.Apply(c.Find("head")!, Direction.Front, Vector2.One, c.History));
 
         EyeParts.Add(c);
-        DetailMove.Apply(c.Find(EyeParts.Left)!, Direction.Front, new Vector2(1, 2), c.History);
+        PartMove.Apply(c.Find(EyeParts.Left)!, Direction.Front, new Vector2(1, 2), c.History);
         var moved = c.Find(EyeParts.Left)!.View(Direction.Front).RestPivot;
         using var ms = new MemoryStream();
         ProjectFile.Save(new ProjectData(c, []), ms, new RawCodec());

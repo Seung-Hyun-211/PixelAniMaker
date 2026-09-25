@@ -194,10 +194,7 @@ public sealed partial class EditorSession : ObservableObject
         OnPropertyChanged(nameof(SecondaryInExport));
         OnPropertyChanged(nameof(ShadingFromRight));
         OnPropertyChanged(nameof(ShadingWidth));
-        OnPropertyChanged(nameof(HasEyes));
-        OnPropertyChanged(nameof(CanAddEyes));
-        OnPropertyChanged(nameof(HasBust));
-        OnPropertyChanged(nameof(CanAddBust));
+        RaiseOptionalPartsChanged();
         ActivePart = character.Find("chest") ?? character.Root;
         OnDirectionsChanged(this, EventArgs.Empty);   // the new character may not have the current (3/4) direction
         HistoryChanged?.Invoke(this, EventArgs.Empty);
@@ -476,14 +473,22 @@ public sealed partial class EditorSession : ObservableObject
     }
 
     /// <summary>Joint of the active part in display coordinates when it can be moved (eye, bust, added part), else null.</summary>
-    public Vector2? ActiveDetailPosition => ActivePart.IsMovable ? FromSource(ActivePart.View(Direction).RestPivot) : null;
+    public Vector2? ActivePartPosition => ActivePart.IsMovable ? FromSource(ActivePart.View(Direction).RestPivot) : null;
 
     /// <summary>Moves the active movable part so its joint lands on <paramref name="display"/> (whole pixels, undoable).</summary>
-    public void MoveActiveDetailTo(Vector2 display)
+    public void MoveActivePartTo(Vector2 display)
     {
         if (!ActivePart.IsMovable || IsLocked(ActivePart))
             return;
-        DetailMove.Apply(ActivePart, Direction, FromSource(display) - ActivePart.View(Direction).RestPivot, Character.History);
+        PartMove.Apply(ActivePart, Direction, FromSource(display) - ActivePart.View(Direction).RestPivot, Character.History);
+    }
+
+    private void RaiseOptionalPartsChanged()
+    {
+        OnPropertyChanged(nameof(HasEyes));
+        OnPropertyChanged(nameof(CanAddEyes));
+        OnPropertyChanged(nameof(HasBust));
+        OnPropertyChanged(nameof(CanAddBust));
     }
 
     private void OnPartsChanged(object? sender, EventArgs e)
@@ -492,10 +497,7 @@ public sealed partial class EditorSession : ObservableObject
             ActivePart = Character.Find(EyeParts.HeadName) ?? Character.Root;
         _hiddenParts.RemoveWhere(p => !Character.Parts.Contains(p));
         _lockedParts.RemoveWhere(p => !Character.Parts.Contains(p));
-        OnPropertyChanged(nameof(HasEyes));
-        OnPropertyChanged(nameof(CanAddEyes));
-        OnPropertyChanged(nameof(HasBust));
-        OnPropertyChanged(nameof(CanAddBust));
+        RaiseOptionalPartsChanged();
         PartsChanged?.Invoke(this, EventArgs.Empty);
     }
 

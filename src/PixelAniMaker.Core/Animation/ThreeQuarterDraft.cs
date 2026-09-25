@@ -53,8 +53,7 @@ public static class ThreeQuarterDraft
         if (added.Count == 0)
             return false;
         var change = new DraftChange(added);
-        change.Redo();
-        history.Push(change);
+        history.Do(change);
         return true;
     }
 

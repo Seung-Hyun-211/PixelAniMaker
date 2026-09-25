@@ -52,6 +52,13 @@ public sealed class UndoHistory
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>Applies <paramref name="action"/> and records it.</summary>
+    public void Do(IUndoableAction action)
+    {
+        action.Redo();
+        Push(action);
+    }
+
     /// <summary>Records an action that has already been applied.</summary>
     public void Push(IUndoableAction action)
     {

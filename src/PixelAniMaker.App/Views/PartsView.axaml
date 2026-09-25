@@ -63,15 +63,15 @@
           </StackPanel>
         </StackPanel>
       </StackPanel>
-      <StackPanel Spacing="4" IsVisible="{Binding IsDetailPart}" IsEnabled="{Binding !Session.IsActivePartLocked}"
+      <StackPanel Spacing="4" IsVisible="{Binding IsMovablePart}" IsEnabled="{Binding !Session.IsActivePartLocked}"
                   ToolTip.Tip="이 방향에서 세부 파츠(눈·가슴 볼륨)나 추가한 파츠의 위치 (관절, 캔버스 px). 방향마다 따로 정하고, 되돌리기가 됩니다. 추가한 파츠는 아래 마디가 함께 옮겨집니다.">
         <StackPanel Orientation="Horizontal" Spacing="6">
           <TextBlock Text="위치 X" VerticalAlignment="Center" Width="48" />
-          <NumericUpDown Value="{Binding DetailX}" Increment="1" FormatString="0" Minimum="-512" Maximum="512" Width="130" />
+          <NumericUpDown Value="{Binding PositionX}" Increment="1" FormatString="0" Minimum="-512" Maximum="512" Width="130" />
         </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="6">
           <TextBlock Text="위치 Y" VerticalAlignment="Center" Width="48" />
-          <NumericUpDown Value="{Binding DetailY}" Increment="1" FormatString="0" Minimum="-512" Maximum="512" Width="130" />
+          <NumericUpDown Value="{Binding PositionY}" Increment="1" FormatString="0" Minimum="-512" Maximum="512" Width="130" />
         </StackPanel>
       </StackPanel>
       <CheckBox Content="반전 끊고 따로 그리기" IsChecked="{Binding OwnRight}" IsVisible="{Binding IsRightView}"

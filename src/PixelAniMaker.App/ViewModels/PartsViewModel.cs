@@ -47,9 +47,9 @@ public sealed partial class PartsViewModel : Tool
     [ObservableProperty] private string _variantMessage = "";
     [ObservableProperty] private bool _ownRight;
     [ObservableProperty] private bool _isRightView;
-    [ObservableProperty] private bool _isDetailPart;
-    [ObservableProperty] private decimal? _detailX;
-    [ObservableProperty] private decimal? _detailY;
+    [ObservableProperty] private bool _isMovablePart;
+    [ObservableProperty] private decimal? _positionX;
+    [ObservableProperty] private decimal? _positionY;
     [ObservableProperty] private bool _hasSecondary;
     [ObservableProperty] private int _secondaryModeIndex;
     [ObservableProperty] private decimal? _secondaryPeriod;
@@ -195,14 +195,14 @@ public sealed partial class PartsViewModel : Tool
             Session.SetOwnRight(value);
     }
 
-    partial void OnDetailXChanged(decimal? value) => ApplyDetailPosition();
+    partial void OnPositionXChanged(decimal? value) => ApplyPartPosition();
 
-    partial void OnDetailYChanged(decimal? value) => ApplyDetailPosition();
+    partial void OnPositionYChanged(decimal? value) => ApplyPartPosition();
 
-    private void ApplyDetailPosition()
+    private void ApplyPartPosition()
     {
-        if (!_syncing && DetailX is { } x && DetailY is { } y)
-            Session.MoveActiveDetailTo(new System.Numerics.Vector2((float)x, (float)y));
+        if (!_syncing && PositionX is { } x && PositionY is { } y)
+            Session.MoveActivePartTo(new System.Numerics.Vector2((float)x, (float)y));
     }
 
     partial void OnOffsetXChanged(decimal? value) => ApplyOffset();
@@ -331,8 +331,8 @@ public sealed partial class PartsViewModel : Tool
         OffsetY = (decimal)Math.Round(Session.CurrentPose.Offset.Y);
         IsRightView = Session.Direction.IsMirrored();
         OwnRight = Session.Direction.IsMirrored() && Session.ActivePart.HasOwnView(Session.Direction);
-        var detail = Session.ActiveDetailPosition;
-        IsDetailPart = detail is not null;
+        var detail = Session.ActivePartPosition;
+        IsMovablePart = detail is not null;
         IsCustomPart = Session.CanRemoveActivePart;
         var sway = Session.ActivePart.Secondary;
         HasSecondary = sway is not null;
@@ -345,8 +345,8 @@ public sealed partial class PartsViewModel : Tool
         HasLimit = limit is not null;
         LimitMin = limit is { } l ? (decimal)l.Min : null;
         LimitMax = limit is { } m ? (decimal)m.Max : null;
-        DetailX = detail is { } d ? (decimal)Math.Round(d.X, 1) : null;
-        DetailY = detail is { } e ? (decimal)Math.Round(e.Y, 1) : null;
+        PositionX = detail is { } d ? (decimal)Math.Round(d.X, 1) : null;
+        PositionY = detail is { } e ? (decimal)Math.Round(e.Y, 1) : null;
         UpdateVariantStatus();
         SyncAttachments();
         SyncLayers();
