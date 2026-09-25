@@ -219,6 +219,13 @@ public sealed partial class EditorSession : ObservableObject
 
     public void Redo() => ActiveDocument.Redo();
 
+    /// <summary>Undoes or redoes to the state with <paramref name="doneCount"/> actions applied (history panel).</summary>
+    public void JumpInHistory(int doneCount)
+    {
+        ActiveDocument.EndStroke();
+        Character.History.MoveTo(doneCount);
+    }
+
     /// <summary>Display canvas point → source-direction point (mirrors x in the Right view).</summary>
     public Vector2 ToSource(double x, double y) =>
         new((float)(Direction.IsMirrored() ? Character.Width - x : x), (float)y);

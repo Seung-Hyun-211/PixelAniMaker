@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PixelAniMaker.App.ViewModels"
+             x:Class="PixelAniMaker.App.Views.HistoryView"
+             x:DataType="vm:HistoryViewModel">
+  <DockPanel Margin="8">
+    <TextBlock DockPanel.Dock="Top" Text="고르면 그 시점으로 되돌립니다 (흐린 줄은 다시 하기로 갈 수 있는 작업)"
+               FontSize="11" Foreground="#999999" TextWrapping="Wrap" Margin="0,0,0,4" />
+    <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:HistoryItem">
+          <TextBlock Text="{Binding Label}" Opacity="{Binding Opacity}" />
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+      <ListBox.Styles>
+        <Style Selector="ListBoxItem">
+          <Setter Property="Padding" Value="6,2" />
+        </Style>
+      </ListBox.Styles>
+    </ListBox>
+  </DockPanel>
+</UserControl>
