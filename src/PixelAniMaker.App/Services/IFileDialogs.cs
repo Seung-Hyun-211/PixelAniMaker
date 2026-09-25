@@ -46,6 +46,9 @@ public interface IFileDialogs
     Task<IReadOnlyList<int>?> PickItemsAsync(string title, string message, IReadOnlyList<string> items, string okLabel,
         IReadOnlyList<bool>? ticked = null);
 
+    /// <summary>Margins to add around a <paramref name="width"/>×<paramref name="height"/> canvas (negative removes), or null when cancelled.</summary>
+    Task<Core.Rigging.CanvasMargins?> PickCanvasMarginsAsync(int width, int height);
+
     /// <summary>True to recover the autosaved work, false to discard it.</summary>
     Task<bool> ConfirmRecoveryAsync(string message);
 }

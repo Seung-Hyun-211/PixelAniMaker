@@ -48,6 +48,9 @@
         <MenuItem Header="되돌리기" InputGesture="{Binding Shortcuts.Gestures[Undo]}" Command="{Binding UndoCommand}" />
         <MenuItem Header="다시 하기" InputGesture="{Binding Shortcuts.Gestures[Redo]}" Command="{Binding RedoCommand}" />
         <Separator />
+        <MenuItem Header="캔버스 크기..." Command="{Binding ResizeCanvasCommand}"
+                  ToolTip.Tip="캔버스 둘레에 여백을 더하거나 줄입니다 (점프·든 팔·모자·꼬리가 잘릴 때). 되돌리기가 됩니다." />
+        <Separator />
         <MenuItem Header="반측면 추가" Command="{Binding AddThreeQuarterCommand}" IsVisible="{Binding !Session.HasThreeQuarter}"
                   ToolTip.Tip="앞·뒤 반측면 방향을 켭니다. 정면·후면 그림을 복사한 상태로 시작하니 그 위에 다시 그리세요. 오른쪽을 향한 두 방향은 반전으로 만들어집니다." />
         <MenuItem Header="반측면 지우기" Command="{Binding RemoveThreeQuarterCommand}" IsVisible="{Binding Session.HasThreeQuarter}"

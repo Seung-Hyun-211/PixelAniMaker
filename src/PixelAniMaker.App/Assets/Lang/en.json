@@ -373,5 +373,16 @@
   "꼬리 추가": "Add tail",
   "망토 추가": "Add cape",
   "장신구 추가": "Add accessory",
-  "이 방향에서 세부 파츠(눈·가슴 볼륨)나 추가한 파츠의 위치 (관절, 캔버스 px). 방향마다 따로 정하고, 되돌리기가 됩니다. 추가한 파츠는 아래 마디가 함께 옮겨집니다.": "Position of the detail part (eyes, bust) or added part in this direction (joint, canvas px). Set per direction; undoable. An added part takes the links below it along."
+  "이 방향에서 세부 파츠(눈·가슴 볼륨)나 추가한 파츠의 위치 (관절, 캔버스 px). 방향마다 따로 정하고, 되돌리기가 됩니다. 추가한 파츠는 아래 마디가 함께 옮겨집니다.": "Position of the detail part (eyes, bust) or added part in this direction (joint, canvas px). Set per direction; undoable. An added part takes the links below it along.",
+
+  "캔버스 크기...": "Canvas size...",
+  "캔버스 둘레에 여백을 더하거나 줄입니다 (점프·든 팔·모자·꼬리가 잘릴 때). 되돌리기가 됩니다.": "Adds or removes margins around the canvas (when jumps, raised arms, hats or tails get cut off). Undoable.",
+  "캔버스 크기": "Canvas size",
+  "캔버스 둘레에 더할 픽셀 수 (음수는 줄임). 캐릭터 그림은 그대로이고 캔버스 위 자리만 옮겨집니다. 잘리는 그림도 파츠 이미지에는 남습니다.": "Pixels to add on each side (negative removes). The character's drawing stays the same; only its place on the canvas moves. Anything cut off is still kept in the part images.",
+  "위": "Top",
+  "아래": "Bottom",
+  "왼쪽": "Left",
+  "오른쪽": "Right",
+  "기본 여백 (좌우 16 · 위 24 · 아래 8)": "Default margins (16 left/right · 24 top · 8 bottom)",
+  "바꾸기": "Change"
 }

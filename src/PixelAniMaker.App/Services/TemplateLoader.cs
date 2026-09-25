@@ -5,7 +5,10 @@ using PixelAniMaker.Core.Rigging;
 
 namespace PixelAniMaker.App.Services;
 
-/// <summary>Loads the built-in 4-head mannequin (16 parts, front/left/back) from the app assets.</summary>
+/// <summary>
+/// Loads the built-in 4-head mannequin (16 parts, front/left/back) from the app assets, on a 128×160 canvas:
+/// the 96×128 template with <see cref="CanvasMargins.Default"/> around it.
+/// </summary>
 public static class TemplateLoader
 {
     private const string Folder = "avares://PixelAniMaker/Assets/Templates/chibi96/";
@@ -29,6 +32,7 @@ public static class TemplateLoader
         character.Outline.OutlineIndex = palette.GetOrAdd(OutlineColor);
         character.Outline.InnerIndex = palette.GetOrAdd(InnerLineColor);
         character.Outline.Enabled = true;
+        CanvasResize.ApplyUnrecorded(character, CanvasMargins.Default);   // room for jumps, raised arms, hats and tails
         return character;
     }
 

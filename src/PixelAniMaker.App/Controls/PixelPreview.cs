@@ -39,7 +39,7 @@ public sealed class PixelPreview : SessionControl
 
     protected override void OnSessionPropertyChanged(string? propertyName)
     {
-        if (propertyName == nameof(EditorSession.Character))
+        if (propertyName is nameof(EditorSession.Character) or nameof(EditorSession.CanvasSize))
             InvalidateMeasure();
     }
 

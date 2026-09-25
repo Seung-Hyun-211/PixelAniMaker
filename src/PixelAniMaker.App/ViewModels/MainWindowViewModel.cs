@@ -42,7 +42,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 OnDocumentStateChanged();
             if (e.PropertyName is nameof(EditorSession.Zoom) or nameof(EditorSession.CurrentTool)
                 or nameof(EditorSession.PoseMode) or nameof(EditorSession.TouchupMode)
-                or nameof(EditorSession.ActivePart) or nameof(EditorSession.Direction))
+                or nameof(EditorSession.ActivePart) or nameof(EditorSession.Direction) or nameof(EditorSession.CanvasSize))
                 OnPropertyChanged(nameof(StatusText));
         };
         RefreshRecentFiles();
@@ -481,6 +481,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         if (!Core.Animation.ThreeQuarterDraft.Apply(Animation.Clips, Session.Character.History) && Dialogs is not null)
             await Dialogs.ShowMessageAsync("채울 반측면 트랙이 없습니다. 반측면 키가 이미 있거나, 정면·측면 키가 없는 동작만 있습니다.");
+    }
+
+    /// <summary>Asks for margins and resizes the canvas (undoable); explains when the size is out of range.</summary>
+    [RelayCommand]
+    private async Task ResizeCanvas()
+    {
+        if (Dialogs is null || await Dialogs.PickCanvasMarginsAsync(Session.Character.Width, Session.Character.Height) is not { } margins)
+            return;
+        if (!Session.ResizeCanvas(margins, Animation.Clips))
+            await Dialogs.ShowErrorAsync($"캔버스는 가로·세로 {Core.Rigging.CanvasResize.MinSize}~{Core.Rigging.CanvasResize.MaxSize} px이어야 합니다.");
     }
 
     /// <summary>Removes the 3/4 views and the clips' 3/4 keys and touch-ups (undoable).</summary>

@@ -29,8 +29,18 @@ public sealed class Character
         _hasThreeQuarter = _parts.Any(p => p.HasOwnView(Direction.FrontLeft));
     }
 
-    public int Width { get; }
-    public int Height { get; }
+    public int Width { get; private set; }
+    public int Height { get; private set; }
+
+    /// <summary>Raised after <see cref="Width"/> or <see cref="Height"/> changed (see <see cref="CanvasResize"/>).</summary>
+    public event EventHandler? CanvasSizeChanged;
+
+    internal void SetCanvasSize(int width, int height)
+    {
+        Width = width;
+        Height = height;
+        CanvasSizeChanged?.Invoke(this, EventArgs.Empty);
+    }
     public Palette Palette { get; }
     public UndoHistory History { get; } = new();
     public ColorSelection Colors { get; }

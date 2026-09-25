@@ -171,6 +171,7 @@ public sealed partial class EditorSession : ObservableObject
             Character.PoseChanged -= OnPoseChanged;
             Character.PartsChanged -= OnPartsChanged;
             Character.DirectionsChanged -= OnDirectionsChanged;
+            Character.CanvasSizeChanged -= OnCanvasSizeChanged;
         }
 
         character.History.Changed += OnHistoryChanged;
@@ -181,12 +182,11 @@ public sealed partial class EditorSession : ObservableObject
         character.PoseChanged += OnPoseChanged;
         character.PartsChanged += OnPartsChanged;
         character.DirectionsChanged += OnDirectionsChanged;
+        character.CanvasSizeChanged += OnCanvasSizeChanged;
 
         _hiddenParts.Clear();
         _lockedParts.Clear();
-        CanvasBitmap = CompositeBitmap.Create(character.Width, character.Height);
-        foreach (var d in DirectionExtensions.Every)
-            _previewBitmaps[d] = CompositeBitmap.Create(character.Width, character.Height);
+        CreateBitmaps(character);
 
         Character = character;
         OnPropertyChanged(nameof(AutoOutline));
@@ -198,6 +198,27 @@ public sealed partial class EditorSession : ObservableObject
         ActivePart = character.Find("chest") ?? character.Root;
         OnDirectionsChanged(this, EventArgs.Empty);   // the new character may not have the current (3/4) direction
         HistoryChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void CreateBitmaps(Character character)
+    {
+        CanvasBitmap = CompositeBitmap.Create(character.Width, character.Height);
+        foreach (var d in DirectionExtensions.Every)
+            _previewBitmaps[d] = CompositeBitmap.Create(character.Width, character.Height);
+    }
+
+    /// <summary>Canvas size in pixels; changes with <see cref="ResizeCanvas"/> (and its undo).</summary>
+    public (int Width, int Height) CanvasSize => (Character.Width, Character.Height);
+
+    /// <summary>Adds (negative: removes) margins around the canvas as one undo step; false when refused.</summary>
+    public bool ResizeCanvas(CanvasMargins margins, IEnumerable<Core.Animation.AnimationClip> clips) =>
+        CanvasResize.Apply(Character, clips, margins, Character.History);
+
+    private void OnCanvasSizeChanged(object? sender, EventArgs e)
+    {
+        CreateBitmaps(Character);
+        OnPropertyChanged(nameof(CanvasSize));
+        Refresh();
     }
 
     public void ZoomBy(int steps)
