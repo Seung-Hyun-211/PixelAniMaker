@@ -200,7 +200,7 @@ public sealed partial class PartsViewModel : Tool
         OffsetX = (decimal)Math.Round(Session.CurrentPose.Offset.X);
         OffsetY = (decimal)Math.Round(Session.CurrentPose.Offset.Y);
         IsRightView = Session.Direction.IsMirrored();
-        OwnRight = Session.ActivePart.HasOwnRight;
+        OwnRight = Session.Direction.IsMirrored() && Session.ActivePart.HasOwnView(Session.Direction);
         var detail = Session.ActiveDetailPosition;
         IsDetailPart = detail is not null;
         DetailX = detail is { } d ? (decimal)Math.Round(d.X, 1) : null;

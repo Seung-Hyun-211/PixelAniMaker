@@ -44,6 +44,8 @@ public sealed partial class AnimationSession : ObservableObject
         {
             if (e.PropertyName == nameof(EditorSession.Direction))
                 OnPropertyChanged(nameof(CurrentKey));
+            else if (e.PropertyName == nameof(EditorSession.Directions))
+                OnPropertyChanged(nameof(Directions));
         };
         Clips.CollectionChanged += (_, _) => HasUnsavedClipChanges = true;
         SetClips(TemplateLoader.LoadDefaultAnimations());
@@ -58,6 +60,9 @@ public sealed partial class AnimationSession : ObservableObject
     public ObservableCollection<AnimationClip> Clips { get; } = [];
 
     /// <summary>The key at the current frame in the current direction, if any.</summary>
+    /// <summary>Directions to play (the character's: 4, or 8 with 3/4 views).</summary>
+    public IReadOnlyList<Direction> Directions => _editor.Directions;
+
     public Keyframe? CurrentKey => CurrentClip?.KeyAt(_editor.Direction, CurrentFrame);
 
     /// <summary>Baked frame bitmap (null before the first bake).</summary>
@@ -192,7 +197,7 @@ public sealed partial class AnimationSession : ObservableObject
     private void ApplyFrame()
     {
         if (CurrentClip is { } clip)
-            foreach (var d in DirectionExtensions.Stored)
+            foreach (var d in _editor.Character.StoredDirections)
                 _editor.Character.PoseFor(d).Restore(clip.Evaluate(d, CurrentFrame));
         OnPropertyChanged(nameof(CurrentKey));
     }
@@ -211,7 +216,8 @@ public sealed partial class AnimationSession : ObservableObject
         _generated = new Dictionary<Direction, CompositeResult[]>();
         if (CurrentClip is { } clip)
         {
-            _generated = SpriteBaker.Bake(_editor.Character, clip, _editor.Compositor, touchups: false);
+            _generated = SpriteBaker.Bake(_editor.Character, clip, _editor.Compositor, touchups: false,
+                directions: _editor.Character.Directions);
             _frames = _generated.ToDictionary(kv => kv.Key, kv => kv.Value.Select((generated, f) =>
             {
                 var final = generated.Clone();

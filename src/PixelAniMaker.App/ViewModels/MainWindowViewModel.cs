@@ -79,6 +79,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
             ["Direction.Left"] = (SetDirectionCommand, Direction.Left),
             ["Direction.Right"] = (SetDirectionCommand, Direction.Right),
             ["Direction.Back"] = (SetDirectionCommand, Direction.Back),
+            ["Direction.FrontLeft"] = (SetDirectionCommand, Direction.FrontLeft),
+            ["Direction.FrontRight"] = (SetDirectionCommand, Direction.FrontRight),
+            ["Direction.BackLeft"] = (SetDirectionCommand, Direction.BackLeft),
+            ["Direction.BackRight"] = (SetDirectionCommand, Direction.BackRight),
             ["ToggleGrid"] = (ToggleGridCommand, null),
             ["ToggleDim"] = (ToggleDimOtherPartsCommand, null),
             ["TogglePose"] = (TogglePoseModeCommand, null),
@@ -411,7 +415,18 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private void SelectTool(ToolItem tool) => Session.SelectTool(tool);
 
     [RelayCommand]
-    private void SetDirection(Direction direction) => Session.Direction = direction;
+    private void SetDirection(Direction direction)
+    {
+        if (Session.Directions.Contains(direction))   // 3/4 shortcuts do nothing until 3/4 views are on
+            Session.Direction = direction;
+    }
+
+    [RelayCommand]
+    private void AddThreeQuarter() => Session.AddThreeQuarter();
+
+    /// <summary>Removes the 3/4 views and the clips' 3/4 keys and touch-ups (undoable).</summary>
+    [RelayCommand]
+    private void RemoveThreeQuarter() => Session.RemoveThreeQuarter(Animation.Clips);
 
     [RelayCommand] private void SaveKey() => Animation.SaveKey();
     [RelayCommand] private void DeleteKey() => Animation.DeleteKey();

@@ -3,6 +3,7 @@
              xmlns:vm="using:PixelAniMaker.App.ViewModels"
              xmlns:c="using:PixelAniMaker.App.Controls"
              xmlns:rig="using:PixelAniMaker.Core.Rigging"
+             xmlns:conv="using:PixelAniMaker.App.Converters"
              x:Class="PixelAniMaker.App.Views.AnimationPreviewView"
              x:DataType="vm:AnimationPreviewViewModel">
   <ScrollViewer HorizontalScrollBarVisibility="Auto">
@@ -11,24 +12,22 @@
         <Run Text="{Binding Animation.CurrentClip.Name, FallbackValue=''}" />
         <Run Text=" — 프레임 생성 결과 재생" />
       </TextBlock>
-      <UniformGrid Columns="2" HorizontalAlignment="Left">
-        <StackPanel Spacing="4" Margin="0,0,10,10">
-          <TextBlock Text="정면" FontSize="11" Foreground="#999999" />
-          <c:AnimationPlayer Animation="{Binding Animation}" Direction="{x:Static rig:Direction.Front}" HorizontalAlignment="Left" />
-        </StackPanel>
-        <StackPanel Spacing="4" Margin="0,0,10,10">
-          <TextBlock Text="좌측면" FontSize="11" Foreground="#999999" />
-          <c:AnimationPlayer Animation="{Binding Animation}" Direction="{x:Static rig:Direction.Left}" HorizontalAlignment="Left" />
-        </StackPanel>
-        <StackPanel Spacing="4" Margin="0,0,10,10">
-          <TextBlock Text="우측면" FontSize="11" Foreground="#999999" />
-          <c:AnimationPlayer Animation="{Binding Animation}" Direction="{x:Static rig:Direction.Right}" HorizontalAlignment="Left" />
-        </StackPanel>
-        <StackPanel Spacing="4" Margin="0,0,10,10">
-          <TextBlock Text="후면" FontSize="11" Foreground="#999999" />
-          <c:AnimationPlayer Animation="{Binding Animation}" Direction="{x:Static rig:Direction.Back}" HorizontalAlignment="Left" />
-        </StackPanel>
-      </UniformGrid>
+      <ItemsControl ItemsSource="{Binding Animation.Directions}" HorizontalAlignment="Left">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <UniformGrid Columns="2" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="rig:Direction">
+            <StackPanel Spacing="4" Margin="0,0,10,10">
+              <TextBlock Text="{Binding Converter={x:Static conv:DirectionLabelConverter.Instance}}" FontSize="11" Foreground="#999999" />
+              <c:AnimationPlayer Animation="{Binding $parent[ItemsControl].((vm:AnimationPreviewViewModel)DataContext).Animation}"
+                                 Direction="{Binding}" HorizontalAlignment="Left" />
+            </StackPanel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
     </StackPanel>
   </ScrollViewer>
 </UserControl>

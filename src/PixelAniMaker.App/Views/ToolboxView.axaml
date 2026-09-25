@@ -8,7 +8,7 @@
   <ScrollViewer>
   <StackPanel Margin="8" Spacing="10">
     <TextBlock Text="방향" FontSize="11" Foreground="#999999" />
-    <ListBox ItemsSource="{Binding Directions}" SelectedItem="{Binding Session.Direction}">
+    <ListBox ItemsSource="{Binding Session.Directions}" SelectedItem="{Binding Session.Direction}">
       <ListBox.ItemsPanel>
         <ItemsPanelTemplate>
           <UniformGrid Columns="2" />
@@ -16,7 +16,7 @@
       </ListBox.ItemsPanel>
       <ListBox.ItemTemplate>
         <DataTemplate>
-          <TextBlock>
+          <TextBlock TextWrapping="Wrap">
             <TextBlock.Text>
               <MultiBinding Converter="{x:Static conv:ShortcutLabelConverter.Instance}">
                 <Binding Converter="{x:Static conv:DirectionLabelConverter.Instance}" />

@@ -47,7 +47,7 @@ public sealed class ToolboxViewModel : Tool
 
     public IReadOnlyList<ToolItem> Tools => ToolCatalog.All;
 
-    public IReadOnlyList<Direction> Directions => DirectionExtensions.All;
+
 }
 
 public sealed partial class SwatchViewModel : ObservableObject

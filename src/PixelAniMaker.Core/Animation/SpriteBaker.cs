@@ -6,9 +6,11 @@ namespace PixelAniMaker.Core.Animation;
 public static class SpriteBaker
 {
     /// <param name="touchups">False gives the frames as generated, before hand-painted fixes.</param>
+    /// <param name="directions">Which directions to render (default: the classic four).</param>
     public static IReadOnlyDictionary<Direction, CompositeResult[]> Bake(
-        Character character, AnimationClip clip, Compositor compositor, bool touchups = true) =>
-        DirectionExtensions.All.ToDictionary(d => d, d =>
+        Character character, AnimationClip clip, Compositor compositor, bool touchups = true,
+        IReadOnlyList<Direction>? directions = null) =>
+        (directions ?? DirectionExtensions.All).ToDictionary(d => d, d =>
             Enumerable.Range(0, clip.FrameCount)
                 .Select(f =>
                 {

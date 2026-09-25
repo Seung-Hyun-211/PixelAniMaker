@@ -106,6 +106,7 @@ public sealed partial class EditorSession : ObservableObject
             Character.Outline.Changed -= OnContentChanged;
             Character.PoseChanged -= OnPoseChanged;
             Character.PartsChanged -= OnPartsChanged;
+            Character.DirectionsChanged -= OnDirectionsChanged;
         }
 
         character.History.Changed += OnHistoryChanged;
@@ -113,9 +114,10 @@ public sealed partial class EditorSession : ObservableObject
         character.Outline.Changed += OnContentChanged;
         character.PoseChanged += OnPoseChanged;
         character.PartsChanged += OnPartsChanged;
+        character.DirectionsChanged += OnDirectionsChanged;
 
         CanvasBitmap = CompositeBitmap.Create(character.Width, character.Height);
-        foreach (var d in DirectionExtensions.All)
+        foreach (var d in DirectionExtensions.Every)
             _previewBitmaps[d] = CompositeBitmap.Create(character.Width, character.Height);
 
         Character = character;
@@ -123,6 +125,7 @@ public sealed partial class EditorSession : ObservableObject
         OnPropertyChanged(nameof(HasEyes));
         OnPropertyChanged(nameof(CanAddEyes));
         ActivePart = character.Find("chest") ?? character.Root;
+        OnDirectionsChanged(this, EventArgs.Empty);   // the new character may not have the current (3/4) direction
         HistoryChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -262,6 +265,26 @@ public sealed partial class EditorSession : ObservableObject
         return null;
     }
 
+    /// <summary>Directions the character is shown in (4, or 8 with 3/4 views), in sheet order.</summary>
+    public IReadOnlyList<Direction> Directions => Character.Directions;
+
+    public bool HasThreeQuarter => Character.HasThreeQuarter;
+
+    /// <summary>Turns 3/4 views on (copies of front/back to redraw), as one undo step.</summary>
+    public void AddThreeQuarter() => ThreeQuarterViews.Enable(Character, Character.History);
+
+    /// <summary>Turns 3/4 views off, removing the clips' 3/4 keys and touch-ups too (one undo step).</summary>
+    public void RemoveThreeQuarter(IEnumerable<Core.Animation.AnimationClip> clips) =>
+        ThreeQuarterViews.Disable(Character, clips, Character.History);
+
+    private void OnDirectionsChanged(object? sender, EventArgs e)
+    {
+        if (!Directions.Contains(Direction))
+            Direction = Direction.Fallback();
+        OnPropertyChanged(nameof(Directions));
+        OnPropertyChanged(nameof(HasThreeQuarter));
+    }
+
     public bool HasEyes => EyeParts.Has(Character);
 
     public bool CanAddEyes => EyeParts.CanAdd(Character);
@@ -296,8 +319,12 @@ public sealed partial class EditorSession : ObservableObject
         PartsChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>Right view only: draw the active part separately (true) or mirror the Left view again.</summary>
-    public void SetOwnRight(bool separate) => RightViewChange.Apply(ActivePart, Character.History, separate);
+    /// <summary>Mirrored directions only (right, right-facing 3/4): draw the active part separately (true) or mirror again.</summary>
+    public void SetOwnRight(bool separate)
+    {
+        if (Direction.IsMirrored())
+            RightViewChange.Apply(ActivePart, Character.History, separate, Direction);
+    }
 
     public void RemoveActiveVariant()
     {
@@ -354,7 +381,7 @@ public sealed partial class EditorSession : ObservableObject
         Transforms = Character.ComputeTransforms(Direction);
         AttachDocument(ActiveTransform.EditImage(ActiveLayer)); // rotating into or out of an angle variant switches the target
         UpdateMirror();                        // the mirror follows the pose
-        var composites = DirectionExtensions.All.ToDictionary(d => d, d => Compositor.Compose(Character, d));
+        var composites = Character.Directions.ToDictionary(d => d, d => Compositor.Compose(Character, d));
         SourceComposite = composites[Direction];
         if (Direction.IsMirrored())
         {
