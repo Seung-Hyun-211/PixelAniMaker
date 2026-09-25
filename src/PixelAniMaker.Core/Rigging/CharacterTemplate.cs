@@ -22,8 +22,10 @@ public sealed record PartViewSpec(int X, int Y, float JointX, float JointY, int 
 /// One part entry of skeleton.json. <see cref="Views"/> is keyed "front", "left", "back", plus "right"
 /// when the part's right view is drawn separately. A right view is stored in the same orientation as
 /// the left view (the program mirrors it for display), so its joints and angles match the left view.
+/// <see cref="Detail"/> marks a detail part such as an eye (omitted when false; older versions ignore it).
 /// </summary>
-public sealed record PartSpec(string Name, string Label, string? Parent, IReadOnlyDictionary<string, PartViewSpec> Views);
+public sealed record PartSpec(string Name, string Label, string? Parent, IReadOnlyDictionary<string, PartViewSpec> Views,
+    bool? Detail = null);
 
 /// <summary>Contents of skeleton.json: canvas size and the part list.</summary>
 public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec> Parts)
@@ -83,7 +85,7 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
                 return new PartViewSpec((int)v.RestPosition.X, (int)v.RestPosition.Y, v.RestPivot.X, v.RestPivot.Y,
                     v.DrawOrder, ImagePath(d, p.Name), variants.Count > 0 ? variants : null,
                     attachments.Count > 0 ? attachments : null, LayerSpecs(v, d, p.Name));
-            }))).ToList());
+            }), p.IsDetail ? true : null)).ToList());
 
     /// <summary>Builds the character; <paramref name="loadImage"/> decodes an image file named in the spec.</summary>
     public Character Build(Func<string, RgbaImage> loadImage, Palette? palette = null)
@@ -92,7 +94,7 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
         var parts = Parts.ToDictionary(s => s.Name, s => new Part(s.Name, s.Label,
             DirectionExtensions.All
                 .Where(d => !d.IsMirrored() || s.Views.ContainsKey(Key(d)))
-                .ToDictionary(d => d, d => BuildView(s, d, loadImage, pal))));
+                .ToDictionary(d => d, d => BuildView(s, d, loadImage, pal))) { IsDetail = s.Detail == true });
         foreach (var spec in Parts.Where(s => s.Parent is not null))
         {
             if (!parts.TryGetValue(spec.Parent!, out var parent))

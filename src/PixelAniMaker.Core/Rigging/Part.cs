@@ -62,6 +62,13 @@ public sealed class Part
 
     public string Name { get; }
     public string Label { get; }
+
+    /// <summary>
+    /// A detail drawn on its parent (e.g. an eye on the head): it follows the parent's outline instead
+    /// of getting its own, so no line is drawn where it meets the parent.
+    /// </summary>
+    public bool IsDetail { get; init; }
+
     public Part? Parent { get; private set; }
     public IReadOnlyList<Part> Children => _children;
 
@@ -84,6 +91,12 @@ public sealed class Part
             _views.Remove(Direction.Right);
         else
             _views[Direction.Right] = view;
+    }
+
+    internal void Detach()
+    {
+        Parent?._children.Remove(this);
+        Parent = null;
     }
 
     internal void AttachTo(Part parent)

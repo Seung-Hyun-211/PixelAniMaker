@@ -34,6 +34,7 @@ public sealed partial class PartsViewModel : Tool
         Title = "파츠";
         CanClose = false;
         session.HistoryChanged += (_, _) => Sync(); // variants or right views added/removed or undone
+        session.PartsChanged += (_, _) => Attach(); // eye parts added/removed or undone
         session.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(EditorSession.Character))
@@ -109,6 +110,12 @@ public sealed partial class PartsViewModel : Tool
 
     [RelayCommand]
     private void ResetPart() => Session.SetRotation(Session.ActivePart, 0);
+
+    [RelayCommand]
+    private void AddEyes() => Session.AddEyes();
+
+    [RelayCommand]
+    private void RemoveEyes() => Session.RemoveEyes();
 
     [RelayCommand]
     private void ResetPose() => Session.ResetPose();

@@ -79,11 +79,15 @@ public sealed class Compositor
         }
     }
 
+    /// <summary>Draw rank per owner; detail parts share their parent's rank so no line is drawn between them.</summary>
     private static int[] RankByOwner(Character character, List<Part> drawOrder)
     {
         var rank = new int[character.Parts.Count];
         for (int i = 0; i < drawOrder.Count; i++)
             rank[character.IndexOf(drawOrder[i])] = i;
+        foreach (var part in character.Parts)
+            if (part.IsDetail && part.Parent is { } parent)
+                rank[character.IndexOf(part)] = rank[character.IndexOf(parent)];
         return rank;
     }
 

@@ -90,6 +90,9 @@ public sealed partial class EditorSession : ObservableObject
     /// <summary>Raised when the undo history or dirty state changes.</summary>
     public event EventHandler? HistoryChanged;
 
+    /// <summary>Raised when parts are added or removed (after the active part has been kept valid).</summary>
+    public event EventHandler? PartsChanged;
+
     /// <summary>Raised when anything that changes rendered frames changes: pixels, palette, outline, undo/redo.</summary>
     public event EventHandler? ContentChanged;
 
@@ -102,12 +105,14 @@ public sealed partial class EditorSession : ObservableObject
             Character.Palette.Changed -= OnContentChanged;
             Character.Outline.Changed -= OnContentChanged;
             Character.PoseChanged -= OnPoseChanged;
+            Character.PartsChanged -= OnPartsChanged;
         }
 
         character.History.Changed += OnHistoryChanged;
         character.Palette.Changed += OnContentChanged;
         character.Outline.Changed += OnContentChanged;
         character.PoseChanged += OnPoseChanged;
+        character.PartsChanged += OnPartsChanged;
 
         CanvasBitmap = CompositeBitmap.Create(character.Width, character.Height);
         foreach (var d in DirectionExtensions.All)
@@ -115,6 +120,8 @@ public sealed partial class EditorSession : ObservableObject
 
         Character = character;
         OnPropertyChanged(nameof(AutoOutline));
+        OnPropertyChanged(nameof(HasEyes));
+        OnPropertyChanged(nameof(CanAddEyes));
         ActivePart = character.Find("chest") ?? character.Root;
         HistoryChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -253,6 +260,29 @@ public sealed partial class EditorSession : ObservableObject
             return $"{angle}° 이미지가 이미 있습니다.";
         VariantChange.Apply(view.Variants, Character.History, angle, VariantChange.RenderFromBase(view, angle));
         return null;
+    }
+
+    public bool HasEyes => EyeParts.Has(Character);
+
+    public bool CanAddEyes => EyeParts.CanAdd(Character);
+
+    /// <summary>Adds the eye parts (undoable) and selects the right eye to draw on.</summary>
+    public void AddEyes()
+    {
+        EyeParts.Add(Character);
+        if (Character.Find(EyeParts.Right) is { } eye)
+            ActivePart = eye;
+    }
+
+    public void RemoveEyes() => EyeParts.Remove(Character);
+
+    private void OnPartsChanged(object? sender, EventArgs e)
+    {
+        if (!Character.Parts.Contains(ActivePart))
+            ActivePart = Character.Find(EyeParts.HeadName) ?? Character.Root;
+        OnPropertyChanged(nameof(HasEyes));
+        OnPropertyChanged(nameof(CanAddEyes));
+        PartsChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Right view only: draw the active part separately (true) or mirror the Left view again.</summary>

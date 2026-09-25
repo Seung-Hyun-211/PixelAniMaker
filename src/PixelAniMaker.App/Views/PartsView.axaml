@@ -76,6 +76,11 @@
         <Button Content="이 파츠 0°" Command="{Binding ResetPartCommand}" />
         <Button Content="포즈 초기화" Command="{Binding ResetPoseCommand}" />
       </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <Button Content="눈 파츠 추가" Command="{Binding AddEyesCommand}" IsVisible="{Binding Session.CanAddEyes}"
+                ToolTip.Tip="머리에 붙는 눈 파츠(눈 R·눈 L)를 따로 만듭니다. 얼굴과 따로 그리고 바꿀 수 있고, 머리와 만나는 곳에는 선이 생기지 않습니다." />
+        <Button Content="눈 파츠 삭제" Command="{Binding RemoveEyesCommand}" IsVisible="{Binding Session.HasEyes}" />
+      </StackPanel>
     </StackPanel>
     </ScrollViewer>
     <GridSplitter Grid.Row="1" ResizeDirection="Rows" />

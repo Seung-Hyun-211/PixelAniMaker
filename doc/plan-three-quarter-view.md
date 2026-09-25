@@ -32,6 +32,7 @@
 | `Core/Rigging/RightViewChange.cs` | 우측면 따로 그리기 되돌리기 | 반전 방향 전체로 일반화 (이름 유지하고 방향 인자 추가) |
 | `Core/Rigging/Character.cs` | 방향별 포즈 3개 | 반 측면 있을 때 포즈 2개 추가 |
 | `Core/Rigging/CharacterTemplate.cs` | `skeleton.json` 키 `front`/`left`/`back`(+`right`) | `frontleft`/`backleft`(+`frontright`/`backright`)는 있을 때만 읽고 쓰기 |
+| `Core/Rigging/EyeParts.cs` | 방향별 눈 위치·보이기 (정면 두 눈, 측면 가까운 눈, 후면 없음) | 앞 반 측면: 두 눈, 먼 눈은 얼굴 중심 쪽으로 좁게 · 뒤 반 측면: 없음. 눈이 이미 있는 캐릭터에 반 측면을 켜면 정면 눈 뷰를 복사해 시작 |
 | `Core/Rigging/Symmetry.cs` | 정면·후면에서만 대칭 그리기 | 반 측면은 대칭 없음 (그대로 `null`) |
 | `Core/Animation/AnimationClip.cs` | 트랙 3개, 키가 없으면 기본 자세 | 반 측면 트랙 선택, 비어 있으면 대체 규칙(5절) |
 | `Core/Animation/AnimationJson.cs` | 모르는 방향이면 `FormatException` | 반 측면 트랙이 있을 때만 쓰기 (옛 프로그램이 읽을 일이 없게) |

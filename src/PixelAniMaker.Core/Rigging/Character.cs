@@ -12,6 +12,7 @@ namespace PixelAniMaker.Core.Rigging;
 public sealed class Character
 {
     private readonly Dictionary<Direction, Pose> _poses = DirectionExtensions.Stored.ToDictionary(d => d, _ => new Pose());
+    private readonly List<Part> _parts;
 
     public Character(int width, int height, Palette palette, IEnumerable<Part> parts)
     {
@@ -19,8 +20,8 @@ public sealed class Character
         Height = height;
         Palette = palette;
         Colors = new ColorSelection(palette);
-        Parts = parts.ToList();
-        Root = Parts.Single(p => p.Parent is null);
+        _parts = parts.ToList();
+        Root = _parts.Single(p => p.Parent is null);
     }
 
     public int Width { get; }
@@ -31,7 +32,10 @@ public sealed class Character
     public OutlineSettings Outline { get; } = new();
 
     /// <summary>All parts in a fixed order; indices into this list identify parts in composites.</summary>
-    public IReadOnlyList<Part> Parts { get; }
+    public IReadOnlyList<Part> Parts => _parts;
+
+    /// <summary>Raised when a part is added or removed (e.g. eye parts).</summary>
+    public event EventHandler? PartsChanged;
 
     public Part Root { get; }
 
@@ -43,6 +47,26 @@ public sealed class Character
     }
 
     public Part? Find(string name) => Parts.FirstOrDefault(p => p.Name == name);
+
+    /// <summary>Adds <paramref name="part"/> as the last child of <paramref name="parent"/>, at the end of <see cref="Parts"/>.</summary>
+    internal void AddPart(Part part, Part parent)
+    {
+        if (Find(part.Name) is not null)
+            throw new InvalidOperationException($"There is already a part named '{part.Name}'.");
+        part.AttachTo(parent);
+        _parts.Add(part);
+        PartsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Removes a part that has no children (never the root).</summary>
+    internal void RemovePart(Part part)
+    {
+        if (part == Root || part.Children.Count > 0)
+            throw new InvalidOperationException($"Part '{part.Name}' cannot be removed.");
+        part.Detach();
+        _parts.Remove(part);
+        PartsChanged?.Invoke(this, EventArgs.Empty);
+    }
 
     public int IndexOf(Part part)
     {
