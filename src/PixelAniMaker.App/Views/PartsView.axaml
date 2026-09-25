@@ -34,6 +34,35 @@
         <TextBlock Text="Y" VerticalAlignment="Center" />
         <NumericUpDown Value="{Binding OffsetY}" Minimum="-64" Maximum="64" Increment="1" FormatString="0" Width="95" />
       </StackPanel>
+      <StackPanel Spacing="4" IsEnabled="{Binding !Session.IsActivePartLocked}">
+        <TextBlock Text="그리는 순서 (이 방향)" FontSize="11" Foreground="#999999"
+                   ToolTip.Tip="겹치는 파츠 중 이 파츠를 앞이나 뒤에 그립니다. 이 방향 전체에 적용되고(동작의 모든 프레임), 세부 파츠(눈·가슴 볼륨)는 함께 옮겨집니다. 우측면처럼 반전되는 방향은 원래 방향의 순서를 바꿉니다. 되돌리기가 되고, 프로젝트에 저장됩니다." />
+        <StackPanel Orientation="Horizontal" Spacing="4" IsEnabled="{Binding CanReorder}">
+          <Button Content="맨 뒤" Command="{Binding MoveDrawOrderCommand}" CommandParameter="ToBack" IsEnabled="{Binding CanOrderBackward}" />
+          <Button Content="뒤로" Command="{Binding MoveDrawOrderCommand}" CommandParameter="Backward" IsEnabled="{Binding CanOrderBackward}" />
+          <Button Content="앞으로" Command="{Binding MoveDrawOrderCommand}" CommandParameter="Forward" IsEnabled="{Binding CanOrderForward}" />
+          <Button Content="맨 앞" Command="{Binding MoveDrawOrderCommand}" CommandParameter="ToFront" IsEnabled="{Binding CanOrderForward}" />
+        </StackPanel>
+        <TextBlock Text="{Binding DrawOrderText}" FontSize="11" TextWrapping="Wrap" />
+        <Expander Header="이 방향 순서 전체 (위가 앞)" Padding="4">
+          <ItemsControl ItemsSource="{Binding DrawOrderItems}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding}" FontSize="11" xml:space="preserve" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </Expander>
+        <TextBlock Text="이 포즈에서만 (K로 키에 저장)" FontSize="11" Foreground="#999999" Margin="0,4,0,0"
+                   ToolTip.Tip="지금 포즈에서만 이 파츠를 고른 파츠의 앞이나 뒤에 그립니다. 회전처럼 포즈의 일부라서 키(K)로 저장하고, 그 키부터 다음 키 전까지 적용됩니다 (순서는 섞이지 않고 바로 바뀜). 팔이 몸 앞뒤로 넘어가는 동작용." />
+        <StackPanel Orientation="Horizontal" Spacing="4" IsEnabled="{Binding CanReorder}">
+          <ComboBox ItemsSource="{Binding OrderAnchors}" SelectedIndex="{Binding OrderAnchorIndex}" Width="100" />
+          <Button Content="그 앞" Command="{Binding SetPoseOrderCommand}" CommandParameter="Front" />
+          <Button Content="그 뒤" Command="{Binding SetPoseOrderCommand}" CommandParameter="Behind" />
+          <Button Content="해제" Command="{Binding ClearPoseOrderCommand}" />
+        </StackPanel>
+        <TextBlock Text="{Binding PoseOrderText}" FontSize="11" TextWrapping="Wrap" />
+      </StackPanel>
       <StackPanel Spacing="4" IsEnabled="{Binding !Session.IsActivePartLocked}"
                   ToolTip.Tip="몸이 움직일 때 반 박자 늦게 따라오는 흔들림. 키는 바뀌지 않고, 애니메이션 미리보기와 내보내기에서 프레임을 만들 때 더해집니다. 변형형은 윗부분을 고정하고 아래가 출렁이며(가슴 볼륨), 회전형은 관절을 중심으로 늦게 기웁니다(머리카락·꼬리). 되돌리기가 되고, 프로젝트에 저장됩니다.">
         <CheckBox Content="흔들림 (2차 모션)" IsChecked="{Binding HasSecondary}" />

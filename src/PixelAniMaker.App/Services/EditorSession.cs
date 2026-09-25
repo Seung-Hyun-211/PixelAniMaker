@@ -237,6 +237,26 @@ public sealed partial class EditorSession : ObservableObject
             PoseChange.Apply(CurrentPose, Character.History, p => p.Set(part.Name, part.ClampRotation(degrees)));
     }
 
+    /// <summary>Moves the active part (with its detail parts) in this direction's drawing order (undoable).</summary>
+    public bool MoveActiveDrawOrder(DrawOrderMove move) =>
+        !IsLocked(ActivePart) && DrawOrderEdit.Move(Character, ActivePart, Direction, move, Character.History);
+
+    public bool CanMoveActiveDrawOrder(DrawOrderMove move) => DrawOrderEdit.CanMove(Character, ActivePart, Direction, move);
+
+    /// <summary>Parts as they are drawn now in this direction, back to front (the current pose's order changes included).</summary>
+    public IReadOnlyList<Part> DrawnOrder =>
+        DrawOrderEdit.WithOverrides(Character, Character.DrawOrder(Direction).ToList(), CurrentPose.Snapshot());
+
+    /// <summary>The current pose's drawing order change for the active part (null: the direction's order).</summary>
+    public OrderOverride? ActivePoseOrder => CurrentPose.GetOrder(ActivePart.Name);
+
+    /// <summary>In the current pose only, draws the active part in front of or behind another part (undoable; K saves it in the key).</summary>
+    public void SetActivePoseOrder(OrderOverride? order)
+    {
+        if (!IsLocked(ActivePart) && !ActivePart.IsDetail)
+            PoseChange.Apply(CurrentPose, Character.History, p => p.SetOrder(ActivePart.Name, order), "순서 (이 포즈)");
+    }
+
     /// <summary>Sets or (null) removes the active part's allowed rotation, as one undoable step.</summary>
     public void SetActiveRotationLimit(RotationLimit? limit) => RotationLimitChange.Apply(ActivePart, Character.History, limit);
 

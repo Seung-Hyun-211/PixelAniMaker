@@ -54,7 +54,8 @@ public sealed class Compositor
         if (secondary is { IsEmpty: false })
             pose = secondary.Apply(pose ?? character.PoseFor(direction).Snapshot());
         var transforms = character.ComputeTransforms(direction, pose);
-        var order = character.DrawOrder(direction).ToList();
+        var order = DrawOrderEdit.WithOverrides(character, character.DrawOrder(direction).ToList(),
+            pose ?? character.PoseFor(direction).Snapshot()).ToList();
         foreach (var part in order.Where(p => hidden is null || !hidden.Contains(p)))
         {
             var t = transforms[part];

@@ -60,6 +60,12 @@ public sealed partial class PartsViewModel : Tool
     [ObservableProperty] private decimal? _limitMin;
     [ObservableProperty] private decimal? _limitMax;
     [ObservableProperty] private bool _isCustomPart;
+    [ObservableProperty] private bool _canOrderForward;
+    [ObservableProperty] private bool _canOrderBackward;
+    [ObservableProperty] private bool _canReorder;
+    [ObservableProperty] private string _drawOrderText = "";
+    [ObservableProperty] private int _orderAnchorIndex;
+    [ObservableProperty] private string _poseOrderText = "";
     [ObservableProperty] private int _customKindIndex;
     [ObservableProperty] private int _customPlacementIndex = (int)CustomParts.DefaultPlacement(CustomPartKind.Hair);
     [ObservableProperty] private decimal? _customSegments = CustomParts.DefaultSegments(CustomPartKind.Hair);
@@ -106,13 +112,24 @@ public sealed partial class PartsViewModel : Tool
 
     [RelayCommand] private void LayerDown() => Session.MoveActiveLayer(-1);
 
+    /// <summary>
+    /// Rebuilds the rows only when the layers changed: rebuilding re-selects a row, and the list then scrolls
+    /// it into view — which scrolled the whole panel on every pose or history change.
+    /// </summary>
     private void SyncLayers()
     {
-        Layers.Clear();
         var layers = Session.ActiveLayers;
-        for (int i = layers.Count - 1; i >= 0; i--)
-            Layers.Add(new LayerItem(Session, i, layers[i].Name, layers[i].Visible));
-        SelectedLayer = Layers.FirstOrDefault(l => l.Index == Session.ActiveLayerIndex);
+        var rows = Enumerable.Range(0, layers.Count).Reverse()
+            .Select(i => (Index: i, Name: Localizer.T(layers[i].Name), layers[i].Visible)).ToList();
+        if (!Layers.Select(l => (l.Index, l.Name, l.Visible)).SequenceEqual(rows))
+        {
+            Layers.Clear();
+            foreach (var (index, _, visible) in rows)
+                Layers.Add(new LayerItem(Session, index, layers[index].Name, visible));
+        }
+        var selected = Layers.FirstOrDefault(l => l.Index == Session.ActiveLayerIndex);
+        if (SelectedLayer != selected)
+            SelectedLayer = selected;
     }
 
     /// <summary>Attachment points of the active part in the current direction.</summary>
@@ -259,6 +276,72 @@ public sealed partial class PartsViewModel : Tool
     [RelayCommand]
     private void RemoveCustomPart() => Session.RemoveActivePart();
 
+    /// <summary>This direction's parts as drawn now, front first (detail parts indented).</summary>
+    public ObservableCollection<string> DrawOrderItems { get; } = [];
+
+    /// <summary>Other parts the active part can go in front of or behind in this pose.</summary>
+    public ObservableCollection<string> OrderAnchors { get; } = [];
+
+    private readonly List<Part> _orderAnchorParts = [];
+
+    /// <summary>Parameter: a <see cref="DrawOrderMove"/> name.</summary>
+    [RelayCommand]
+    private void MoveDrawOrder(string move) => Session.MoveActiveDrawOrder(Enum.Parse<DrawOrderMove>(move));
+
+    /// <summary>Parameter: "Front" or "Behind" the chosen anchor, in the current pose only.</summary>
+    [RelayCommand]
+    private void SetPoseOrder(string where)
+    {
+        if (OrderAnchorIndex >= 0 && OrderAnchorIndex < _orderAnchorParts.Count)
+            Session.SetActivePoseOrder(new OrderOverride(_orderAnchorParts[OrderAnchorIndex].Name, where == "Front"));
+    }
+
+    [RelayCommand]
+    private void ClearPoseOrder() => Session.SetActivePoseOrder(null);
+
+    private void SyncDrawOrder()
+    {
+        var part = Session.ActivePart;
+        var drawn = Session.DrawnOrder;
+        CanReorder = !part.IsDetail;
+        CanOrderForward = Session.CanMoveActiveDrawOrder(DrawOrderMove.Forward);
+        CanOrderBackward = Session.CanMoveActiveDrawOrder(DrawOrderMove.Backward);
+
+        var heads = drawn.Where(p => !p.IsDetail).ToList();
+        var head = DrawOrderEdit.UnitHead(part);
+        int i = heads.IndexOf(head);
+        string behind = i > 0 ? heads[i - 1].Label : "없음", front = i >= 0 && i < heads.Count - 1 ? heads[i + 1].Label : "없음";
+        DrawOrderText = part.IsDetail ? $"세부 파츠: 부모({head.Label})를 따라감" : $"바로 뒤: {behind}  ·  바로 앞: {front}";
+
+        var items = drawn.Reverse().Select(p => (p == part ? "▶ " : "   ") + (p.IsDetail ? "   " : "") + p.Label).ToList();
+        // update in place: rebuilding the list re-lays out the panel and makes it jump
+        for (int k = 0; k < items.Count; k++)
+            if (k >= DrawOrderItems.Count)
+                DrawOrderItems.Add(items[k]);
+            else if (DrawOrderItems[k] != items[k])
+                DrawOrderItems[k] = items[k];
+        while (DrawOrderItems.Count > items.Count)
+            DrawOrderItems.RemoveAt(DrawOrderItems.Count - 1);
+
+        // skeleton order, not drawing order: the list stays put while parts are reordered
+        var anchors = Session.Character.Hierarchy().Where(p => !p.IsDetail && p != head).ToList();
+        var order = Session.ActivePoseOrder;
+        if (!_orderAnchorParts.SequenceEqual(anchors))
+        {
+            _orderAnchorParts.Clear();
+            _orderAnchorParts.AddRange(anchors);
+            OrderAnchors.Clear();
+            foreach (var a in anchors)
+                OrderAnchors.Add(a.Label);
+        }
+        if (order is not null && _orderAnchorParts.FindIndex(p => p.Name == order.Anchor) is >= 0 and var at)
+            OrderAnchorIndex = at;
+        else if (OrderAnchorIndex < 0 || OrderAnchorIndex >= _orderAnchorParts.Count)
+            OrderAnchorIndex = 0;
+        PoseOrderText = order is null ? "이 포즈: 방향 순서대로"
+            : $"이 포즈: {Session.Character.Find(order.Anchor)?.Label ?? order.Anchor} {(order.Front ? "앞" : "뒤")}";
+    }
+
     [RelayCommand]
     private void ResetPose() => Session.ResetPose();
 
@@ -347,6 +430,7 @@ public sealed partial class PartsViewModel : Tool
         LimitMax = limit is { } m ? (decimal)m.Max : null;
         PositionX = detail is { } d ? (decimal)Math.Round(d.X, 1) : null;
         PositionY = detail is { } e ? (decimal)Math.Round(e.Y, 1) : null;
+        SyncDrawOrder();
         UpdateVariantStatus();
         SyncAttachments();
         SyncLayers();

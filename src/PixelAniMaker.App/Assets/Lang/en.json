@@ -384,5 +384,19 @@
   "왼쪽": "Left",
   "오른쪽": "Right",
   "기본 여백 (좌우 16 · 위 24 · 아래 8)": "Default margins (16 left/right · 24 top · 8 bottom)",
-  "바꾸기": "Change"
+  "바꾸기": "Change",
+
+  "그리는 순서 (이 방향)": "Drawing order (this direction)",
+  "겹치는 파츠 중 이 파츠를 앞이나 뒤에 그립니다. 이 방향 전체에 적용되고(동작의 모든 프레임), 세부 파츠(눈·가슴 볼륨)는 함께 옮겨집니다. 우측면처럼 반전되는 방향은 원래 방향의 순서를 바꿉니다. 되돌리기가 되고, 프로젝트에 저장됩니다.": "Draws this part in front of or behind overlapping parts. Applies to the whole direction (every frame of every clip); detail parts (eyes, bust) move along. Mirrored directions change their source direction's order. Undoable and saved with the project.",
+  "맨 뒤": "To back",
+  "맨 앞": "To front",
+  "이 방향 순서 전체 (위가 앞)": "Whole order in this direction (top = front)",
+  "이 포즈에서만 (K로 키에 저장)": "In this pose only (save to the key with K)",
+  "지금 포즈에서만 이 파츠를 고른 파츠의 앞이나 뒤에 그립니다. 회전처럼 포즈의 일부라서 키(K)로 저장하고, 그 키부터 다음 키 전까지 적용됩니다 (순서는 섞이지 않고 바로 바뀜). 팔이 몸 앞뒤로 넘어가는 동작용.": "In the current pose only, draws this part in front of or behind the chosen part. Like rotations it is part of the pose: save it to a key (K); it applies from that key until the next one (orders don't blend, they switch). For arms crossing in front of or behind the body.",
+  "그 앞": "In front",
+  "그 뒤": "Behind",
+  "해제": "Clear",
+  "그리는 순서": "Drawing order",
+  "순서 (이 포즈)": "Order (this pose)",
+  "이 포즈: 방향 순서대로": "This pose: direction order"
 }

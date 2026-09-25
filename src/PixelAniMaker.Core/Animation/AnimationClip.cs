@@ -183,7 +183,10 @@ public sealed class AnimationClip : INotifyPropertyChanged
         return i;
     }
 
-    /// <summary>Interpolates rotations along the shorter way round and the offset linearly.</summary>
+    /// <summary>
+    /// Interpolates rotations along the shorter way round and the offset linearly; drawing order changes
+    /// cannot blend, so the earlier pose's hold until the next key.
+    /// </summary>
     public static PoseData Blend(PoseData a, PoseData b, double t)
     {
         var rotations = new Dictionary<string, double>();
@@ -192,7 +195,7 @@ public sealed class AnimationClip : INotifyPropertyChanged
             double from = a.Get(part), delta = Pose.Normalize(b.Get(part) - from);
             rotations[part] = Pose.Normalize(from + delta * t);
         }
-        return new PoseData(rotations, Vector2.Lerp(a.Offset, b.Offset, (float)t));
+        return new PoseData(rotations, Vector2.Lerp(a.Offset, b.Offset, (float)t), a.Order);
     }
 
     private void Set<T>(ref T field, T value, [CallerMemberName] string? property = null)

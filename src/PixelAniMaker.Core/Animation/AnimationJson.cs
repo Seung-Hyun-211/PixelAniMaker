@@ -8,7 +8,9 @@ namespace PixelAniMaker.Core.Animation;
 /// <summary>Reads and writes animation clips as JSON (template animations.json and project files).</summary>
 public static class AnimationJson
 {
-    private sealed record KeySpec(int Frame, string? Easing, float[]? Offset, Dictionary<string, double>? Rotations);
+    /// <param name="Order">Drawing order changes of the pose (omitted when none; older versions ignore it).</param>
+    private sealed record KeySpec(int Frame, string? Easing, float[]? Offset, Dictionary<string, double>? Rotations,
+        Dictionary<string, OrderOverride>? Order = null);
 
     /// <summary>One touched-up frame: pixels as [x, y, paletteIndex] (index 0 erases).</summary>
     private sealed record TouchupSpec(string Direction, int Frame, List<int[]> Pixels);
@@ -67,7 +69,8 @@ public static class AnimationJson
                 k.Frame,
                 k.Easing.ToString(),
                 k.Pose.Offset == Vector2.Zero ? null : [k.Pose.Offset.X, k.Pose.Offset.Y],
-                k.Pose.Rotations.Where(r => r.Value != 0).ToDictionary(r => r.Key, r => r.Value))).ToList()),
+                k.Pose.Rotations.Where(r => r.Value != 0).ToDictionary(r => r.Key, r => r.Value),
+                k.Pose.Order is { Count: > 0 } order ? new Dictionary<string, OrderOverride>(order) : null)).ToList()),
         clip.Touchups.Frames.Any()
             ? clip.Touchups.Frames.OrderBy(f => f.Direction).ThenBy(f => f.Frame)
                 .Select(f => new TouchupSpec(f.Direction.ToString().ToLowerInvariant(), f.Frame,
@@ -77,7 +80,7 @@ public static class AnimationJson
         clip.Holds.Count > 0 ? new Dictionary<int, int>(clip.Holds) : null);
 
     private static PoseData ToPose(KeySpec k) =>
-        new(k.Rotations ?? [], k.Offset is [var x, var y] ? new Vector2(x, y) : Vector2.Zero);
+        new(k.Rotations ?? [], k.Offset is [var x, var y] ? new Vector2(x, y) : Vector2.Zero, k.Order is { Count: > 0 } ? k.Order : null);
 
     private static Easing ParseEasing(string? name) =>
         name is null ? Easing.EaseInOut

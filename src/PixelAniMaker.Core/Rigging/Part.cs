@@ -19,7 +19,7 @@ public sealed class PartView(IndexedImage image, Vector2 restPosition, Vector2 r
 
     public Vector2 RestPosition { get; private set; } = restPosition;
     public Vector2 RestPivot { get; private set; } = restPivot;
-    public int DrawOrder { get; } = drawOrder;
+    public int DrawOrder { get; internal set; } = drawOrder;
 
     /// <summary>Shifts the image and its joint together (see <see cref="PartMove"/>).</summary>
     internal void MoveBy(Vector2 delta)
