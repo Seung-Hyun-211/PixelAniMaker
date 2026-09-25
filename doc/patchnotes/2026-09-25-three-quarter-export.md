@@ -10,7 +10,7 @@
 
 ![메뉴](images/tq-export-01-menu.png)
 
-8방향 통합 시트의 첫 동작(대기) 부분 — 동작마다 기존 4줄(front·left·right·back) 뒤에 반측면 4줄이 붙는다. 예시 캐릭터(견습 마녀)를 앱의 일괄 내보내기(`--directions 8`)로 뽑은 결과.
+8방향 통합 시트의 첫 동작(대기) 부분 — 동작마다 기존 4줄(front·left·right·back) 뒤에 반측면 4줄이 붙는다. 2x 마네킹을 앱의 일괄 내보내기(`--directions 8`)로 뽑은 결과 (각 줄 앞 4프레임).
 
 ![시트](images/tq-export-02-sheet.png)
 
