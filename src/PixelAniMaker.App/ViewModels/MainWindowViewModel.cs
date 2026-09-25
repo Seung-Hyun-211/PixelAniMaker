@@ -36,6 +36,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Project.PropertyChanged += (_, _) => OnDocumentStateChanged();
         Session.PropertyChanged += (_, e) =>
         {
+            if (e.PropertyName == nameof(EditorSession.HasUnsavedSettings))
+                OnDocumentStateChanged();
             if (e.PropertyName is nameof(EditorSession.Zoom) or nameof(EditorSession.CurrentTool)
                 or nameof(EditorSession.PoseMode) or nameof(EditorSession.TouchupMode)
                 or nameof(EditorSession.ActivePart) or nameof(EditorSession.Direction))

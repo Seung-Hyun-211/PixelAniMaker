@@ -48,6 +48,9 @@ public sealed partial class EditorSession : ObservableObject
     [ObservableProperty] private bool _showGrid = true;
     [ObservableProperty] private string _cursorText = "";
 
+    /// <summary>Outline or shading settings changed since the character was loaded or saved (they are not in the undo history).</summary>
+    [ObservableProperty] private bool _hasUnsavedSettings;
+
     public EditorSession()
     {
         Reference.Changed += (_, _) => ImageUpdated?.Invoke(this, EventArgs.Empty);
@@ -137,8 +140,8 @@ public sealed partial class EditorSession : ObservableObject
         {
             Character.History.Changed -= OnHistoryChanged;
             Character.Palette.Changed -= OnContentChanged;
-            Character.Outline.Changed -= OnContentChanged;
-            Character.Shading.Changed -= OnContentChanged;
+            Character.Outline.Changed -= OnSettingsChanged;
+            Character.Shading.Changed -= OnSettingsChanged;
             Character.PoseChanged -= OnPoseChanged;
             Character.PartsChanged -= OnPartsChanged;
             Character.DirectionsChanged -= OnDirectionsChanged;
@@ -146,8 +149,9 @@ public sealed partial class EditorSession : ObservableObject
 
         character.History.Changed += OnHistoryChanged;
         character.Palette.Changed += OnContentChanged;
-        character.Outline.Changed += OnContentChanged;
-        character.Shading.Changed += OnContentChanged;
+        character.Outline.Changed += OnSettingsChanged;
+        character.Shading.Changed += OnSettingsChanged;
+        HasUnsavedSettings = false;
         character.PoseChanged += OnPoseChanged;
         character.PartsChanged += OnPartsChanged;
         character.DirectionsChanged += OnDirectionsChanged;
@@ -482,6 +486,14 @@ public sealed partial class EditorSession : ObservableObject
         Refresh();
         ContentChanged?.Invoke(this, EventArgs.Empty);
     }
+
+    private void OnSettingsChanged(object? sender, EventArgs e)
+    {
+        HasUnsavedSettings = true;
+        OnContentChanged(sender, e);
+    }
+
+    public void MarkSettingsSaved() => HasUnsavedSettings = false;
 
     private void OnPoseChanged(object? sender, EventArgs e) => Refresh();
 

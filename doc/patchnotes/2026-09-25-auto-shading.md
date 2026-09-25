@@ -34,7 +34,7 @@
 
 - 켰을 때만 `project.json`에 `"shading": {"enabled": true, "light": "TopLeft", "width": 1}`을 쓴다. 끄면 파일이 이전과 같다 (기준 파일 테스트 그대로 통과).
 - 형식 버전은 그대로. 이전 버전은 이 항목을 무시하고 명암 없이 보여 준다.
-- 알려진 제한: 자동 외곽선처럼, 켜고 끄기만 한 것은 "저장 안 한 변경"으로 표시되지 않는다.
+- 자동 외곽선·자동 명암 설정을 바꾸면 "저장 안 한 변경"(`*`)으로 표시되고, 닫을 때 저장 확인도 묻는다 (전에는 자동 외곽선을 켜고 끄기만 하면 표시되지 않았음 — 이번에 같이 고침). 앱에서 확인: 켜기 → `*`, 저장 → 없어짐, 외곽선 끄기 → `*`.
 
 ## 구조
 
@@ -44,7 +44,8 @@
 | `Core/Rigging/Compositor` | 파츠를 그린 뒤, 외곽선 전에 명암 |
 | `Core/Rigging/Character` | `Shading` |
 | `Core/Project/ProjectFile` | `shading` 읽기·쓰기 (켰을 때만) |
-| `App/Services/EditorSession`, `Views/ToolboxView.axaml` | 자동 명암·빛 방향·두께 |
+| `App/Services/EditorSession`, `Views/ToolboxView.axaml` | 자동 명암·빛 방향·두께, 설정 변경을 저장 안 한 변경으로 (`HasUnsavedSettings`) |
+| `App/Services/ProjectService`, `ViewModels/MainWindowViewModel` | 저장 안 한 변경 판단·제목 `*`에 설정 변경 포함 |
 
 ## 테스트
 

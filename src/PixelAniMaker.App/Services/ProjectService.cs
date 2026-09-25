@@ -34,7 +34,8 @@ public sealed partial class ProjectService : ObservableObject
 
     public string DocumentName => CurrentPath is null ? "제목 없음" : Path.GetFileNameWithoutExtension(CurrentPath);
 
-    public bool IsDirty => IsRecovered || _editor.Character.History.IsDirty || _animation.HasUnsavedClipChanges;
+    public bool IsDirty => IsRecovered || _editor.Character.History.IsDirty || _animation.HasUnsavedClipChanges
+                           || _editor.HasUnsavedSettings;
 
     /// <summary>Raised when the document is replaced (new, open) or saved — autosave copies are then obsolete.</summary>
     public event EventHandler? DocumentReset;
@@ -78,6 +79,7 @@ public sealed partial class ProjectService : ObservableObject
     {
         WriteCopy(path);
         _editor.Character.History.MarkSaved();
+        _editor.MarkSettingsSaved();
         _animation.MarkSaved();
         CurrentPath = path;
         IsRecovered = false;
