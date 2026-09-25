@@ -434,5 +434,9 @@
 
   "프레임 수를 줄여서 마지막 프레임 뒤에 남은 키입니다. 재생·내보내기에는 쓰이지 않고, 프레임을 다시 늘리면 돌아옵니다.": "Keys left after the last frame when the clip was shortened. They are not played or exported, and come back when the clip is lengthened.",
   "범위 밖 키 {0}개": "{0} keys past the end",
-  "범위 밖 키 지우기": "Delete keys past the end"
+  "범위 밖 키 지우기": "Delete keys past the end",
+  "체형을 고르세요. 파츠 구성과 기본 동작은 모두 같습니다.": "Pick a body type. All of them have the same parts and default animations.",
+  "다음": "Next",
+  "{0}등신  (머리 {1}px · 키 {2}px)": "{0} heads tall  (head {1}px · height {2}px)",
+  "{0}등신  (머리 {1}px · 키 {2}px) · 치비, 손으로 그린 기본 마네킹": "{0} heads tall  (head {1}px · height {2}px) · chibi, the hand-drawn default mannequin"
 }

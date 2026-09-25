@@ -80,7 +80,7 @@ public sealed partial class EditorSession : ObservableObject
     public EditorSession()
     {
         Reference.Changed += (_, _) => ImageUpdated?.Invoke(this, EventArgs.Empty);
-        LoadCharacter(TemplateLoader.LoadChibi96());
+        LoadCharacter(TemplateLoader.LoadMannequin());
     }
 
     /// <summary>Reference pictures shown on the canvas (per direction, not saved).</summary>

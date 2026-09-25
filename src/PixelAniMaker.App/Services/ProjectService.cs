@@ -46,10 +46,12 @@ public sealed partial class ProjectService : ObservableObject
     /// since the timeline always keeps at least one.
     /// </param>
     /// <param name="threeQuarter">Start with the template's 3/4 views (saved as format 2).</param>
-    public void New(bool jointDiscs = true, IReadOnlyList<AnimationClip>? clips = null, bool threeQuarter = false)
+    /// <param name="heads">Body type: the mannequin's head count (see <see cref="TemplateLoader.BodyTypes"/>).</param>
+    public void New(bool jointDiscs = true, IReadOnlyList<AnimationClip>? clips = null, bool threeQuarter = false,
+        double heads = TemplateLoader.ChibiHeads)
     {
-        _editor.LoadCharacter(TemplateLoader.LoadChibi96(jointDiscs, threeQuarter));
-        clips ??= TemplateLoader.LoadDefaultAnimations(threeQuarter);
+        _editor.LoadCharacter(TemplateLoader.LoadMannequin(heads, jointDiscs, threeQuarter));
+        clips ??= TemplateLoader.LoadDefaultAnimations(threeQuarter, heads);
         _animation.SetClips(clips.Count > 0 ? clips : [new AnimationClip(Localizer.T("새 동작"), 8)]);
         CurrentPath = null;
         IsRecovered = false;

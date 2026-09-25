@@ -187,7 +187,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         if (!await ConfirmDiscardAsync())
             return;
-        var clips = TemplateLoader.LoadDefaultAnimations(threeQuarter: true);
+        double heads = TemplateLoader.ChibiHeads;
+        if (Dialogs is not null)
+        {
+            var bodies = TemplateLoader.BodyTypes;
+            var bodyLabels = bodies.Select(BodyTypeLabel).ToList();
+            if (await Dialogs.PickOneAsync("새로 만들기", "체형을 고르세요. 파츠 구성과 기본 동작은 모두 같습니다.",
+                    bodyLabels, "다음", bodies.ToList().IndexOf(TemplateLoader.ChibiHeads)) is not { } body)
+                return;
+            heads = bodies[body];
+        }
+        var clips = TemplateLoader.LoadDefaultAnimations(threeQuarter: true, heads);
         bool threeQuarter = false;
         if (Dialogs is not null)
         {
@@ -205,7 +215,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
         if (!threeQuarter)
             foreach (var clip in clips)
                 Core.Rigging.ThreeQuarterViews.StripFrom(clip);
-        Project.New(jointDiscs, clips, threeQuarter);
+        Project.New(jointDiscs, clips, threeQuarter, heads);
+    }
+
+    private static string BodyTypeLabel(double heads)
+    {
+        var p = Core.Rigging.Body.BodyProportions.For(heads);
+        string label = $"{heads}등신  (머리 {p.HeadPixels}px · 키 {Math.Round(p.BodyHeightPixels)}px)";   // translated on screen
+        return heads == TemplateLoader.ChibiHeads ? label + " · 치비, 손으로 그린 기본 마네킹" : label;
     }
 
     [RelayCommand]

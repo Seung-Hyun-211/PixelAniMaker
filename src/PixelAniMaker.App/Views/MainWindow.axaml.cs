@@ -183,6 +183,16 @@ public partial class MainWindow : Window, IFileDialogs
         return Enumerable.Range(0, boxes.Count).Where(i => boxes[i].IsChecked == true).ToList();
     }
 
+    public async Task<int?> PickOneAsync(string title, string message, IReadOnlyList<string> items, string okLabel, int selected = 0)
+    {
+        var buttons = items.Select((item, i) => new RadioButton { Content = item, GroupName = "pick", IsChecked = i == selected }).ToList();
+        var list = new StackPanel { Spacing = 2 };
+        list.Children.AddRange(buttons);
+        if (await MessageDialog.ShowAsync(this, title, message, list, okLabel, "취소") != 0)
+            return null;
+        return buttons.FindIndex(b => b.IsChecked == true) is var i and >= 0 ? i : null;
+    }
+
     public async Task<CanvasMargins?> PickCanvasMarginsAsync(int width, int height)
     {
         NumericUpDown Field() => new() { Value = 0, Minimum = -512, Maximum = 512, Increment = 1, FormatString = "0", Width = 130 };

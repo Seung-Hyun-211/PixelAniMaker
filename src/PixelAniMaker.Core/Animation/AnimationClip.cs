@@ -139,6 +139,18 @@ public sealed class AnimationClip : INotifyPropertyChanged
         return copy;
     }
 
+    /// <summary>
+    /// Multiplies every key's body offset (rounded to whole pixels), e.g. to fit a clip made for a smaller
+    /// body. Not recorded: meant for clips being set up, before they are shown.
+    /// </summary>
+    public void ScaleOffsets(float factor)
+    {
+        foreach (var track in _tracks.Values)
+            foreach (var key in track.Values.ToList())
+                track[key.Frame] = key with { Pose = key.Pose with { Offset = new Vector2(MathF.Round(key.Pose.Offset.X * factor), MathF.Round(key.Pose.Offset.Y * factor)) } };
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
     public void RemoveKey(Direction direction, int frame)
     {
         if (_tracks[direction.Source()].Remove(frame))

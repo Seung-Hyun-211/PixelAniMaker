@@ -46,6 +46,9 @@ public interface IFileDialogs
     Task<IReadOnlyList<int>?> PickItemsAsync(string title, string message, IReadOnlyList<string> items, string okLabel,
         IReadOnlyList<bool>? ticked = null);
 
+    /// <summary>One of <paramref name="items"/> (radio buttons, <paramref name="selected"/> at first); its index, or null when cancelled.</summary>
+    Task<int?> PickOneAsync(string title, string message, IReadOnlyList<string> items, string okLabel, int selected = 0);
+
     /// <summary>Margins to add around a <paramref name="width"/>×<paramref name="height"/> canvas (negative removes), or null when cancelled.</summary>
     Task<Core.Rigging.CanvasMargins?> PickCanvasMarginsAsync(int width, int height);
 

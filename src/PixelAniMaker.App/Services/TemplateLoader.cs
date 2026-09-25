@@ -2,12 +2,14 @@ using Avalonia.Platform;
 using PixelAniMaker.Core.Animation;
 using PixelAniMaker.Core.Imaging;
 using PixelAniMaker.Core.Rigging;
+using PixelAniMaker.Core.Rigging.Body;
 
 namespace PixelAniMaker.App.Services;
 
 /// <summary>
-/// Loads the built-in 4-head mannequin (16 parts, front/left/back) from the app assets, on a 128×160 canvas:
-/// the 96×128 template with <see cref="CanvasMargins.Default"/> around it.
+/// Loads the mannequins new projects start from: the hand-drawn 4-head one (16 parts, front/left/back) from the
+/// app assets, on a 128×160 canvas (the 96×128 template with <see cref="CanvasMargins.Default"/> around it), or
+/// a generated one of any other head count in <see cref="BodyProportions.Table"/>, with the same parts.
 /// </summary>
 public static class TemplateLoader
 {
@@ -18,16 +20,32 @@ public static class TemplateLoader
     private static readonly Rgba OutlineColor = new(52, 40, 34);
     private static readonly Rgba InnerLineColor = new(120, 96, 74);
 
+    /// <summary>The hand-drawn template's head count.</summary>
+    public const double ChibiHeads = 4;
+
+    /// <summary>The body types a new project can start from, in head counts.</summary>
+    public static IReadOnlyList<double> BodyTypes { get; } = BodyProportions.Table.Select(r => r.Heads).ToList();
+
+    /// <param name="heads">Head count: <see cref="ChibiHeads"/> loads the hand-drawn template, others are generated.</param>
     /// <param name="jointDiscs">False loads the plain mannequin without ball-joint circles.</param>
     /// <param name="threeQuarter">True keeps the template's 3/4 views (the project is then saved as format 2).</param>
-    public static Character LoadChibi96(bool jointDiscs = true, bool threeQuarter = false)
+    public static Character LoadMannequin(double heads = ChibiHeads, bool jointDiscs = true, bool threeQuarter = false)
     {
-        string folder = jointDiscs ? Folder : PlainFolder;
-        var spec = CharacterSpec.Parse(ReadText(folder, "skeleton.json"));
+        if (heads == ChibiHeads)
+        {
+            string folder = jointDiscs ? Folder : PlainFolder;
+            return Finish(CharacterSpec.Parse(ReadText(folder, "skeleton.json")), file => LoadRgba(new Uri(folder + file)), threeQuarter);
+        }
+        var generated = MannequinBuilder.Build(BodyProportions.For(heads), jointDiscs);
+        return Finish(generated.Spec, file => generated.Images[file], threeQuarter);
+    }
+
+    private static Character Finish(CharacterSpec spec, Func<string, RgbaImage> loadImage, bool threeQuarter)
+    {
         if (!threeQuarter)
             spec = spec.WithoutThreeQuarter();
         var palette = new Palette();
-        var character = spec.Build(file => LoadRgba(new Uri(folder + file)), palette);
+        var character = spec.Build(loadImage, palette);
         SeedPalette(palette);
         character.Outline.OutlineIndex = palette.GetOrAdd(OutlineColor);
         character.Outline.InnerIndex = palette.GetOrAdd(InnerLineColor);
@@ -38,14 +56,18 @@ public static class TemplateLoader
 
     /// <summary>The default clips (idle, walk, run, jump, attack, hit).</summary>
     /// <param name="threeQuarter">True keeps their 3/4 tracks; otherwise they are dropped (format 1 projects).</param>
-    public static IReadOnlyList<AnimationClip> LoadDefaultAnimations(bool threeQuarter = false)
+    /// <param name="heads">The body they are for: body moves (jump height and the like) grow with its height.</param>
+    public static IReadOnlyList<AnimationClip> LoadDefaultAnimations(bool threeQuarter = false, double heads = ChibiHeads)
     {
         var clips = AnimationJson.Parse(ReadText(Folder, "animations.json"));
+        float scale = (float)(BodyProportions.For(heads).BodyHeightPixels / BodyProportions.For(ChibiHeads).BodyHeightPixels);
         foreach (var clip in clips)
         {
             clip.Name = Localizer.T(clip.Name); // names are data: new projects get them in the UI language
             if (!threeQuarter)
                 ThreeQuarterViews.StripFrom(clip);
+            if (heads != ChibiHeads)
+                clip.ScaleOffsets(scale);
         }
         return clips;
     }
