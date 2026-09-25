@@ -496,7 +496,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private EditorDocument? SelectionDocument => Session.TouchupMode ? Touchup.Document : Session.ActiveDocument;
 
     [RelayCommand]
-    private void DeleteSelection() => SelectionDocument?.DeleteSelection();
+    private void DeleteSelection()
+    {
+        if (Session.TouchupMode || Session.CanDrawActivePart)
+            SelectionDocument?.DeleteSelection();
+    }
 
     [RelayCommand]
     private void Deselect()

@@ -21,6 +21,8 @@ public sealed partial class EditorSession : ObservableObject
     public static readonly int[] ZoomSteps = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48];
 
     private readonly Dictionary<Direction, WriteableBitmap> _previewBitmaps = [];
+    private readonly HashSet<Part> _hiddenParts = [];
+    private readonly HashSet<Part> _lockedParts = [];
 
     [ObservableProperty] private Character _character = null!;
     [ObservableProperty] private Direction _direction = Direction.Front;
@@ -116,6 +118,8 @@ public sealed partial class EditorSession : ObservableObject
         character.PartsChanged += OnPartsChanged;
         character.DirectionsChanged += OnDirectionsChanged;
 
+        _hiddenParts.Clear();
+        _lockedParts.Clear();
         CanvasBitmap = CompositeBitmap.Create(character.Width, character.Height);
         foreach (var d in DirectionExtensions.Every)
             _previewBitmaps[d] = CompositeBitmap.Create(character.Width, character.Height);
@@ -135,9 +139,61 @@ public sealed partial class EditorSession : ObservableObject
         Zoom = ZoomSteps[Math.Clamp(i + steps, 0, ZoomSteps.Length - 1)];
     }
 
-    /// <summary>Rotates a joint in the current direction as one undoable step.</summary>
-    public void SetRotation(Part part, double degrees) =>
-        PoseChange.Apply(CurrentPose, Character.History, p => p.Set(part.Name, degrees));
+    /// <summary>Rotates a joint in the current direction as one undoable step (not for locked parts).</summary>
+    public void SetRotation(Part part, double degrees)
+    {
+        if (!IsLocked(part))
+            PoseChange.Apply(CurrentPose, Character.History, p => p.Set(part.Name, degrees));
+    }
+
+    // ------------------------------------------------------------------ hide / lock (editing aids, not saved)
+
+    /// <summary>Hidden parts are left out of the canvas only; previews, animation frames and exports still show them.</summary>
+    public bool IsHidden(Part part) => _hiddenParts.Contains(part);
+
+    /// <summary>Locked parts cannot be drawn on, rotated or moved (selecting them still works).</summary>
+    public bool IsLocked(Part part) => _lockedParts.Contains(part);
+
+    public void SetHidden(Part part, bool hidden)
+    {
+        if (hidden ? _hiddenParts.Add(part) : _hiddenParts.Remove(part))
+            OnPartStateChanged();
+    }
+
+    public void SetLocked(Part part, bool locked)
+    {
+        if (locked ? _lockedParts.Add(part) : _lockedParts.Remove(part))
+            OnPartStateChanged();
+    }
+
+    /// <summary>Canvas strokes reach the active part only while it is shown and unlocked.</summary>
+    public bool CanDrawActivePart => ActivePart is not null && !IsHidden(ActivePart) && !IsLocked(ActivePart);
+
+    public bool IsActivePartLocked => ActivePart is not null && IsLocked(ActivePart);
+
+    /// <summary>Why canvas strokes do not reach the active part, or "" when they do.</summary>
+    public string ActivePartBlockedReason =>
+        ActivePart is null ? ""
+        : IsLocked(ActivePart) ? "잠긴 파츠 — 그리기·회전·위치 옮기기가 막혀 있습니다"
+        : IsHidden(ActivePart) ? "숨긴 파츠 — 캔버스에서 그릴 수 없습니다"
+        : "";
+
+    /// <summary>Raised when a part is hidden, shown, locked or unlocked.</summary>
+    public event EventHandler? PartStatesChanged;
+
+    private void OnPartStateChanged()
+    {
+        NotifyActivePartState();
+        Refresh();
+        PartStatesChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void NotifyActivePartState()
+    {
+        OnPropertyChanged(nameof(CanDrawActivePart));
+        OnPropertyChanged(nameof(IsActivePartLocked));
+        OnPropertyChanged(nameof(ActivePartBlockedReason));
+    }
 
     /// <summary>Moves the whole body (root offset, whole pixels) as one undoable step.</summary>
     public void SetOffset(Vector2 offset) =>
@@ -164,7 +220,11 @@ public sealed partial class EditorSession : ObservableObject
     /// <summary>Source-direction point → display canvas point.</summary>
     public Vector2 FromSource(Vector2 p) => Direction.IsMirrored() ? p with { X = Character.Width - p.X } : p;
 
-    partial void OnActivePartChanged(Part value) => ReopenDocument();
+    partial void OnActivePartChanged(Part value)
+    {
+        NotifyActivePartState();
+        ReopenDocument();
+    }
 
     partial void OnDirectionChanged(Direction value)
     {
@@ -226,7 +286,8 @@ public sealed partial class EditorSession : ObservableObject
     {
         if (ActiveDocument is null)
             return;
-        ActiveDocument.Mirror = Symmetric && CurrentTool != ToolCatalog.Select
+        var counterpart = Core.Rigging.Symmetry.Counterpart(Character, ActivePart);
+        ActiveDocument.Mirror = Symmetric && CurrentTool != ToolCatalog.Select && !IsHidden(counterpart) && !IsLocked(counterpart)
             ? Core.Rigging.Symmetry.For(Character, ActivePart, Direction, ActiveLayerIndex)
             : null;
     }
@@ -305,7 +366,7 @@ public sealed partial class EditorSession : ObservableObject
     /// <summary>Moves the active detail part so its joint lands on <paramref name="display"/> (whole pixels, undoable).</summary>
     public void MoveActiveDetailTo(Vector2 display)
     {
-        if (!ActivePart.IsDetail)
+        if (!ActivePart.IsDetail || IsLocked(ActivePart))
             return;
         DetailMove.Apply(ActivePart, Direction, FromSource(display) - ActivePart.View(Direction).RestPivot, Character.History);
     }
@@ -314,6 +375,8 @@ public sealed partial class EditorSession : ObservableObject
     {
         if (!Character.Parts.Contains(ActivePart))
             ActivePart = Character.Find(EyeParts.HeadName) ?? Character.Root;
+        _hiddenParts.RemoveWhere(p => !Character.Parts.Contains(p));
+        _lockedParts.RemoveWhere(p => !Character.Parts.Contains(p));
         OnPropertyChanged(nameof(HasEyes));
         OnPropertyChanged(nameof(CanAddEyes));
         PartsChanged?.Invoke(this, EventArgs.Empty);
@@ -382,7 +445,8 @@ public sealed partial class EditorSession : ObservableObject
         AttachDocument(ActiveTransform.EditImage(ActiveLayer)); // rotating into or out of an angle variant switches the target
         UpdateMirror();                        // the mirror follows the pose
         var composites = Character.Directions.ToDictionary(d => d, d => Compositor.Compose(Character, d));
-        SourceComposite = composites[Direction];
+        var canvas = _hiddenParts.Count == 0 ? composites[Direction] : Compositor.Compose(Character, Direction, hidden: _hiddenParts);
+        SourceComposite = canvas;   // hidden parts cannot be picked on the canvas
         if (Direction.IsMirrored())
         {
             // hit-testing works in source coordinates; the Right view may have its own images
@@ -392,7 +456,7 @@ public sealed partial class EditorSession : ObservableObject
 
         foreach (var (d, composite) in composites)
             CompositeBitmap.Write(composite, Character.Palette, _previewBitmaps[d]);
-        CompositeBitmap.Write(composites[Direction], Character.Palette, CanvasBitmap,
+        CompositeBitmap.Write(canvas, Character.Palette, CanvasBitmap,
             DimOtherParts && !PoseMode ? Character.IndexOf(ActivePart) : null);
         ImageUpdated?.Invoke(this, EventArgs.Empty);
     }

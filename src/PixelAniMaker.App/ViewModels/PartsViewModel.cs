@@ -7,9 +7,29 @@ using PixelAniMaker.Core.Rigging;
 
 namespace PixelAniMaker.App.ViewModels;
 
-public sealed record PartItem(Part Part)
+/// <summary>One row of the part tree: show/hide and lock write back to the session (editing aids, not undoable or saved).</summary>
+public sealed partial class PartItem : ObservableObject
 {
+    private readonly EditorSession _session;
+
+    [ObservableProperty] private bool _visible;
+    [ObservableProperty] private bool _locked;
+
+    public PartItem(EditorSession session, Part part)
+    {
+        _session = session;
+        Part = part;
+        _visible = !session.IsHidden(part);
+        _locked = session.IsLocked(part);
+    }
+
+    public Part Part { get; }
+
     public string Display => new string(' ', Part.Depth * 3) + Part.Label;
+
+    partial void OnVisibleChanged(bool value) => _session.SetHidden(Part, !value);
+
+    partial void OnLockedChanged(bool value) => _session.SetLocked(Part, value);
 }
 
 /// <summary>Skeleton hierarchy: pick the part to edit and set its joint rotation in the current direction.</summary>
@@ -178,7 +198,7 @@ public sealed partial class PartsViewModel : Tool
 
         Items.Clear();
         foreach (var part in Session.Character.Hierarchy())
-            Items.Add(new PartItem(part));
+            Items.Add(new PartItem(Session, part));
         Sync();
     }
 

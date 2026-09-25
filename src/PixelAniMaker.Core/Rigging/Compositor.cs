@@ -45,12 +45,14 @@ public sealed class Compositor
     private readonly Dictionary<IndexedImage, RotSprite> _samplers = [];
 
     /// <summary>Renders <paramref name="direction"/> in <paramref name="pose"/> (default: the direction's current pose).</summary>
-    public CompositeResult Compose(Character character, Direction direction, PoseData? pose = null)
+    /// <param name="hidden">Parts left out (the editor's hidden parts); the outline then follows what is drawn.</param>
+    public CompositeResult Compose(Character character, Direction direction, PoseData? pose = null,
+        IReadOnlySet<Part>? hidden = null)
     {
         var result = new CompositeResult(character.Width, character.Height);
         var transforms = character.ComputeTransforms(direction, pose);
         var order = character.DrawOrder(direction).ToList();
-        foreach (var part in order)
+        foreach (var part in order.Where(p => hidden is null || !hidden.Contains(p)))
             Draw(result, transforms[part], (short)character.IndexOf(part));
         if (character.Outline.Enabled)
             OutlinePass.Apply(result, RankByOwner(character, order), character.Outline);
