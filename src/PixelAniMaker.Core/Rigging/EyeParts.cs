@@ -57,17 +57,18 @@ public static class EyeParts
             float h = SkullHeight(headView);
             var joint = headView.RestPivot;
             float y = joint.Y - 0.36f * h;
-            // screen side and visibility: front shows *_r on the left, back hides both,
-            // the left-facing side view shows the near (left) eye towards the face
-            // a 3/4 view starts like the front or back one (redraw to taste)
-            (float x, bool visible) = direction.Fallback() switch
+            // screen side, visibility and width: front shows *_r on the left; back and back-3/4 hide both;
+            // the left-facing side view shows the near (left) eye towards the face; the front-3/4 view
+            // (facing screen-left) moves both towards the face side, the far (right) eye narrower
+            (float x, float width) = direction switch
             {
-                Direction.Front => (joint.X + (right ? -1 : 1) * 0.24f * h, true),
-                Direction.Back => (joint.X + (right ? 1 : -1) * 0.24f * h, false),
-                _ => (joint.X - (right ? 0.20f : 0.28f) * h, !right),
+                Direction.Front => (joint.X + (right ? -1 : 1) * 0.24f * h, 0.13f),
+                Direction.FrontLeft => (joint.X - 0.14f * h + (right ? -0.20f : 0.20f) * h, right ? 0.08f : 0.13f),
+                Direction.Left => (joint.X - (right ? 0.20f : 0.28f) * h, right ? 0 : 0.09f),
+                Direction.Back => (joint.X + (right ? 1 : -1) * 0.24f * h, 0),
+                _ => (joint.X + 0.14f * h + (right ? 0.20f : -0.20f) * h, 0),   // back-3/4
             };
-            views[direction] = View(character, new Vector2(x, y), h, headView.DrawOrder,
-                visible ? direction == Direction.Left ? 0.09f : 0.13f : 0);
+            views[direction] = View(character, new Vector2(x, y), h, headView.DrawOrder, width);
         }
         return new Part(name, right ? "눈 R" : "눈 L", views) { IsDetail = true };
     }

@@ -9,7 +9,9 @@ namespace PixelAniMaker.Core.Rigging;
 public sealed class RightViewChange(Part part, PartView? before, PartView? after, Direction direction = Direction.Right)
     : IUndoableAction
 {
-    public string Name => after is null ? "우측면 반전으로 되돌리기" : "우측면 따로 그리기";
+    public string Name => direction == Direction.Right
+        ? after is null ? "우측면 반전으로 되돌리기" : "우측면 따로 그리기"
+        : after is null ? $"{direction.Label()} 반전으로 되돌리기" : $"{direction.Label()} 따로 그리기";
 
     public void Undo() => part.SetView(direction, before);
 

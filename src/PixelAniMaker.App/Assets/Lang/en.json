@@ -7,6 +7,8 @@
   "새로 만들기": "New",
   "새로 만들기 (관절 원 없는 마네킹)": "New (mannequin without joint discs)",
   "만들기": "Create",
+  "{0} 따로 그리기": "Draw {0} separately",
+  "{0} 반전으로 되돌리기": "Mirror {0} again",
   "이 캐릭터에는 반측면이 없어서 반측면 키와 손본 픽셀은 가져오지 않았습니다.": "This character has no 3/4 views, so 3/4 keys and touch-ups were not imported.",
   "앞 반측면 (좌)": "Front 3/4 (left)",
   "앞 반측면 (우)": "Front 3/4 (right)",

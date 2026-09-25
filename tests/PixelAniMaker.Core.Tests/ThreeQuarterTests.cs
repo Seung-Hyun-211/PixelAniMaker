@@ -214,14 +214,38 @@ public class ThreeQuarterTests
     }
 
     [Fact]
-    public void Eye_parts_added_after_3_4_views_get_3_4_views_too()
+    public void Eye_parts_added_after_3_4_views_are_turned_towards_the_face_side()
     {
-        var c = GoldenTests.Build().Character;
-        EyeParts.Remove(c);
+        var c = EyePartsTests.HeadAndBody();   // a head of realistic size (33 px), so eye widths can differ
         ThreeQuarterViews.Enable(c, new UndoHistory());
         EyeParts.Add(c);
-        var eye = c.Find(EyeParts.Left)!;
-        Assert.True(eye.HasOwnView(Direction.FrontLeft) && eye.HasOwnView(Direction.BackLeft));
-        Assert.Equal(eye.View(Direction.Front).RestPivot, eye.View(Direction.FrontLeft).RestPivot);
+        var near = c.Find(EyeParts.Left)!;
+        var far = c.Find(EyeParts.Right)!;
+        Assert.True(near.HasOwnView(Direction.FrontLeft) && near.HasOwnView(Direction.BackLeft));
+
+        // front-3/4 faces screen-left: both eyes move left of where they sit in the front view,
+        // and the far eye is drawn narrower than the near one
+        Assert.True(near.View(Direction.FrontLeft).RestPivot.X < near.View(Direction.Front).RestPivot.X);
+        Assert.True(far.View(Direction.FrontLeft).RestPivot.X < far.View(Direction.Front).RestPivot.X);
+        Assert.True(far.View(Direction.FrontLeft).RestPivot.X < near.View(Direction.FrontLeft).RestPivot.X);
+        static int Width(PartView v)
+        {
+            var xs = Enumerable.Range(0, v.Image.Width * v.Image.Height).Where(i => v.Image.Pixels[i] != 0).Select(i => i % v.Image.Width).ToList();
+            return xs.Max() - xs.Min() + 1;
+        }
+        Assert.True(Width(far.View(Direction.FrontLeft)) < Width(near.View(Direction.FrontLeft)));
+        Assert.All(new[] { near, far }, e => Assert.All(e.View(Direction.BackLeft).Image.Pixels.ToArray(), p => Assert.Equal(0, p)));
+    }
+
+    [Fact]
+    public void Undo_names_say_which_mirrored_view_was_separated()
+    {
+        var c = GoldenTests.Build().Character;
+        ThreeQuarterViews.Enable(c, new UndoHistory());
+        var history = new UndoHistory();
+        RightViewChange.Apply(c.Find("body")!, history, separate: true);
+        RightViewChange.Apply(c.Find("body")!, history, separate: true, Direction.FrontRight);
+        Assert.Equal("우측면 따로 그리기", history.Done[0].Name);
+        Assert.Equal("앞 반측면 (우) 따로 그리기", history.Done[1].Name);
     }
 }

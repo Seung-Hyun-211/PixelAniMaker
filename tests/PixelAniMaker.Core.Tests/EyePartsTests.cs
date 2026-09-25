@@ -9,7 +9,7 @@ public class EyePartsTests
     private static readonly Rgba Skin = new(250, 220, 200);
 
     /// <summary>48x48 canvas: a 30x33 skin head at (9,3) on its neck joint (24,36), plus a body below.</summary>
-    private static Character HeadAndBody()
+    internal static Character HeadAndBody()
     {
         var head = new PartViewSpec(9, 3, 24, 36, 1, "head");
         var body = new PartViewSpec(14, 36, 24, 40, 0, "body");
