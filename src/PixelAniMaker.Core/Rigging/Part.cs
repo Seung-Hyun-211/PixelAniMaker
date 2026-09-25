@@ -91,6 +91,9 @@ public sealed class Part
     /// </summary>
     public bool IsDetail { get; init; }
 
+    /// <summary>Secondary motion (sway) added when frames are made (null = none). The same in every direction.</summary>
+    public Animation.SecondarySettings? Secondary { get; internal set; }
+
     /// <summary>Allowed joint rotation while editing (null = any angle). The same in every direction.</summary>
     public RotationLimit? Limit { get; internal set; }
 

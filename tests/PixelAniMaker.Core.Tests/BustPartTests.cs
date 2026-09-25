@@ -9,7 +9,7 @@ public class BustPartTests
     private static readonly Rgba Skin = new(250, 220, 200), Shade = new(190, 165, 150);
 
     /// <summary>96x128: pelvis (root), a 36x44 chest at (30,40) and a head above, in all five stored views.</summary>
-    private static Character Body()
+    internal static Character Body()
     {
         PartViewSpec View(int x, int y, float jx, float jy, int order, string image) => new(x, y, jx, jy, order, image);
         Dictionary<string, PartViewSpec> All(PartViewSpec v) =>

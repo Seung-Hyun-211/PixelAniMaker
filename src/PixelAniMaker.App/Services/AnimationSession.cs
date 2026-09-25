@@ -40,6 +40,10 @@ public sealed partial class AnimationSession : ObservableObject
         _playTimer.Tick += (_, _) => AdvancePlayback();
 
         editor.ContentChanged += (_, _) => ScheduleBake();
+        editor.SecondaryProvider = d =>
+            CurrentClip is { } clip && SecondaryMotion.HasAny(editor.Character)
+                ? SecondaryMotion.Solve(editor.Character, clip, d)[Math.Clamp(CurrentFrame, 0, clip.FrameCount - 1)]
+                : null;
         editor.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(EditorSession.Direction))
@@ -217,7 +221,7 @@ public sealed partial class AnimationSession : ObservableObject
         if (CurrentClip is { } clip)
         {
             _generated = SpriteBaker.Bake(_editor.Character, clip, _editor.Compositor, touchups: false,
-                directions: _editor.Character.Directions);
+                directions: _editor.Character.Directions, secondary: true);
             _frames = _generated.ToDictionary(kv => kv.Key, kv => kv.Value.Select((generated, f) =>
             {
                 var final = generated.Clone();

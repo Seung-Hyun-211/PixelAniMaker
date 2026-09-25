@@ -35,6 +35,8 @@
           <Separator />
           <MenuItem Header="시트와 함께 JSON 메타데이터 저장" ToggleType="CheckBox"
                     IsChecked="{Binding WriteSheetMetadata, Mode=TwoWay}" />
+          <MenuItem Header="2차 모션 넣기" ToggleType="CheckBox" IsChecked="{Binding SecondaryInExport, Mode=TwoWay}"
+                    ToolTip.Tip="시트·GIF·프레임별 PNG에 흔들림(2차 모션)을 넣습니다. 엔진에서 물리를 따로 쓸 때는 끄세요. 프로젝트에 저장됩니다." />
           <MenuItem Header="반측면도 내보내기 (8방향)" ToggleType="CheckBox"
                     IsChecked="{Binding ExportThreeQuarter, Mode=TwoWay}"
                     ToolTip.Tip="반측면이 있는 캐릭터는 시트와 GIF에 반측면 4방향을 더합니다. 시트에서는 기존 4줄 뒤에 앞 반측면 (좌)·(우), 뒤 반측면 (좌)·(우) 순서로 붙습니다. 반측면이 없는 캐릭터는 그대로 4방향입니다." />
@@ -58,6 +60,8 @@
                   ToggleType="CheckBox" IsChecked="{Binding Session.DimOtherParts, Mode=OneWay}" />
         <MenuItem Header="포즈 모드" InputGesture="{Binding Shortcuts.Gestures[TogglePose]}" Command="{Binding TogglePoseModeCommand}"
                   ToggleType="CheckBox" IsChecked="{Binding Session.PoseMode, Mode=OneWay}" />
+        <MenuItem Header="캔버스에 2차 모션 보기" ToggleType="CheckBox" IsChecked="{Binding Session.ShowSecondaryOnCanvas, Mode=TwoWay}"
+                  ToolTip.Tip="편집 캔버스에 지금 프레임의 흔들림(2차 모션)을 더해 보여 줍니다. 끄면 키로 잡은 포즈 그대로 보입니다. 애니메이션 미리보기에는 항상 들어갑니다." />
         <Separator />
         <MenuItem Header="참고 이미지 불러오기 (지금 방향)..." Command="{Binding LoadReferenceCommand}" />
         <MenuItem Header="참고 이미지 지우기 (지금 방향)" Command="{Binding ClearReferenceCommand}" />

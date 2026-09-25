@@ -34,6 +34,35 @@
         <TextBlock Text="Y" VerticalAlignment="Center" />
         <NumericUpDown Value="{Binding OffsetY}" Minimum="-64" Maximum="64" Increment="1" FormatString="0" Width="95" />
       </StackPanel>
+      <StackPanel Spacing="4" IsEnabled="{Binding !Session.IsActivePartLocked}"
+                  ToolTip.Tip="몸이 움직일 때 반 박자 늦게 따라오는 흔들림. 키는 바뀌지 않고, 애니메이션 미리보기와 내보내기에서 프레임을 만들 때 더해집니다. 변형형은 윗부분을 고정하고 아래가 출렁이며(가슴 볼륨), 회전형은 관절을 중심으로 늦게 기웁니다(머리카락·꼬리). 되돌리기가 되고, 프로젝트에 저장됩니다.">
+        <CheckBox Content="흔들림 (2차 모션)" IsChecked="{Binding HasSecondary}" />
+        <StackPanel Spacing="4" IsVisible="{Binding HasSecondary}" Margin="20,0,0,0">
+          <ComboBox ItemsSource="{Binding SecondaryModes}" SelectedIndex="{Binding SecondaryModeIndex}" Width="190" />
+          <WrapPanel ItemSpacing="4" LineSpacing="4">
+            <TextBlock Text="프리셋" VerticalAlignment="Center" />
+            <Button Content="가슴 볼륨" Command="{Binding ApplySecondaryPresetCommand}" CommandParameter="Bust" />
+            <Button Content="머리카락" Command="{Binding ApplySecondaryPresetCommand}" CommandParameter="Hair" />
+            <Button Content="천·꼬리" Command="{Binding ApplySecondaryPresetCommand}" CommandParameter="Cloth" />
+          </WrapPanel>
+          <StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="한 번 출렁이는 데 걸리는 프레임 수 (작을수록 탱탱)">
+            <TextBlock Text="주기" VerticalAlignment="Center" Width="48" />
+            <NumericUpDown Value="{Binding SecondaryPeriod}" Minimum="2" Maximum="12" Increment="1" FormatString="0.#" Width="130" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="흔들림이 잦아드는 빠르기 (0.1 = 오래 흔들림, 1 = 바로 멈춤)">
+            <TextBlock Text="감쇠" VerticalAlignment="Center" Width="48" />
+            <NumericUpDown Value="{Binding SecondaryDamping}" Minimum="0.1" Maximum="1" Increment="0.05" FormatString="0.##" Width="130" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="늦게 따라오는 정도에 곱하는 배율 (0 = 없음)">
+            <TextBlock Text="세기" VerticalAlignment="Center" Width="48" />
+            <NumericUpDown Value="{Binding SecondaryStrength}" Minimum="0" Maximum="2" Increment="0.1" FormatString="0.##" Width="130" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="변형형은 세로 px(가로는 절반), 회전형은 각도(°)">
+            <TextBlock Text="최대" VerticalAlignment="Center" Width="48" />
+            <NumericUpDown Value="{Binding SecondaryMax}" Minimum="0" Maximum="45" Increment="1" FormatString="0.#" Width="130" />
+          </StackPanel>
+        </StackPanel>
+      </StackPanel>
       <StackPanel Spacing="4" IsVisible="{Binding IsDetailPart}" IsEnabled="{Binding !Session.IsActivePartLocked}"
                   ToolTip.Tip="이 방향에서 세부 파츠(눈·가슴 볼륨)의 위치 (관절 = 파츠 가운데, 캔버스 px). 방향마다 따로 정하고, 되돌리기가 됩니다.">
         <StackPanel Orientation="Horizontal" Spacing="6">

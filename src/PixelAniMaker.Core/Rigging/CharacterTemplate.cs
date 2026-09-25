@@ -24,9 +24,21 @@ public sealed record PartViewSpec(int X, int Y, float JointX, float JointY, int 
 /// the left view (the program mirrors it for display), so its joints and angles match the left view.
 /// <see cref="Detail"/> marks a detail part such as an eye (omitted when false; older versions ignore it).
 /// <see cref="Limit"/> is the allowed rotation [min, max] in degrees (omitted when free; older versions ignore it).
+/// <see cref="Secondary"/> is the part's secondary motion (omitted when none; older versions ignore it).
 /// </summary>
 public sealed record PartSpec(string Name, string Label, string? Parent, IReadOnlyDictionary<string, PartViewSpec> Views,
-    bool? Detail = null, double[]? Limit = null);
+    bool? Detail = null, double[]? Limit = null, SecondarySpec? Secondary = null);
+
+/// <summary>Secondary motion in skeleton.json: mode "deform" or "swing", and the spring settings.</summary>
+public sealed record SecondarySpec(string Mode, float Period, float Damping, float Strength, float Max)
+{
+    public static SecondarySpec? From(Animation.SecondarySettings? s) =>
+        s is null ? null : new(s.Mode.ToString().ToLowerInvariant(), s.Period, s.Damping, s.Strength, s.Max);
+
+    public Animation.SecondarySettings ToSettings() => new(
+        Enum.TryParse<Animation.SecondaryMode>(Mode, ignoreCase: true, out var m) ? m : Animation.SecondaryMode.Deform,
+        Period, Damping, Strength, Max);
+}
 
 /// <summary>Contents of skeleton.json: canvas size and the part list.</summary>
 public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec> Parts)
@@ -93,7 +105,7 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
                 return new PartViewSpec((int)v.RestPosition.X, (int)v.RestPosition.Y, v.RestPivot.X, v.RestPivot.Y,
                     v.DrawOrder, ImagePath(d, p.Name), variants.Count > 0 ? variants : null,
                     attachments.Count > 0 ? attachments : null, LayerSpecs(v, d, p.Name));
-            }), p.IsDetail ? true : null, p.Limit is { } l ? [l.Min, l.Max] : null)).ToList());
+            }), p.IsDetail ? true : null, p.Limit is { } l ? [l.Min, l.Max] : null, SecondarySpec.From(p.Secondary))).ToList());
 
     /// <summary>Builds the character; <paramref name="loadImage"/> decodes an image file named in the spec.</summary>
     public Character Build(Func<string, RgbaImage> loadImage, Palette? palette = null)
@@ -106,6 +118,7 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
             {
                 IsDetail = s.Detail == true,
                 Limit = s.Limit is [var min, var max] ? new RotationLimit(min, max) : null,
+                Secondary = s.Secondary?.ToSettings(),
             });
         foreach (var spec in Parts.Where(s => s.Parent is not null))
         {

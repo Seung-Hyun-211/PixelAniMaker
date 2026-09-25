@@ -46,11 +46,12 @@ public sealed record SpriteSheet(RgbaImage Image, int CellWidth, int CellHeight,
             var byDirection = new Dictionary<string, IReadOnlyList<SheetFrame>>();
             foreach (var d in directions)
             {
+                var poses = SpriteBaker.FramePoses(character, clip, d);
                 var frames = new List<SheetFrame>();
                 for (int f = 0; f < clip.FrameCount; f++)
                 {
                     Blit(baked[d][f], character.Palette, image, f * w, row * h);
-                    frames.Add(new SheetFrame(f * w, row * h, clip.DurationMs(f), FrameAttachments(character, d, clip.Evaluate(d, f))));
+                    frames.Add(new SheetFrame(f * w, row * h, clip.DurationMs(f), FrameAttachments(character, d, poses[f])));
                 }
                 byDirection[d.ToString().ToLowerInvariant()] = frames;
                 row++;

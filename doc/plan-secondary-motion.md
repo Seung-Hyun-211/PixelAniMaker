@@ -1,6 +1,6 @@
 # 계획: 2차 모션 (흔들림)
 
-작성: 2026-09-25 · 상태: **설계** (구현 전, scratchpad 프로토타입으로 시험) · 관련: [가슴 볼륨 파츠](plan-bust-part.md), [프레임별 길이](patchnotes/2026-09-25-frame-hold.md)
+작성: 2026-09-25 · 상태: **구현됨** ([패치노트](patchnotes/2026-09-25-secondary-motion.md)) — 회전형 전용 매달린 파츠(머리카락·꼬리)는 임의 파츠 추가 기능과 함께 · 관련: [가슴 볼륨 파츠](plan-bust-part.md), [프레임별 길이](patchnotes/2026-09-25-frame-hold.md)
 
 ## 1. 목적
 

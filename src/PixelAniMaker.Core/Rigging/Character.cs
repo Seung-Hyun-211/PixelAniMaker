@@ -36,6 +36,9 @@ public sealed class Character
     public ColorSelection Colors { get; }
     public OutlineSettings Outline { get; } = new();
 
+    /// <summary>Whether exported sheets, GIFs and frame PNGs include secondary motion (previews always do).</summary>
+    public bool SecondaryInExport { get; set; } = true;
+
     /// <summary>Automatic shading of composites (off unless turned on).</summary>
     public ShadingSettings Shading { get; } = new();
 

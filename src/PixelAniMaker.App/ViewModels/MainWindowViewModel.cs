@@ -36,6 +36,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Project.PropertyChanged += (_, _) => OnDocumentStateChanged();
         Session.PropertyChanged += (_, e) =>
         {
+            if (e.PropertyName == nameof(EditorSession.SecondaryInExport))
+                OnPropertyChanged(nameof(SecondaryInExport));
             if (e.PropertyName == nameof(EditorSession.HasUnsavedSettings))
                 OnDocumentStateChanged();
             if (e.PropertyName is nameof(EditorSession.Zoom) or nameof(EditorSession.CurrentTool)
@@ -131,6 +133,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public IFileDialogs? Dialogs { get; set; }
 
     public ObservableCollection<string> RecentFiles { get; } = [];
+
+    /// <summary>Project setting: exports include secondary motion.</summary>
+    public bool SecondaryInExport
+    {
+        get => Session.SecondaryInExport;
+        set
+        {
+            Session.SecondaryInExport = value;
+            OnPropertyChanged();
+        }
+    }
 
     public bool ExportThreeQuarter
     {

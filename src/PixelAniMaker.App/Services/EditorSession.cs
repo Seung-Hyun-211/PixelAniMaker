@@ -51,6 +51,32 @@ public sealed partial class EditorSession : ObservableObject
     /// <summary>Outline or shading settings changed since the character was loaded or saved (they are not in the undo history).</summary>
     [ObservableProperty] private bool _hasUnsavedSettings;
 
+    /// <summary>Show the current frame's secondary motion on the editing canvas (off: the keyed pose as is).</summary>
+    [ObservableProperty] private bool _showSecondaryOnCanvas;
+
+    /// <summary>Secondary motion of the current animation frame per direction (set by the animation session).</summary>
+    public Func<Direction, Core.Animation.SecondaryFrame?>? SecondaryProvider { get; set; }
+
+    /// <summary>Whether exports include secondary motion (a project setting, saved with it).</summary>
+    public bool SecondaryInExport
+    {
+        get => Character.SecondaryInExport;
+        set
+        {
+            if (Character.SecondaryInExport == value)
+                return;
+            Character.SecondaryInExport = value;
+            HasUnsavedSettings = true;
+            OnPropertyChanged();
+        }
+    }
+
+    partial void OnShowSecondaryOnCanvasChanged(bool value) => Refresh();
+
+    /// <summary>Sets or (null) removes the active part's secondary motion, as one undoable step.</summary>
+    public void SetActiveSecondary(Core.Animation.SecondarySettings? settings) =>
+        Core.Animation.SecondaryChange.Apply(ActivePart, Character.History, settings?.Clamped());
+
     public EditorSession()
     {
         Reference.Changed += (_, _) => ImageUpdated?.Invoke(this, EventArgs.Empty);
@@ -165,6 +191,7 @@ public sealed partial class EditorSession : ObservableObject
         Character = character;
         OnPropertyChanged(nameof(AutoOutline));
         OnPropertyChanged(nameof(AutoShading));
+        OnPropertyChanged(nameof(SecondaryInExport));
         OnPropertyChanged(nameof(ShadingFromRight));
         OnPropertyChanged(nameof(ShadingWidth));
         OnPropertyChanged(nameof(HasEyes));
@@ -525,7 +552,9 @@ public sealed partial class EditorSession : ObservableObject
         AttachDocument(ActiveTransform.EditImage(ActiveLayer)); // rotating into or out of an angle variant switches the target
         UpdateMirror();                        // the mirror follows the pose
         var composites = Character.Directions.ToDictionary(d => d, d => Compositor.Compose(Character, d));
-        var canvas = _hiddenParts.Count == 0 ? composites[Direction] : Compositor.Compose(Character, Direction, hidden: _hiddenParts);
+        var sway = ShowSecondaryOnCanvas ? SecondaryProvider?.Invoke(Direction) : null;
+        var canvas = _hiddenParts.Count == 0 && sway is null ? composites[Direction]
+            : Compositor.Compose(Character, Direction, hidden: _hiddenParts.Count == 0 ? null : _hiddenParts, secondary: sway);
         SourceComposite = canvas;   // hidden parts cannot be picked on the canvas
         if (Direction.IsMirrored())
         {

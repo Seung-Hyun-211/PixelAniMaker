@@ -119,7 +119,7 @@ public static class BustPart
             }
             views[direction] = View(pixels, skin, line, y0, y1, outsideOnly, new Vector2(cx, (y0 + y1) / 2), chestView.DrawOrder);
         }
-        return new Part(Name, "가슴 볼륨", views) { IsDetail = true };
+        return new Part(Name, "가슴 볼륨", views) { IsDetail = true, Secondary = Animation.SecondarySettings.Bust };
     }
 
     /// <summary>The drawing, with a line under the round bottom where it lies on the chest.</summary>

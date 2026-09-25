@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Mvvm.Controls;
 using PixelAniMaker.App.Services;
+using PixelAniMaker.Core.Animation;
 using PixelAniMaker.Core.Rigging;
 
 namespace PixelAniMaker.App.ViewModels;
@@ -49,6 +50,12 @@ public sealed partial class PartsViewModel : Tool
     [ObservableProperty] private bool _isDetailPart;
     [ObservableProperty] private decimal? _detailX;
     [ObservableProperty] private decimal? _detailY;
+    [ObservableProperty] private bool _hasSecondary;
+    [ObservableProperty] private int _secondaryModeIndex;
+    [ObservableProperty] private decimal? _secondaryPeriod;
+    [ObservableProperty] private decimal? _secondaryDamping;
+    [ObservableProperty] private decimal? _secondaryStrength;
+    [ObservableProperty] private decimal? _secondaryMax;
     [ObservableProperty] private bool _hasLimit;
     [ObservableProperty] private decimal? _limitMin;
     [ObservableProperty] private decimal? _limitMax;
@@ -131,6 +138,41 @@ public sealed partial class PartsViewModel : Tool
         double current = Session.CurrentPose.Get(Session.ActivePart.Name);
         Session.SetActiveRotationLimit(value ? new RotationLimit(Math.Min(-90, current), Math.Max(90, current)) : null);
     }
+
+    /// <summary>Choices for <see cref="SecondaryModeIndex"/>, in <see cref="SecondaryMode"/> order.</summary>
+    public IReadOnlyList<string> SecondaryModes { get; } = ["변형형 (덩어리)", "회전형 (매달림)"];
+
+    /// <summary>Turning sway on starts from the bust preset for detail parts, the hair preset otherwise.</summary>
+    partial void OnHasSecondaryChanged(bool value)
+    {
+        if (!_syncing)
+            Session.SetActiveSecondary(value ? (Session.ActivePart.IsDetail ? SecondarySettings.Bust : SecondarySettings.Hair) : null);
+    }
+
+    partial void OnSecondaryModeIndexChanged(int value) => ApplySecondary();
+    partial void OnSecondaryPeriodChanged(decimal? value) => ApplySecondary();
+    partial void OnSecondaryDampingChanged(decimal? value) => ApplySecondary();
+    partial void OnSecondaryStrengthChanged(decimal? value) => ApplySecondary();
+    partial void OnSecondaryMaxChanged(decimal? value) => ApplySecondary();
+
+    private void ApplySecondary()
+    {
+        if (_syncing || !HasSecondary || SecondaryPeriod is not { } period || SecondaryDamping is not { } damping
+            || SecondaryStrength is not { } strength || SecondaryMax is not { } max)
+            return;
+        Session.SetActiveSecondary(new SecondarySettings((SecondaryMode)Math.Clamp(SecondaryModeIndex, 0, 1),
+            (float)period, (float)damping, (float)strength, (float)max));
+        Avalonia.Threading.Dispatcher.UIThread.Post(Sync);   // show the values as clamped
+    }
+
+    /// <summary>Parameter: "Bust", "Hair" or "Cloth".</summary>
+    [RelayCommand]
+    private void ApplySecondaryPreset(string name) => Session.SetActiveSecondary(name switch
+    {
+        "Hair" => SecondarySettings.Hair,
+        "Cloth" => SecondarySettings.Cloth,
+        _ => SecondarySettings.Bust,
+    });
 
     partial void OnLimitMinChanged(decimal? value) => ApplyLimit();
 
@@ -257,6 +299,13 @@ public sealed partial class PartsViewModel : Tool
         OwnRight = Session.Direction.IsMirrored() && Session.ActivePart.HasOwnView(Session.Direction);
         var detail = Session.ActiveDetailPosition;
         IsDetailPart = detail is not null;
+        var sway = Session.ActivePart.Secondary;
+        HasSecondary = sway is not null;
+        SecondaryModeIndex = (int)(sway?.Mode ?? SecondaryMode.Deform);
+        SecondaryPeriod = sway is null ? null : (decimal)sway.Period;
+        SecondaryDamping = sway is null ? null : (decimal)Math.Round(sway.Damping, 2);
+        SecondaryStrength = sway is null ? null : (decimal)Math.Round(sway.Strength, 2);
+        SecondaryMax = sway is null ? null : (decimal)sway.Max;
         var limit = Session.ActivePart.Limit;
         HasLimit = limit is not null;
         LimitMin = limit is { } l ? (decimal)l.Min : null;
