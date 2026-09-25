@@ -171,9 +171,10 @@ public partial class MainWindow : Window, IFileDialogs
         };
     }
 
-    public async Task<IReadOnlyList<int>?> PickItemsAsync(string title, string message, IReadOnlyList<string> items, string okLabel)
+    public async Task<IReadOnlyList<int>?> PickItemsAsync(string title, string message, IReadOnlyList<string> items, string okLabel,
+        IReadOnlyList<bool>? ticked = null)
     {
-        var boxes = items.Select(i => new CheckBox { Content = i, IsChecked = true }).ToList();
+        var boxes = items.Select((item, i) => new CheckBox { Content = item, IsChecked = ticked?[i] ?? true }).ToList();
         var list = new ScrollViewer { MaxHeight = 360, Content = new StackPanel { Spacing = 2, Children = { } } };
         ((StackPanel)list.Content).Children.AddRange(boxes);
         if (await MessageDialog.ShowAsync(this, title, message, list, okLabel, "취소") != 0)

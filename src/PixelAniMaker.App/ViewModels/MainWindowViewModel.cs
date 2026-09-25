@@ -172,17 +172,25 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         if (!await ConfirmDiscardAsync())
             return;
-        var clips = TemplateLoader.LoadDefaultAnimations();
+        var clips = TemplateLoader.LoadDefaultAnimations(threeQuarter: true);
+        bool threeQuarter = false;
         if (Dialogs is not null)
         {
+            // the last row is an option, off by default: 3/4 views make the file format 2
             var labels = clips.Select(c => $"{c.Name}  ({c.FrameCount}프레임 · {c.Fps} fps)").ToList();
+            labels.Add("반측면 포함 (앞·뒤 반측면 마네킹과 동작, 이전 버전에서는 열리지 않음)");
+            var ticked = clips.Select(_ => true).Append(false).ToList();
             if (await Dialogs.PickItemsAsync("새로 만들기", "만들 동작을 고르세요.\n" +
                     "고르지 않은 동작은 나중에 다른 프로젝트에서 가져오거나 새로 만들 수 있습니다.",
-                    labels, "만들기") is not { } picked)
+                    labels, "만들기", ticked) is not { } picked)
                 return;
-            clips = picked.Select(i => clips[i]).ToList();
+            threeQuarter = picked.Contains(clips.Count);
+            clips = picked.Where(i => i < clips.Count).Select(i => clips[i]).ToList();
         }
-        Project.New(jointDiscs, clips);
+        if (!threeQuarter)
+            foreach (var clip in clips)
+                Core.Rigging.ThreeQuarterViews.StripFrom(clip);
+        Project.New(jointDiscs, clips, threeQuarter);
     }
 
     [RelayCommand]

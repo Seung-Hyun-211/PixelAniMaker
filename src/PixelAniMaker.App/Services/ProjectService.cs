@@ -44,10 +44,11 @@ public sealed partial class ProjectService : ObservableObject
     /// The clips to start with (default: every default clip). An empty list gives one blank clip,
     /// since the timeline always keeps at least one.
     /// </param>
-    public void New(bool jointDiscs = true, IReadOnlyList<AnimationClip>? clips = null)
+    /// <param name="threeQuarter">Start with the template's 3/4 views (saved as format 2).</param>
+    public void New(bool jointDiscs = true, IReadOnlyList<AnimationClip>? clips = null, bool threeQuarter = false)
     {
-        _editor.LoadCharacter(TemplateLoader.LoadChibi96(jointDiscs));
-        clips ??= TemplateLoader.LoadDefaultAnimations();
+        _editor.LoadCharacter(TemplateLoader.LoadChibi96(jointDiscs, threeQuarter));
+        clips ??= TemplateLoader.LoadDefaultAnimations(threeQuarter);
         _animation.SetClips(clips.Count > 0 ? clips : [new AnimationClip(Localizer.T("새 동작"), 8)]);
         CurrentPath = null;
         IsRecovered = false;

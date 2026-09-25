@@ -44,6 +44,16 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
 
     public string ToJson() => JsonSerializer.Serialize(this, Json);
 
+    /// <summary>The same spec without 3/4 views (for a template used by a project that has none).</summary>
+    public CharacterSpec WithoutThreeQuarter() => this with
+    {
+        Parts = Parts.Select(p => p with
+        {
+            Views = p.Views.Where(v => !Enum.TryParse<Direction>(v.Key, ignoreCase: true, out var d) || !d.IsThreeQuarter())
+                .ToDictionary(v => v.Key, v => v.Value),
+        }).ToList(),
+    };
+
     /// <summary>File name used for a part's image in one direction.</summary>
     public static string ImagePath(Direction direction, string part, int? angle = null) =>
         $"{direction.ToString().ToLowerInvariant()}/{part}{(angle is { } a ? $"@{a}" : "")}.png";

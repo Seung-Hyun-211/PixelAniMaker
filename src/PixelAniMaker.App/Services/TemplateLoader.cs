@@ -16,10 +16,13 @@ public static class TemplateLoader
     private static readonly Rgba InnerLineColor = new(120, 96, 74);
 
     /// <param name="jointDiscs">False loads the plain mannequin without ball-joint circles.</param>
-    public static Character LoadChibi96(bool jointDiscs = true)
+    /// <param name="threeQuarter">True keeps the template's 3/4 views (the project is then saved as format 2).</param>
+    public static Character LoadChibi96(bool jointDiscs = true, bool threeQuarter = false)
     {
         string folder = jointDiscs ? Folder : PlainFolder;
         var spec = CharacterSpec.Parse(ReadText(folder, "skeleton.json"));
+        if (!threeQuarter)
+            spec = spec.WithoutThreeQuarter();
         var palette = new Palette();
         var character = spec.Build(file => LoadRgba(new Uri(folder + file)), palette);
         SeedPalette(palette);
@@ -30,11 +33,16 @@ public static class TemplateLoader
     }
 
     /// <summary>The default clips (idle, walk, run, jump, attack, hit).</summary>
-    public static IReadOnlyList<AnimationClip> LoadDefaultAnimations()
+    /// <param name="threeQuarter">True keeps their 3/4 tracks; otherwise they are dropped (format 1 projects).</param>
+    public static IReadOnlyList<AnimationClip> LoadDefaultAnimations(bool threeQuarter = false)
     {
         var clips = AnimationJson.Parse(ReadText(Folder, "animations.json"));
         foreach (var clip in clips)
+        {
             clip.Name = Localizer.T(clip.Name); // names are data: new projects get them in the UI language
+            if (!threeQuarter)
+                ThreeQuarterViews.StripFrom(clip);
+        }
         return clips;
     }
 

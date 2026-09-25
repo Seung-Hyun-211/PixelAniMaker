@@ -92,7 +92,7 @@ public enum Direction
 ### 5.2 초안 만들기
 
 - **구현됨** ([패치노트](patchnotes/2026-09-25-three-quarter-draft.md)) — `반측면 동작 초안` 명령: 정면과 측면 키를 프레임별로 반씩 섞어(`AnimationClip.Blend`, t = 0.5) 반측면 트랙을 채운다. 몸 이동량도 섞는다. **팔은 측면 키를 그대로 쓴다** (아래 시험 결과).
-- 기본 동작 6종의 반측면 트랙은 이 초안을 만든 뒤 마네킹으로 다듬어 `animations.json`에 넣는다.
+- 기본 동작 6종의 반측면 트랙은 이 초안 규칙 그대로의 결과를 `animations.json`에 넣었다 (④, 손으로 다듬지 않음 — 테스트가 초안 규칙과 같은지 확인).
 - **시험 결과 (2026-09-25, 예시 캐릭터 2개):** 대기·걷기·달리기·점프처럼 정면과 측면이 **같은 관절**을 움직이는 동작은 초안이 자연스럽다 (다리가 비스듬히 앞뒤로 움직임). 손 흔들기처럼 정면은 오른팔, 측면은 가까운 왼팔을 쓰는 동작은 섞으면 두 팔이 반쯤 들린 모습이 되어 **손으로 만들어야** 한다. 초안 명령은 이미 키가 있는 반측면 트랙을 덮어쓰지 않는다.
 
 ### 5.3 동작 가져오기
@@ -129,11 +129,12 @@ public enum Direction
 ## 7. 템플릿(마네킹)
 
 - `mannequin/make_chibi_parts.py`에 `view_front_left`, `view_back_left`를 추가한다.
-- **시험한 만드는 법 (2026-09-25, scratchpad 시안 — 저장소에는 아직 없음):**
-  - 관절 위치: 몸 중심선 기준으로 가까운 쪽 관절은 정면 거리의 0.85배, 먼 쪽은 0.55배로 모은다. 팔다리 굵기는 그대로. 앞 반측면(왼쪽을 향함)은 먼 쪽 = 캐릭터 오른쪽(`_r`, 화면 왼쪽), 뒤 반측면은 먼 쪽이 화면 오른쪽.
-  - 몸통·허리·골반: 정면 윤곽을 같은 비율로 모으고, 가슴 앞면을 향하는 쪽으로 1px 내민다.
+- **구현됨** ([패치노트](patchnotes/2026-09-25-three-quarter-template.md)).
+- **만드는 법 (scratchpad 시안에서 시험한 뒤 스크립트로 옮김, 2026-09-25):**
+  - 관절 위치: 몸 중심선 기준으로 가까운 쪽 관절은 정면 거리의 0.85배, 먼 쪽은 0.6배로 모은다. 팔다리 굵기는 그대로. 앞 반측면(왼쪽을 향함)은 먼 쪽 = 캐릭터 오른쪽(`_r`, 화면 왼쪽), 뒤 반측면은 먼 쪽이 화면 오른쪽.
+  - 몸통·허리·골반: 정면 윤곽을 같은 비율로 모으고, 앞 반측면은 가슴을 향하는 쪽으로 2px 내민다.
   - 머리: 정면 머리(귀 없음)와 측면 머리의 가로 폭을 줄마다 반씩 섞는다 (턱이 향하는 쪽으로 옮겨 감). 앞 턱선 아래는 목만 남기고, 3줄 평균으로 윤곽을 매끄럽게.
-  - 발: 향하는 쪽으로 조금 옮긴 타원.
+  - 발: 향하는 쪽으로 3px 옮긴다.
   - 그리기 순서 (뒤→앞): 먼 팔 → 먼 다리 → 가까운 다리 → 골반·허리·가슴·머리 → 가까운 팔.
   - **몸통:** 정면보다 폭이 좁고, 가슴·골반이 향하는 쪽으로 조금 치우친다.
   - **팔다리:** 먼 쪽 팔다리는 몸 뒤로 일부 가려지게 그리기 순서를 조정한다.
@@ -153,7 +154,7 @@ public enum Direction
 
 ## 9. 작업 순서
 
-진행 상황: ① 완료 ([패치노트](patchnotes/2026-09-25-direction-model.md)), ③ 완료 ([패치노트](patchnotes/2026-09-25-three-quarter-ui.md), 반측면을 앱에서 바로 쓸 수 있게 ②보다 먼저 진행), ② 완료 ([패치노트](patchnotes/2026-09-25-three-quarter-export.md)). ④의 반측면 몸·머리는 scratchpad 시안으로 먼저 시험했다 (위 7절, 저장소에는 아직 없음). 반측면 눈을 다듬는 데 필요한 **눈 위치 옮기기**는 추가했다 ([패치노트](patchnotes/2026-09-25-eye-position.md)). 실제 작업은 세션 작업 브랜치(`claude/work-environment-setup-a3u93e`)에서 하고 있으며, 아래 브랜치 이름은 `main`에 나눠 병합할 때의 단위다. 구현하면서 정한 이름 — `Direction.FrontLeft`·`FrontRight`·`BackLeft`·`BackRight`, `Character.HasThreeQuarter`·`StoredDirections`·`Directions`, `ThreeQuarterViews.Enable`·`Disable`, `ProjectFile.VersionFor`.
+진행 상황: ① 완료 ([패치노트](patchnotes/2026-09-25-direction-model.md)), ③ 완료 ([패치노트](patchnotes/2026-09-25-three-quarter-ui.md), 반측면을 앱에서 바로 쓸 수 있게 ②보다 먼저 진행), ② 완료 ([패치노트](patchnotes/2026-09-25-three-quarter-export.md)), 반측면 동작 초안 완료 ([패치노트](patchnotes/2026-09-25-three-quarter-draft.md)), ④ 완료 ([패치노트](patchnotes/2026-09-25-three-quarter-template.md)) — 계획한 단계는 모두 끝났다. 반측면 눈을 다듬는 데 필요한 **눈 위치 옮기기**는 추가했다 ([패치노트](patchnotes/2026-09-25-eye-position.md)). 실제 작업은 세션 작업 브랜치(`claude/work-environment-setup-a3u93e`)에서 하고 있으며, 아래 브랜치 이름은 `main`에 나눠 병합할 때의 단위다. 구현하면서 정한 이름 — `Direction.FrontLeft`·`FrontRight`·`BackLeft`·`BackRight`, `Character.HasThreeQuarter`·`StoredDirections`·`Directions`, `ThreeQuarterViews.Enable`·`Disable`, `ProjectFile.VersionFor`.
 
 각 단계는 저장소 규칙대로 `feature/...` 브랜치에서 작업한다. 단계마다 테스트·스크린샷·패치노트를 남기고 `main`에 병합한다. 앞 단계만 병합돼도 프로그램이 정상 동작하도록 순서를 잡았다.
 

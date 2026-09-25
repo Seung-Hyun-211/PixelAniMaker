@@ -42,8 +42,9 @@ public interface IFileDialogs
     /// <summary>Shows the character now and with the imported palette swapped in, and asks how to import.</summary>
     Task<PaletteImportChoice> ConfirmPaletteImportAsync(string message, Avalonia.Media.IImage before, Avalonia.Media.IImage after);
 
-    /// <summary>Checklist (all ticked at first); the ticked indices, or null when cancelled.</summary>
-    Task<IReadOnlyList<int>?> PickItemsAsync(string title, string message, IReadOnlyList<string> items, string okLabel);
+    /// <summary>Checklist (all ticked at first unless <paramref name="ticked"/> says otherwise); the ticked indices, or null when cancelled.</summary>
+    Task<IReadOnlyList<int>?> PickItemsAsync(string title, string message, IReadOnlyList<string> items, string okLabel,
+        IReadOnlyList<bool>? ticked = null);
 
     /// <summary>True to recover the autosaved work, false to discard it.</summary>
     Task<bool> ConfirmRecoveryAsync(string message);

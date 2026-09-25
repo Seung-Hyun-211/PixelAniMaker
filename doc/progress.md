@@ -55,15 +55,16 @@
 
 ### 3.4 계획: 반측면(3/4 뷰)
 
-기존 파일·결과물과 호환되게 반측면 방향을 추가하는 계획: [plan-three-quarter-view.md](plan-three-quarter-view.md). 4단계(방향 모델 → 내보내기 → 화면 → 템플릿)로 나눠 진행한다.
+기존 파일·결과물과 호환되게 반측면 방향을 추가하는 계획: [plan-three-quarter-view.md](plan-three-quarter-view.md). 4단계(방향 모델 → 내보내기 → 화면 → 템플릿)로 나눠 진행했고, 모두 완료했다.
 
 | 단계 | 상태 | 패치노트 |
 | --- | --- | --- |
 | ① 방향 모델 | 완료 (화면·결과물 변화 없음, 기준 파일 회귀 테스트) | [①](patchnotes/2026-09-25-direction-model.md) |
 | (추가) 눈 위치 옮기기 | 완료 | [눈 위치](patchnotes/2026-09-25-eye-position.md) |
 | ② 내보내기 방향 수 | 완료 | [②](patchnotes/2026-09-25-three-quarter-export.md) |
-| ③ 화면 | 완료 (②보다 먼저 진행 — 내보내기는 아직 4방향) | [③](patchnotes/2026-09-25-three-quarter-ui.md) |
-| ④ 반측면 템플릿 | 대기 | |
+| ③ 화면 | 완료 (②보다 먼저 진행) | [③](patchnotes/2026-09-25-three-quarter-ui.md) |
+| (추가) 반측면 동작 초안 | 완료 | [초안](patchnotes/2026-09-25-three-quarter-draft.md) |
+| ④ 반측면 템플릿 | 완료 (새로 만들기 "반측면 포함", 기본 끔) | [④](patchnotes/2026-09-25-three-quarter-template.md) |
 
 ## 4. 알려진 제한
 
