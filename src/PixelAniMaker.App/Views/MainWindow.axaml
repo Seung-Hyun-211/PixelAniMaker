@@ -27,6 +27,10 @@
           <MenuItem Header="현재 동작 시트 PNG..." InputGesture="{Binding Shortcuts.Gestures[ExportSheet]}" Command="{Binding ExportCurrentSheetCommand}" />
           <MenuItem Header="전체 동작 통합 시트 PNG..." Command="{Binding ExportAllSheetCommand}" />
           <MenuItem Header="현재 동작 GIF..." Command="{Binding ExportGifCommand}" />
+          <MenuItem Header="현재 동작 프레임별 PNG..." Command="{Binding ExportCurrentFramesCommand}"
+                    ToolTip.Tip="프레임마다 PNG 한 장씩, 고른 이름 뒤에 _동작_방향_번호를 붙여 같은 폴더에 저장합니다." />
+          <MenuItem Header="전체 동작 프레임별 PNG..." Command="{Binding ExportAllFramesCommand}"
+                    ToolTip.Tip="프레임마다 PNG 한 장씩, 고른 이름 뒤에 _동작_방향_번호를 붙여 같은 폴더에 저장합니다." />
           <MenuItem Header="팔레트 (.gpl, .hex, .png)..." Command="{Binding ExportPaletteCommand}" />
           <Separator />
           <MenuItem Header="시트와 함께 JSON 메타데이터 저장" ToggleType="CheckBox"

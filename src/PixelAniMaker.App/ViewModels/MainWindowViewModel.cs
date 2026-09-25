@@ -230,6 +230,23 @@ public sealed partial class MainWindowViewModel : ObservableObject
         $"{Project.DocumentName}_all", path => Project.ExportSheet(path, allClips: true));
 
     [RelayCommand]
+    private Task ExportCurrentFrames() => ExportFramesAsync(allClips: false);
+
+    [RelayCommand]
+    private Task ExportAllFrames() => ExportFramesAsync(allClips: true);
+
+    /// <summary>Frame PNGs go next to the picked file name, which starts each frame's name.</summary>
+    private async Task ExportFramesAsync(bool allClips)
+    {
+        if (Dialogs is null || await Dialogs.PickSaveFileAsync("프레임별 PNG 내보내기 (이름 앞부분과 폴더 고르기)",
+                ProjectService.PngType, Project.DocumentName) is not { } path)
+            return;
+        int count = 0;
+        if (await TryAsync(() => count = Project.ExportFrames(path, allClips), "내보내지 못했습니다"))
+            await Dialogs.ShowMessageAsync($"PNG {count}개를 저장했습니다.\n{Path.GetDirectoryName(path)}");
+    }
+
+    [RelayCommand]
     private Task ExportGif() => ExportAsync("GIF 내보내기", ProjectService.GifType,
         $"{Project.DocumentName}_{Animation.CurrentClip?.Name}", Project.ExportGif);
 
