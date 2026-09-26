@@ -408,6 +408,53 @@ public sealed partial class EditorSession : ObservableObject
     public void SetLayerVisible(int index, bool visible) =>
         LayerChange.Apply(ActiveLayers, Character.History, visible ? "레이어 보이기" : "레이어 숨기기", list => list[index].Visible = visible);
 
+    // ------------------------------------------------------------------ strokes past the part's area
+
+    /// <summary>Views grown for the stroke in progress, with the area to keep when trimming (in grown pixels).</summary>
+    private readonly List<(PartView View, Core.Editing.PixelRect Keep)> _grownForStroke = [];
+
+    /// <summary>
+    /// Starts a canvas stroke as one undo step. For tools that add pixels, the active part (and its mirror
+    /// partner) is first grown to cover the whole canvas, so the stroke can go past the shape it started
+    /// with — angle images keep their size.
+    /// </summary>
+    public void BeginStroke()
+    {
+        Character.History.BeginGroup(CurrentTool.Label);
+        _grownForStroke.Clear();
+        if (!CurrentTool.DrawsOutside || ActiveTransform.Image != ActiveTransform.View.Image)
+            return;
+        var views = new List<PartTransform> { ActiveTransform };
+        if (ActiveDocument.Mirror is not null && Transforms[Core.Rigging.Symmetry.Counterpart(Character, ActivePart)] is var partner
+            && partner.View != ActiveTransform.View && partner.Image == partner.View.Image)
+            views.Add(partner);
+        foreach (var t in views)
+        {
+            var before = PartViewBounds.Current(t.View);
+            var cover = PartViewBounds.CoveringCanvas(t, Character.Width, Character.Height);
+            PartViewBounds.Resize(t.View, cover, Character.History);   // the document follows through HistoryChanged
+            _grownForStroke.Add((t.View, before.Offset(-cover.X0, -cover.Y0)));
+        }
+    }
+
+    /// <summary>Ends the stroke: grown parts shrink back to what was drawn; a stroke that drew nothing leaves no step.</summary>
+    public void EndStroke()
+    {
+        var history = Character.History;
+        int grown = _grownForStroke.Count(g => PartViewBounds.Current(g.View) != g.Keep);
+        if (history.GroupCount <= grown)
+        {
+            history.CancelGroup();                  // only the growing was recorded
+        }
+        else
+        {
+            foreach (var (view, keep) in _grownForStroke)
+                PartViewBounds.Resize(view, PartViewBounds.Trimmed(view, keep), history);
+            history.EndGroup();
+        }
+        _grownForStroke.Clear();
+    }
+
     /// <summary>Mirrors strokes while symmetric editing applies (not for moving a selection).</summary>
     private void UpdateMirror()
     {
