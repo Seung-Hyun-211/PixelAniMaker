@@ -98,7 +98,7 @@ public sealed class PixelCanvas : SessionControl
 
     protected override void OnSessionPropertyChanged(string? propertyName)
     {
-        if (propertyName == nameof(EditorSession.Character))
+        if (propertyName is nameof(EditorSession.Character) or nameof(EditorSession.CanvasSize))
             PlaceImage(Bounds.Size);
         else if (propertyName == nameof(EditorSession.Zoom) && Session is { } s)
         {

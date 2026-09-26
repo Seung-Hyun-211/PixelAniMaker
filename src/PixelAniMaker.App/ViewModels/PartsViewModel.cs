@@ -3,13 +3,34 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Mvvm.Controls;
 using PixelAniMaker.App.Services;
+using PixelAniMaker.Core.Animation;
 using PixelAniMaker.Core.Rigging;
 
 namespace PixelAniMaker.App.ViewModels;
 
-public sealed record PartItem(Part Part)
+/// <summary>One row of the part tree: show/hide and lock write back to the session (editing aids, not undoable or saved).</summary>
+public sealed partial class PartItem : ObservableObject
 {
+    private readonly EditorSession _session;
+
+    [ObservableProperty] private bool _visible;
+    [ObservableProperty] private bool _locked;
+
+    public PartItem(EditorSession session, Part part)
+    {
+        _session = session;
+        Part = part;
+        _visible = !session.IsHidden(part);
+        _locked = session.IsLocked(part);
+    }
+
+    public Part Part { get; }
+
     public string Display => new string(' ', Part.Depth * 3) + Part.Label;
+
+    partial void OnVisibleChanged(bool value) => _session.SetHidden(Part, !value);
+
+    partial void OnLockedChanged(bool value) => _session.SetLocked(Part, value);
 }
 
 /// <summary>Skeleton hierarchy: pick the part to edit and set its joint rotation in the current direction.</summary>
@@ -26,6 +47,31 @@ public sealed partial class PartsViewModel : Tool
     [ObservableProperty] private string _variantMessage = "";
     [ObservableProperty] private bool _ownRight;
     [ObservableProperty] private bool _isRightView;
+    [ObservableProperty] private bool _isMovablePart;
+    [ObservableProperty] private decimal? _positionX;
+    [ObservableProperty] private decimal? _positionY;
+    [ObservableProperty] private bool _hasSecondary;
+    [ObservableProperty] private int _secondaryModeIndex;
+    [ObservableProperty] private decimal? _secondaryPeriod;
+    [ObservableProperty] private decimal? _secondaryDamping;
+    [ObservableProperty] private decimal? _secondaryStrength;
+    [ObservableProperty] private decimal? _secondaryMax;
+    [ObservableProperty] private bool _hasLimit;
+    [ObservableProperty] private decimal? _limitMin;
+    [ObservableProperty] private decimal? _limitMax;
+    [ObservableProperty] private bool _isCustomPart;
+    [ObservableProperty] private string _customLabel = "";
+    [ObservableProperty] private bool _canOrderForward;
+    [ObservableProperty] private bool _canOrderBackward;
+    [ObservableProperty] private bool _canReorder;
+    [ObservableProperty] private bool _orderWithChildren = true;
+    [ObservableProperty] private string _drawOrderText = "";
+    [ObservableProperty] private int _orderAnchorIndex;
+    [ObservableProperty] private string _poseOrderText = "";
+    [ObservableProperty] private int _customKindIndex;
+    [ObservableProperty] private int _customPlacementIndex = (int)CustomParts.DefaultPlacement(CustomPartKind.Hair);
+    [ObservableProperty] private decimal? _customSegments = CustomParts.DefaultSegments(CustomPartKind.Hair);
+    [ObservableProperty] private decimal? _customLength;
 
     public PartsViewModel(EditorSession session)
     {
@@ -34,6 +80,7 @@ public sealed partial class PartsViewModel : Tool
         Title = "파츠";
         CanClose = false;
         session.HistoryChanged += (_, _) => Sync(); // variants or right views added/removed or undone
+        session.PartsChanged += (_, _) => Attach(); // eye parts added/removed or undone
         session.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(EditorSession.Character))
@@ -67,13 +114,24 @@ public sealed partial class PartsViewModel : Tool
 
     [RelayCommand] private void LayerDown() => Session.MoveActiveLayer(-1);
 
+    /// <summary>
+    /// Rebuilds the rows only when the layers changed: rebuilding re-selects a row, and the list then scrolls
+    /// it into view — which scrolled the whole panel on every pose or history change.
+    /// </summary>
     private void SyncLayers()
     {
-        Layers.Clear();
         var layers = Session.ActiveLayers;
-        for (int i = layers.Count - 1; i >= 0; i--)
-            Layers.Add(new LayerItem(Session, i, layers[i].Name, layers[i].Visible));
-        SelectedLayer = Layers.FirstOrDefault(l => l.Index == Session.ActiveLayerIndex);
+        var rows = Enumerable.Range(0, layers.Count).Reverse()
+            .Select(i => (Index: i, Name: Localizer.T(layers[i].Name), layers[i].Visible)).ToList();
+        if (!Layers.Select(l => (l.Index, l.Name, l.Visible)).SequenceEqual(rows))
+        {
+            Layers.Clear();
+            foreach (var (index, _, visible) in rows)
+                Layers.Add(new LayerItem(Session, index, layers[index].Name, visible));
+        }
+        var selected = Layers.FirstOrDefault(l => l.Index == Session.ActiveLayerIndex);
+        if (SelectedLayer != selected)
+            SelectedLayer = selected;
     }
 
     /// <summary>Attachment points of the active part in the current direction.</summary>
@@ -88,13 +146,82 @@ public sealed partial class PartsViewModel : Tool
     partial void OnRotationChanged(decimal? value)
     {
         if (!_syncing && value is { } degrees)
+        {
             Session.SetRotation(Session.ActivePart, (double)degrees);
+            // show the clamped angle even when the pose did not change; posted, because the control
+            // ignores a new value while it is still handing over the typed one
+            Avalonia.Threading.Dispatcher.UIThread.Post(Sync);
+        }
+    }
+
+    /// <summary>Turning the limit on starts from ±90°, widened to include the current rotation.</summary>
+    partial void OnHasLimitChanged(bool value)
+    {
+        if (_syncing)
+            return;
+        double current = Session.CurrentPose.Get(Session.ActivePart.Name);
+        Session.SetActiveRotationLimit(value ? new RotationLimit(Math.Min(-90, current), Math.Max(90, current)) : null);
+    }
+
+    /// <summary>Choices for <see cref="SecondaryModeIndex"/>, in <see cref="SecondaryMode"/> order.</summary>
+    public IReadOnlyList<string> SecondaryModes { get; } = ["변형형 (덩어리)", "회전형 (매달림)"];
+
+    /// <summary>Turning sway on starts from the bust preset for detail parts, the hair preset otherwise.</summary>
+    partial void OnHasSecondaryChanged(bool value)
+    {
+        if (!_syncing)
+            Session.SetActiveSecondary(value ? (Session.ActivePart.IsDetail ? SecondarySettings.Bust : SecondarySettings.Hair) : null);
+    }
+
+    partial void OnSecondaryModeIndexChanged(int value) => ApplySecondary();
+    partial void OnSecondaryPeriodChanged(decimal? value) => ApplySecondary();
+    partial void OnSecondaryDampingChanged(decimal? value) => ApplySecondary();
+    partial void OnSecondaryStrengthChanged(decimal? value) => ApplySecondary();
+    partial void OnSecondaryMaxChanged(decimal? value) => ApplySecondary();
+
+    private void ApplySecondary()
+    {
+        if (_syncing || !HasSecondary || SecondaryPeriod is not { } period || SecondaryDamping is not { } damping
+            || SecondaryStrength is not { } strength || SecondaryMax is not { } max)
+            return;
+        Session.SetActiveSecondary(new SecondarySettings((SecondaryMode)Math.Clamp(SecondaryModeIndex, 0, 1),
+            (float)period, (float)damping, (float)strength, (float)max));
+        Avalonia.Threading.Dispatcher.UIThread.Post(Sync);   // show the values as clamped
+    }
+
+    /// <summary>Parameter: "Bust", "Hair" or "Cloth".</summary>
+    [RelayCommand]
+    private void ApplySecondaryPreset(string name) => Session.SetActiveSecondary(name switch
+    {
+        "Hair" => SecondarySettings.Hair,
+        "Cloth" => SecondarySettings.Cloth,
+        _ => SecondarySettings.Bust,
+    });
+
+    partial void OnLimitMinChanged(decimal? value) => ApplyLimit();
+
+    partial void OnLimitMaxChanged(decimal? value) => ApplyLimit();
+
+    private void ApplyLimit()
+    {
+        if (!_syncing && HasLimit && LimitMin is { } min && LimitMax is { } max)
+            Session.SetActiveRotationLimit(new RotationLimit((double)min, (double)max));
     }
 
     partial void OnOwnRightChanged(bool value)
     {
         if (!_syncing)
             Session.SetOwnRight(value);
+    }
+
+    partial void OnPositionXChanged(decimal? value) => ApplyPartPosition();
+
+    partial void OnPositionYChanged(decimal? value) => ApplyPartPosition();
+
+    private void ApplyPartPosition()
+    {
+        if (!_syncing && PositionX is { } x && PositionY is { } y)
+            Session.MoveActivePartTo(new System.Numerics.Vector2((float)x, (float)y));
     }
 
     partial void OnOffsetXChanged(decimal? value) => ApplyOffset();
@@ -109,6 +236,129 @@ public sealed partial class PartsViewModel : Tool
 
     [RelayCommand]
     private void ResetPart() => Session.SetRotation(Session.ActivePart, 0);
+
+    [RelayCommand]
+    private void AddEyes() => Session.AddEyes();
+
+    [RelayCommand]
+    private void RemoveEyes() => Session.RemoveEyes();
+
+    /// <summary>Parameter: "Small", "Medium" or "Large".</summary>
+    [RelayCommand]
+    private void AddBust(string size) => Session.AddBust(Enum.Parse<BustSize>(size));
+
+    [RelayCommand]
+    private void RemoveBust() => Session.RemoveBust();
+
+    /// <summary>Choices for <see cref="CustomKindIndex"/>, in <see cref="CustomPartKind"/> order.</summary>
+    public IReadOnlyList<string> CustomKinds { get; } = ["머리카락 가닥", "꼬리", "망토 자락", "장신구"];
+
+    /// <summary>Choices for <see cref="CustomPlacementIndex"/>, in <see cref="CustomPlacement"/> order.</summary>
+    public IReadOnlyList<string> CustomPlacements { get; } = ["부모 앞", "부모 뒤", "등 쪽"];
+
+    private CustomPartKind CustomKind => (CustomPartKind)Math.Clamp(CustomKindIndex, 0, 3);
+
+    /// <summary>Accessories are one piece.</summary>
+    public bool CustomHasSegments => CustomKind != CustomPartKind.Accessory;
+
+    /// <summary>A new kind brings its own placement, links and length.</summary>
+    partial void OnCustomKindIndexChanged(int value)
+    {
+        CustomPlacementIndex = (int)CustomParts.DefaultPlacement(CustomKind);
+        CustomSegments = CustomParts.DefaultSegments(CustomKind);
+        CustomLength = CustomParts.DefaultLength(CustomKind, Session.Character.Height);
+        OnPropertyChanged(nameof(CustomHasSegments));
+    }
+
+    [RelayCommand]
+    private void AddCustomPart() => Session.AddCustomPart(new CustomPartOptions(CustomKind,
+        (CustomPlacement)Math.Clamp(CustomPlacementIndex, 0, 2), (int)(CustomSegments ?? 1),
+        CustomLength is { } length ? (int)length : null));
+
+    [RelayCommand]
+    private void RemoveCustomPart() => Session.RemoveActivePart();
+
+    [RelayCommand]
+    private void RenameCustomPart() => Session.RenameActivePart(CustomLabel);
+
+    /// <summary>This direction's parts as drawn now, front first (detail parts indented).</summary>
+    public ObservableCollection<string> DrawOrderItems { get; } = [];
+
+    /// <summary>Other parts the active part can go in front of or behind in this pose.</summary>
+    public ObservableCollection<string> OrderAnchors { get; } = [];
+
+    private readonly List<Part> _orderAnchorParts = [];
+
+    /// <summary>Parameter: a <see cref="DrawOrderMove"/> name.</summary>
+    [RelayCommand]
+    private void MoveDrawOrder(string move) => Session.MoveActiveDrawOrder(Enum.Parse<DrawOrderMove>(move), OrderWithChildren);
+
+    partial void OnOrderWithChildrenChanged(bool value) => SyncDrawOrder();
+
+    /// <summary>Parameter: "Front" or "Behind" the chosen anchor, in the current pose only.</summary>
+    [RelayCommand]
+    private void SetPoseOrder(string where)
+    {
+        if (OrderAnchorIndex >= 0 && OrderAnchorIndex < _orderAnchorParts.Count)
+            Session.SetActivePoseOrder(OrderOverride.Create(_orderAnchorParts[OrderAnchorIndex].Name, where == "Front", OrderWithChildren));
+    }
+
+    [RelayCommand]
+    private void ClearPoseOrder() => Session.SetActivePoseOrder(null);
+
+    private void SyncDrawOrder()
+    {
+        var part = Session.ActivePart;
+        var drawn = Session.DrawnOrder;
+        CanReorder = !part.IsDetail;
+        CanOrderForward = Session.CanMoveActiveDrawOrder(DrawOrderMove.Forward, OrderWithChildren);
+        CanOrderBackward = Session.CanMoveActiveDrawOrder(DrawOrderMove.Backward, OrderWithChildren);
+
+        var heads = drawn.Where(p => !p.IsDetail).ToList();
+        var head = DrawOrderEdit.UnitHead(part);
+        // neighbours outside the block that moves (the part, and the parts below it when they move along)
+        bool InBlock(Part p) => p == head || OrderWithChildren && IsBelow(p, head);
+        int first = heads.FindIndex(InBlock), last = heads.FindLastIndex(InBlock);
+        string behind = heads.Take(Math.Max(first, 0)).LastOrDefault(p => !InBlock(p))?.Label ?? "없음";
+        string front = last < 0 ? "없음" : heads.Skip(last + 1).FirstOrDefault(p => !InBlock(p))?.Label ?? "없음";
+        DrawOrderText = part.IsDetail ? $"세부 파츠: 부모({head.Label})를 따라감" : $"바로 뒤: {behind}  ·  바로 앞: {front}";
+
+        var items = drawn.Reverse().Select(p => (p == part ? "▶ " : "   ") + (p.IsDetail ? "   " : "") + p.Label).ToList();
+        // update in place: rebuilding the list re-lays out the panel and makes it jump
+        for (int k = 0; k < items.Count; k++)
+            if (k >= DrawOrderItems.Count)
+                DrawOrderItems.Add(items[k]);
+            else if (DrawOrderItems[k] != items[k])
+                DrawOrderItems[k] = items[k];
+        while (DrawOrderItems.Count > items.Count)
+            DrawOrderItems.RemoveAt(DrawOrderItems.Count - 1);
+
+        // skeleton order, not drawing order: the list stays put while parts are reordered
+        var anchors = Session.Character.Hierarchy().Where(p => !p.IsDetail && p != head).ToList();
+        var order = Session.ActivePoseOrder;
+        if (!_orderAnchorParts.SequenceEqual(anchors))
+        {
+            _orderAnchorParts.Clear();
+            _orderAnchorParts.AddRange(anchors);
+            OrderAnchors.Clear();
+            foreach (var a in anchors)
+                OrderAnchors.Add(a.Label);
+        }
+        if (order is not null && _orderAnchorParts.FindIndex(p => p.Name == order.Anchor) is >= 0 and var at)
+            OrderAnchorIndex = at;
+        else if (OrderAnchorIndex < 0 || OrderAnchorIndex >= _orderAnchorParts.Count)
+            OrderAnchorIndex = 0;
+        PoseOrderText = order is null ? "이 포즈: 방향 순서대로"
+            : $"이 포즈: {Session.Character.Find(order.Anchor)?.Label ?? order.Anchor} {(order.Front ? "앞" : "뒤")}{(order.WithChildren ? " (아래 파츠 함께)" : "")}";
+    }
+
+    private static bool IsBelow(Part part, Part ancestor)
+    {
+        for (var p = part.Parent; p is not null; p = p.Parent)
+            if (p == ancestor)
+                return true;
+        return false;
+    }
 
     [RelayCommand]
     private void ResetPose() => Session.ResetPose();
@@ -156,9 +406,10 @@ public sealed partial class PartsViewModel : Tool
         _character = Session.Character;
         _character.PoseChanged += OnPoseChanged;
 
+        CustomLength = CustomParts.DefaultLength(CustomKind, Session.Character.Height);
         Items.Clear();
         foreach (var part in Session.Character.Hierarchy())
-            Items.Add(new PartItem(part));
+            Items.Add(new PartItem(Session, part));
         Sync();
     }
 
@@ -180,7 +431,25 @@ public sealed partial class PartsViewModel : Tool
         OffsetX = (decimal)Math.Round(Session.CurrentPose.Offset.X);
         OffsetY = (decimal)Math.Round(Session.CurrentPose.Offset.Y);
         IsRightView = Session.Direction.IsMirrored();
-        OwnRight = Session.ActivePart.HasOwnRight;
+        OwnRight = Session.Direction.IsMirrored() && Session.ActivePart.HasOwnView(Session.Direction);
+        var detail = Session.ActivePartPosition;
+        IsMovablePart = detail is not null;
+        IsCustomPart = Session.CanRemoveActivePart;
+        CustomLabel = Session.ActivePart.Label;
+        var sway = Session.ActivePart.Secondary;
+        HasSecondary = sway is not null;
+        SecondaryModeIndex = (int)(sway?.Mode ?? SecondaryMode.Deform);
+        SecondaryPeriod = sway is null ? null : (decimal)sway.Period;
+        SecondaryDamping = sway is null ? null : (decimal)Math.Round(sway.Damping, 2);
+        SecondaryStrength = sway is null ? null : (decimal)Math.Round(sway.Strength, 2);
+        SecondaryMax = sway is null ? null : (decimal)sway.Max;
+        var limit = Session.ActivePart.Limit;
+        HasLimit = limit is not null;
+        LimitMin = limit is { } l ? (decimal)l.Min : null;
+        LimitMax = limit is { } m ? (decimal)m.Max : null;
+        PositionX = detail is { } d ? (decimal)Math.Round(d.X, 1) : null;
+        PositionY = detail is { } e ? (decimal)Math.Round(e.Y, 1) : null;
+        SyncDrawOrder();
         UpdateVariantStatus();
         SyncAttachments();
         SyncLayers();

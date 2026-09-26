@@ -26,7 +26,7 @@ public sealed class TouchupSession
         editor.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(EditorSession.TouchupMode) or nameof(EditorSession.Direction)
-                or nameof(EditorSession.Character))
+                or nameof(EditorSession.Character) or nameof(EditorSession.CanvasSize))
                 Reload();
         };
         animation.PropertyChanged += (_, e) =>

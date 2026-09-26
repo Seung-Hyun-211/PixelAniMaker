@@ -36,12 +36,16 @@ public sealed record Keyframe(int Frame, PoseData Pose, Easing Easing = Easing.E
 
 /// <summary>
 /// A named animation: frame count, speed and one keyframe track per stored direction (the Right view
-/// plays the Left track mirrored). Frames between keys are interpolated.
+/// plays the Left track mirrored). Frames between keys are interpolated. The 3/4 tracks are optional:
+/// while one is empty, that view plays the front or back track.
 /// </summary>
 public sealed class AnimationClip : INotifyPropertyChanged
 {
     private readonly Dictionary<Direction, SortedList<int, Keyframe>> _tracks =
-        DirectionExtensions.Stored.ToDictionary(d => d, _ => new SortedList<int, Keyframe>());
+        DirectionExtensions.Stored.Concat(DirectionExtensions.ThreeQuarterStored)
+            .ToDictionary(d => d, _ => new SortedList<int, Keyframe>());
+
+    private readonly SortedDictionary<int, int> _holds = [];
 
     private string _name;
     private int _frameCount;
@@ -66,11 +70,54 @@ public sealed class AnimationClip : INotifyPropertyChanged
     public int Fps { get => _fps; set => Set(ref _fps, Math.Max(1, value)); }
     public bool Loop { get => _loop; set => Set(ref _loop, value); }
 
+    /// <summary>Longest hold a frame can have, in ticks.</summary>
+    public const int MaxHold = 16;
+
+    /// <summary>How many ticks (1/<see cref="Fps"/> s each) <paramref name="frame"/> stays on screen; 1 unless held longer.</summary>
+    public int Hold(int frame) => _holds.GetValueOrDefault(frame, 1);
+
+    /// <summary>Frames held longer than one tick (frame → ticks), inside the clip only.</summary>
+    public IReadOnlyDictionary<int, int> Holds => _holds.Where(h => h.Key < FrameCount).ToDictionary(h => h.Key, h => h.Value);
+
+    public void SetHold(int frame, int ticks)
+    {
+        ticks = Math.Clamp(ticks, 1, MaxHold);
+        if (Hold(frame) == ticks)
+            return;
+        if (ticks == 1)
+            _holds.Remove(frame);
+        else
+            _holds[frame] = ticks;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Holds)));
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Display time of <paramref name="frame"/> in milliseconds (whole ms, as in sheet JSON).</summary>
+    public int DurationMs(int frame) => Hold(frame) * 1000 / Fps;
+
     /// <summary>The direction's keys in frame order (a copy).</summary>
     /// <summary>Hand-painted pixel fixes on top of the generated frames.</summary>
     public FrameTouchups Touchups { get; } = new();
 
     public IReadOnlyList<Keyframe> Keys(Direction direction) => [.. _tracks[direction.Source()].Values];
+
+    /// <summary>
+    /// Keys past the last frame, left over after the clip was shortened. They are kept (lengthening the clip
+    /// brings them back) but not played; see <see cref="KeysPastEndChange"/> to delete them.
+    /// </summary>
+    public IReadOnlyList<(Direction Direction, Keyframe Key)> KeysPastEnd =>
+        _tracks.SelectMany(t => t.Value.Values.Where(k => k.Frame >= FrameCount).Select(k => (t.Key, k))).ToList();
+
+    /// <summary>True when any 3/4 track has keys or any 3/4 frame is touched up (the file then needs format 2).</summary>
+    public bool HasThreeQuarterData =>
+        DirectionExtensions.ThreeQuarterStored.Any(d => _tracks[d].Count > 0) || Touchups.Frames.Any(f => f.Direction.IsThreeQuarter());
+
+    /// <summary>The track played for a direction: its own, or for an empty 3/4 track the front/back one.</summary>
+    private SortedList<int, Keyframe> PlayedTrack(Direction direction)
+    {
+        var track = _tracks[direction.Source()];
+        return track.Count == 0 && direction.IsThreeQuarter() ? _tracks[direction.Fallback()] : track;
+    }
 
     public Keyframe? KeyAt(Direction direction, int frame) => _tracks[direction.Source()].GetValueOrDefault(frame);
 
@@ -80,14 +127,28 @@ public sealed class AnimationClip : INotifyPropertyChanged
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>A copy with the same settings and keys (touch-ups are not copied).</summary>
+    /// <summary>A copy with the same settings, frame holds and keys (touch-ups are not copied).</summary>
     public AnimationClip CopyAs(string name)
     {
         var copy = new AnimationClip(name, FrameCount, Fps, Loop);
         foreach (var (direction, track) in _tracks)
             foreach (var key in track.Values)
                 copy._tracks[direction][key.Frame] = key;
+        foreach (var (frame, ticks) in _holds)
+            copy._holds[frame] = ticks;
         return copy;
+    }
+
+    /// <summary>
+    /// Multiplies every key's body offset (rounded to whole pixels), e.g. to fit a clip made for a smaller
+    /// body. Not recorded: meant for clips being set up, before they are shown.
+    /// </summary>
+    public void ScaleOffsets(float factor)
+    {
+        foreach (var track in _tracks.Values)
+            foreach (var key in track.Values.ToList())
+                track[key.Frame] = key with { Pose = key.Pose with { Offset = new Vector2(MathF.Round(key.Pose.Offset.X * factor), MathF.Round(key.Pose.Offset.Y * factor)) } };
+        Changed?.Invoke(this, EventArgs.Empty);
     }
 
     public void RemoveKey(Direction direction, int frame)
@@ -100,7 +161,7 @@ public sealed class AnimationClip : INotifyPropertyChanged
     public PoseData Evaluate(Direction direction, int frame)
     {
         // keys past the end (left over after shortening the clip) are kept but not played
-        var keys = _tracks[direction.Source()].Values.Where(k => k.Frame < FrameCount).ToList();
+        var keys = PlayedTrack(direction).Values.Where(k => k.Frame < FrameCount).ToList();
         if (keys.Count == 0)
             return PoseData.Rest;
 
@@ -141,7 +202,10 @@ public sealed class AnimationClip : INotifyPropertyChanged
         return i;
     }
 
-    /// <summary>Interpolates rotations along the shorter way round and the offset linearly.</summary>
+    /// <summary>
+    /// Interpolates rotations along the shorter way round and the offset linearly; drawing order changes
+    /// cannot blend, so the earlier pose's hold until the next key.
+    /// </summary>
     public static PoseData Blend(PoseData a, PoseData b, double t)
     {
         var rotations = new Dictionary<string, double>();
@@ -150,7 +214,7 @@ public sealed class AnimationClip : INotifyPropertyChanged
             double from = a.Get(part), delta = Pose.Normalize(b.Get(part) - from);
             rotations[part] = Pose.Normalize(from + delta * t);
         }
-        return new PoseData(rotations, Vector2.Lerp(a.Offset, b.Offset, (float)t));
+        return new PoseData(rotations, Vector2.Lerp(a.Offset, b.Offset, (float)t), a.Order);
     }
 
     private void Set<T>(ref T field, T value, [CallerMemberName] string? property = null)
@@ -190,7 +254,34 @@ public sealed class KeyframeChange(AnimationClip clip, Direction direction, int 
         if (before == key || (before is null && key is null))
             return;
         var change = new KeyframeChange(clip, direction, frame, before, key);
-        change.Redo();
-        history.Push(change);
+        history.Do(change);
+    }
+}
+
+/// <summary>Undoable deletion of a clip's keys past its last frame (<see cref="AnimationClip.KeysPastEnd"/>).</summary>
+public sealed class KeysPastEndChange(AnimationClip clip, IReadOnlyList<(Direction Direction, Keyframe Key)> keys) : IUndoableAction
+{
+    public string Name => "범위 밖 키 지우기";
+
+    public void Undo()
+    {
+        foreach (var (direction, key) in keys)
+            clip.SetKey(direction, key);
+    }
+
+    public void Redo()
+    {
+        foreach (var (direction, key) in keys)
+            clip.RemoveKey(direction, key.Frame);
+    }
+
+    /// <summary>Deletes the keys past the end as one undo step; false when there are none.</summary>
+    public static bool Apply(AnimationClip clip, UndoHistory history)
+    {
+        var keys = clip.KeysPastEnd;
+        if (keys.Count == 0)
+            return false;
+        history.Do(new KeysPastEndChange(clip, keys));
+        return true;
     }
 }

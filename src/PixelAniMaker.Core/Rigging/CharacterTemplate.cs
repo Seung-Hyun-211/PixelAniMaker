@@ -22,8 +22,24 @@ public sealed record PartViewSpec(int X, int Y, float JointX, float JointY, int 
 /// One part entry of skeleton.json. <see cref="Views"/> is keyed "front", "left", "back", plus "right"
 /// when the part's right view is drawn separately. A right view is stored in the same orientation as
 /// the left view (the program mirrors it for display), so its joints and angles match the left view.
+/// <see cref="Detail"/> marks a detail part such as an eye (omitted when false; older versions ignore it).
+/// <see cref="Limit"/> is the allowed rotation [min, max] in degrees (omitted when free; older versions ignore it).
+/// <see cref="Secondary"/> is the part's secondary motion (omitted when none; older versions ignore it).
+/// <see cref="Custom"/> marks a part the user added (omitted when false; older versions read it as a plain part).
 /// </summary>
-public sealed record PartSpec(string Name, string Label, string? Parent, IReadOnlyDictionary<string, PartViewSpec> Views);
+public sealed record PartSpec(string Name, string Label, string? Parent, IReadOnlyDictionary<string, PartViewSpec> Views,
+    bool? Detail = null, double[]? Limit = null, SecondarySpec? Secondary = null, bool? Custom = null);
+
+/// <summary>Secondary motion in skeleton.json: mode "deform" or "swing", and the spring settings.</summary>
+public sealed record SecondarySpec(string Mode, float Period, float Damping, float Strength, float Max)
+{
+    public static SecondarySpec? From(Animation.SecondarySettings? s) =>
+        s is null ? null : new(s.Mode.ToString().ToLowerInvariant(), s.Period, s.Damping, s.Strength, s.Max);
+
+    public Animation.SecondarySettings ToSettings() => new(
+        Enum.TryParse<Animation.SecondaryMode>(Mode, ignoreCase: true, out var m) ? m : Animation.SecondaryMode.Deform,
+        Period, Damping, Strength, Max);
+}
 
 /// <summary>Contents of skeleton.json: canvas size and the part list.</summary>
 public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec> Parts)
@@ -42,15 +58,22 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
 
     public string ToJson() => JsonSerializer.Serialize(this, Json);
 
-    private static string Key(Direction direction) => direction.ToString().ToLowerInvariant();
+    /// <summary>The same spec without 3/4 views (for a template used by a project that has none).</summary>
+    public CharacterSpec WithoutThreeQuarter() => this with
+    {
+        Parts = Parts.Select(p => p with
+        {
+            Views = p.Views.Where(v => !Enum.TryParse<Direction>(v.Key, ignoreCase: true, out var d) || !d.IsThreeQuarter())
+                .ToDictionary(v => v.Key, v => v.Value),
+        }).ToList(),
+    };
 
     /// <summary>File name used for a part's image in one direction.</summary>
     public static string ImagePath(Direction direction, string part, int? angle = null) =>
         $"{direction.ToString().ToLowerInvariant()}/{part}{(angle is { } a ? $"@{a}" : "")}.png";
 
-    /// <summary>Directions a part has its own data for (Right only when drawn separately).</summary>
-    private static IEnumerable<Direction> OwnDirections(Part part) =>
-        part.HasOwnRight ? DirectionExtensions.All : DirectionExtensions.Stored;
+    /// <summary>Directions a part has its own data for (mirrored ones only when drawn separately, 3/4 only when on).</summary>
+    private static IEnumerable<Direction> OwnDirections(Part part) => DirectionExtensions.Every.Where(part.HasOwnView);
 
     /// <summary>File of a view's layer: the view's own image for the first layer, "part.layerN.png" for the others.</summary>
     public static string LayerPath(Direction direction, string part, int layer) =>
@@ -83,16 +106,23 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
                 return new PartViewSpec((int)v.RestPosition.X, (int)v.RestPosition.Y, v.RestPivot.X, v.RestPivot.Y,
                     v.DrawOrder, ImagePath(d, p.Name), variants.Count > 0 ? variants : null,
                     attachments.Count > 0 ? attachments : null, LayerSpecs(v, d, p.Name));
-            }))).ToList());
+            }), p.IsDetail ? true : null, p.Limit is { } l ? [l.Min, l.Max] : null, SecondarySpec.From(p.Secondary),
+            p.IsCustom ? true : null)).ToList());
 
     /// <summary>Builds the character; <paramref name="loadImage"/> decodes an image file named in the spec.</summary>
     public Character Build(Func<string, RgbaImage> loadImage, Palette? palette = null)
     {
         var pal = palette ?? new Palette();
         var parts = Parts.ToDictionary(s => s.Name, s => new Part(s.Name, s.Label,
-            DirectionExtensions.All
-                .Where(d => !d.IsMirrored() || s.Views.ContainsKey(Key(d)))
-                .ToDictionary(d => d, d => BuildView(s, d, loadImage, pal))));
+            DirectionExtensions.Every
+                .Where(d => DirectionExtensions.Stored.Contains(d) || s.Views.ContainsKey(d.Key()))
+                .ToDictionary(d => d, d => BuildView(s, d, loadImage, pal)))
+            {
+                IsDetail = s.Detail == true,
+                IsCustom = s.Custom == true,
+                Limit = s.Limit is [var min, var max] ? new RotationLimit(min, max) : null,
+                Secondary = s.Secondary?.ToSettings(),
+            });
         foreach (var spec in Parts.Where(s => s.Parent is not null))
         {
             if (!parts.TryGetValue(spec.Parent!, out var parent))
@@ -104,7 +134,7 @@ public sealed record CharacterSpec(int Width, int Height, IReadOnlyList<PartSpec
 
     private static PartView BuildView(PartSpec part, Direction direction, Func<string, RgbaImage> loadImage, Palette palette)
     {
-        string key = Key(direction);
+        string key = direction.Key();
         if (!part.Views.TryGetValue(key, out var v))
             throw new FormatException($"Part '{part.Name}' has no '{key}' view.");
         var baseImage = Load(v.Image);

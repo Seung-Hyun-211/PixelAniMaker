@@ -43,22 +43,37 @@ internal sealed class TouchupInteraction(EditorSession session, TouchupSession t
         ((int)MathF.Floor(input.Display.X), (int)MathF.Floor(input.Display.Y));
 }
 
-/// <summary>Draws on the active part: canvas pixels are mapped back into the part's own image.</summary>
+/// <summary>
+/// Draws on the active part: canvas pixels are mapped back into the part's own image. Does nothing
+/// while the active part is hidden or locked.
+/// </summary>
 internal sealed class DrawInteraction(EditorSession session) : ICanvasInteraction
 {
+    private bool _drawing;
+
     public void Begin(CanvasInput input)
     {
+        _drawing = session.CanDrawActivePart;
+        if (!_drawing)
+            return;
         var (x, y) = ToLocal(input.Point);
         session.ActiveDocument.BeginStroke(session.ActiveTool, x, y, input.Secondary);
     }
 
     public void Move(CanvasInput input)
     {
+        if (!_drawing)
+            return;
         var (x, y) = ToLocal(input.Point);
         session.ActiveDocument.ContinueStroke(x, y);
     }
 
-    public void End() => session.ActiveDocument.EndStroke();
+    public void End()
+    {
+        if (_drawing)
+            session.ActiveDocument.EndStroke();
+        _drawing = false;
+    }
 
     private (int X, int Y) ToLocal(Vector2 canvas) =>
         session.ActiveTransform.ToLocalPixel((int)MathF.Floor(canvas.X), (int)MathF.Floor(canvas.Y));
@@ -67,7 +82,8 @@ internal sealed class DrawInteraction(EditorSession session) : ICanvasInteractio
 /// <summary>
 /// Picks the part under the cursor and rotates it around its joint while dragging. With Alt, or when
 /// nothing is under the cursor, rotates the selected part (for parts hidden behind others).
-/// Shift snaps to 15°. The whole drag is one undo step.
+/// Shift snaps to 15°. The whole drag is one undo step. A locked part is selected but not rotated, and
+/// a part with a rotation limit stops at its ends. Grabbing a detail part turns its parent.
 /// </summary>
 internal sealed class PoseInteraction(EditorSession session) : ICanvasInteraction
 {
@@ -85,7 +101,14 @@ internal sealed class PoseInteraction(EditorSession session) : ICanvasInteractio
         _part = input.UseActivePart || owner == CompositeResult.NoPart
             ? session.ActivePart
             : session.Character.Parts[owner];
+        if (_part is { IsDetail: true, Parent: { } parent })
+            _part = parent;                  // details (eyes, bust) have no rotation of their own: turn what they sit on
         session.ActivePart = _part;
+        if (session.IsLocked(_part))
+        {
+            _part = null;
+            return;
+        }
         _pivot = session.Transforms[_part].Pivot;
         _startAngle = AngleTo(input.Point);
         _startRotation = session.CurrentPose.Get(_part.Name);
@@ -95,7 +118,7 @@ internal sealed class PoseInteraction(EditorSession session) : ICanvasInteractio
     public void Move(CanvasInput input)
     {
         if (_part is not null)
-            session.CurrentPose.Set(_part.Name, Rotation(input.Point, input.Snap));
+            session.CurrentPose.Set(_part.Name, _part.ClampRotation(Rotation(input.Point, input.Snap)));
     }
 
     public void End()

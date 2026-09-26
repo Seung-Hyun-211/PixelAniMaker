@@ -27,10 +27,19 @@
           <MenuItem Header="현재 동작 시트 PNG..." InputGesture="{Binding Shortcuts.Gestures[ExportSheet]}" Command="{Binding ExportCurrentSheetCommand}" />
           <MenuItem Header="전체 동작 통합 시트 PNG..." Command="{Binding ExportAllSheetCommand}" />
           <MenuItem Header="현재 동작 GIF..." Command="{Binding ExportGifCommand}" />
+          <MenuItem Header="현재 동작 프레임별 PNG..." Command="{Binding ExportCurrentFramesCommand}"
+                    ToolTip.Tip="프레임마다 PNG 한 장씩, 고른 이름 뒤에 _동작_방향_번호를 붙여 같은 폴더에 저장합니다." />
+          <MenuItem Header="전체 동작 프레임별 PNG..." Command="{Binding ExportAllFramesCommand}"
+                    ToolTip.Tip="프레임마다 PNG 한 장씩, 고른 이름 뒤에 _동작_방향_번호를 붙여 같은 폴더에 저장합니다." />
           <MenuItem Header="팔레트 (.gpl, .hex, .png)..." Command="{Binding ExportPaletteCommand}" />
           <Separator />
           <MenuItem Header="시트와 함께 JSON 메타데이터 저장" ToggleType="CheckBox"
                     IsChecked="{Binding WriteSheetMetadata, Mode=TwoWay}" />
+          <MenuItem Header="2차 모션 넣기" ToggleType="CheckBox" IsChecked="{Binding SecondaryInExport, Mode=TwoWay}"
+                    ToolTip.Tip="시트·GIF·프레임별 PNG에 흔들림(2차 모션)을 넣습니다. 엔진에서 물리를 따로 쓸 때는 끄세요. 프로젝트에 저장됩니다." />
+          <MenuItem Header="반측면도 내보내기 (8방향)" ToggleType="CheckBox"
+                    IsChecked="{Binding ExportThreeQuarter, Mode=TwoWay}"
+                    ToolTip.Tip="반측면이 있는 캐릭터는 시트와 GIF에 반측면 4방향을 더합니다. 시트에서는 기존 4줄 뒤에 앞 반측면 (좌)·(우), 뒤 반측면 (좌)·(우) 순서로 붙습니다. 반측면이 없는 캐릭터는 그대로 4방향입니다." />
         </MenuItem>
         <Separator />
         <MenuItem Header="종료" Click="OnExitClick" />
@@ -38,6 +47,16 @@
       <MenuItem Header="편집(_E)">
         <MenuItem Header="되돌리기" InputGesture="{Binding Shortcuts.Gestures[Undo]}" Command="{Binding UndoCommand}" />
         <MenuItem Header="다시 하기" InputGesture="{Binding Shortcuts.Gestures[Redo]}" Command="{Binding RedoCommand}" />
+        <Separator />
+        <MenuItem Header="캔버스 크기..." Command="{Binding ResizeCanvasCommand}"
+                  ToolTip.Tip="캔버스 둘레에 여백을 더하거나 줄입니다 (점프·든 팔·모자·꼬리가 잘릴 때). 되돌리기가 됩니다." />
+        <MenuItem Header="해상도 2배..." Command="{Binding ScaleResolutionCommand}"
+                  ToolTip.Tip="캔버스와 모든 그림을 가로·세로 2배로 키웁니다 (더 세밀하게 다시 그릴 때). 되돌리기가 됩니다." />
+        <Separator />
+        <MenuItem Header="반측면 추가" Command="{Binding AddThreeQuarterCommand}" IsVisible="{Binding !Session.HasThreeQuarter}"
+                  ToolTip.Tip="앞·뒤 반측면 방향을 켭니다. 정면·후면 그림을 복사한 상태로 시작하니 그 위에 다시 그리세요. 오른쪽을 향한 두 방향은 반전으로 만들어집니다." />
+        <MenuItem Header="반측면 지우기" Command="{Binding RemoveThreeQuarterCommand}" IsVisible="{Binding Session.HasThreeQuarter}"
+                  ToolTip.Tip="반측면 그림과 모든 동작의 반측면 키·손본 픽셀을 지웁니다 (되돌리기 가능)." />
       </MenuItem>
       <MenuItem Header="보기(_V)">
         <MenuItem Header="픽셀 격자" InputGesture="{Binding Shortcuts.Gestures[ToggleGrid]}" Command="{Binding ToggleGridCommand}"
@@ -46,6 +65,8 @@
                   ToggleType="CheckBox" IsChecked="{Binding Session.DimOtherParts, Mode=OneWay}" />
         <MenuItem Header="포즈 모드" InputGesture="{Binding Shortcuts.Gestures[TogglePose]}" Command="{Binding TogglePoseModeCommand}"
                   ToggleType="CheckBox" IsChecked="{Binding Session.PoseMode, Mode=OneWay}" />
+        <MenuItem Header="캔버스에 2차 모션 보기" ToggleType="CheckBox" IsChecked="{Binding Session.ShowSecondaryOnCanvas, Mode=TwoWay}"
+                  ToolTip.Tip="편집 캔버스에 지금 프레임의 흔들림(2차 모션)을 더해 보여 줍니다. 끄면 키로 잡은 포즈 그대로 보입니다. 애니메이션 미리보기에는 항상 들어갑니다." />
         <Separator />
         <MenuItem Header="참고 이미지 불러오기 (지금 방향)..." Command="{Binding LoadReferenceCommand}" />
         <MenuItem Header="참고 이미지 지우기 (지금 방향)" Command="{Binding ClearReferenceCommand}" />
@@ -56,6 +77,9 @@
       <MenuItem Header="애니메이션(_A)">
         <MenuItem Header="키 저장" InputGesture="{Binding Shortcuts.Gestures[SaveKey]}" Command="{Binding SaveKeyCommand}" />
         <MenuItem Header="키 삭제" Command="{Binding DeleteKeyCommand}" />
+        <MenuItem Header="반측면 동작 초안 (빈 반측면 트랙 채우기)" Command="{Binding DraftThreeQuarterCommand}"
+                  IsVisible="{Binding Session.HasThreeQuarter}"
+                  ToolTip.Tip="모든 동작의 비어 있는 반측면 트랙을 채웁니다. 팔은 측면 키를, 나머지는 정면(후면)과 측면의 중간값을 씁니다. 이미 키가 있는 반측면 트랙은 그대로 둡니다 (되돌리기 한 번)." />
         <Separator />
         <MenuItem Header="이전 프레임" InputGesture="{Binding Shortcuts.Gestures[PreviousFrame]}" Command="{Binding PreviousFrameCommand}" />
         <MenuItem Header="다음 프레임" InputGesture="{Binding Shortcuts.Gestures[NextFrame]}" Command="{Binding NextFrameCommand}" />

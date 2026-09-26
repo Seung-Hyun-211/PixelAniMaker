@@ -45,25 +45,72 @@ public sealed class Compositor
     private readonly Dictionary<IndexedImage, RotSprite> _samplers = [];
 
     /// <summary>Renders <paramref name="direction"/> in <paramref name="pose"/> (default: the direction's current pose).</summary>
-    public CompositeResult Compose(Character character, Direction direction, PoseData? pose = null)
+    /// <param name="hidden">Parts left out (the editor's hidden parts); the outline then follows what is drawn.</param>
+    /// <param name="secondary">Secondary motion of this frame: extra angles, and warps drawn before the outline.</param>
+    public CompositeResult Compose(Character character, Direction direction, PoseData? pose = null,
+        IReadOnlySet<Part>? hidden = null, Animation.SecondaryFrame? secondary = null)
     {
         var result = new CompositeResult(character.Width, character.Height);
+        if (secondary is { IsEmpty: false })
+            pose = secondary.Apply(pose ?? character.PoseFor(direction).Snapshot());
         var transforms = character.ComputeTransforms(direction, pose);
-        var order = character.DrawOrder(direction).ToList();
-        foreach (var part in order)
-            Draw(result, transforms[part], (short)character.IndexOf(part));
+        var order = DrawOrderEdit.WithOverrides(character, character.DrawOrder(direction).ToList(),
+            pose ?? character.PoseFor(direction).Snapshot()).ToList();
+        foreach (var part in order.Where(p => hidden is null || !hidden.Contains(p)))
+        {
+            var t = transforms[part];
+            var image = secondary is not null && secondary.Offsets.TryGetValue(part, out var off) ? Warp(t, off) : t.Image;
+            Draw(result, t, image, (short)character.IndexOf(part));
+        }
+        var rank = RankByOwner(character, order);
+        if (character.Shading.Enabled)
+            ShadingPass.Apply(result, rank, character.Palette, character.Shading, character.Outline.Enabled,
+                character.Outline.Enabled ? new HashSet<int> { character.Outline.OutlineIndex, character.Outline.InnerIndex } : []);
         if (character.Outline.Enabled)
-            OutlinePass.Apply(result, RankByOwner(character, order), character.Outline);
+            OutlinePass.Apply(result, rank, character.Outline);
         if (direction.IsMirrored())
             result.MirrorHorizontally();
         return result;
     }
 
-    private void Draw(CompositeResult target, PartTransform t, short owner)
+    /// <summary>
+    /// The drawn image deformed by a canvas offset: the top row stays, row y moves by the offset × (y/h)^1.5,
+    /// in whole pixels; rows that spread apart are joined. The image grows downwards so nothing is cut.
+    /// </summary>
+    private static IndexedImage Warp(PartTransform t, System.Numerics.Vector2 offset)
     {
-        var (x0, y0, x1, y1) = CanvasBounds(t, target.Width, target.Height);
-        var image = t.Image;
-        Func<Vector2, int> sample = t.IsGridAligned ? p => SampleNearest(image, p) : Sampler(image).Sample;
+        var src = t.Image;
+        var local = PartTransform.Rotate(offset, -t.ImageAngle);        // canvas → image axes
+        int pad = (int)MathF.Ceiling(MathF.Abs(local.Y)) + 1;
+        int w = src.Width, h = src.Height;
+        var dst = new IndexedImage(w, h + pad);
+        var written = new bool[w * (h + pad)];
+        for (int y = 0; y < h; y++)
+        {
+            float weight = MathF.Pow(h > 1 ? y / (float)(h - 1) : 1, 1.5f);
+            int dx = (int)MathF.Round(local.X * weight), dy = (int)MathF.Round(local.Y * weight);
+            for (int x = 0; x < w; x++)
+            {
+                int index = src[x, y];
+                if (index == Palette.TransparentIndex || !dst.InBounds(x + dx, y + dy))
+                    continue;
+                dst.Set(x + dx, y + dy, index);
+                written[(y + dy) * w + x + dx] = true;
+            }
+        }
+        for (int y = 1; y < h + pad - 1; y++)                                   // join rows that spread apart
+            for (int x = 0; x < w; x++)
+                if (!written[y * w + x] && written[(y - 1) * w + x] && written[(y + 1) * w + x])
+                    dst.Set(x, y, dst[x, y - 1]);
+        return dst;
+    }
+
+    private void Draw(CompositeResult target, PartTransform t, IndexedImage image, short owner)
+    {
+        var (x0, y0, x1, y1) = CanvasBounds(t, image, target.Width, target.Height);
+        // warped images are made per frame: sample them without filling the cache
+        Func<Vector2, int> sample = t.IsGridAligned ? p => SampleNearest(image, p)
+            : (image == t.Image ? Sampler(image) : new RotSprite(image)).Sample;
 
         for (int y = y0; y < y1; y++)
         {
@@ -79,17 +126,20 @@ public sealed class Compositor
         }
     }
 
+    /// <summary>Draw rank per owner; detail parts share their parent's rank so no line is drawn between them.</summary>
     private static int[] RankByOwner(Character character, List<Part> drawOrder)
     {
         var rank = new int[character.Parts.Count];
         for (int i = 0; i < drawOrder.Count; i++)
             rank[character.IndexOf(drawOrder[i])] = i;
+        foreach (var part in character.Parts)
+            if (part.IsDetail && part.Parent is { } parent)
+                rank[character.IndexOf(part)] = rank[character.IndexOf(parent)];
         return rank;
     }
 
-    private static (int X0, int Y0, int X1, int Y1) CanvasBounds(PartTransform t, int width, int height)
+    private static (int X0, int Y0, int X1, int Y1) CanvasBounds(PartTransform t, IndexedImage img, int width, int height)
     {
-        var img = t.Image;
         Vector2[] corners = [new(0, 0), new(img.Width, 0), new(0, img.Height), new(img.Width, img.Height)];
         var pts = corners.Select(t.ToCanvas).ToArray();
         return (

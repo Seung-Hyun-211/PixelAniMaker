@@ -2,40 +2,35 @@ using PixelAniMaker.Core.History;
 
 namespace PixelAniMaker.Core.Rigging;
 
-/// <summary>Undoable switch of a part between a mirrored and a separately drawn Right view.</summary>
-public sealed class RightViewChange(Part part, PartView? before, PartView? after) : IUndoableAction
+/// <summary>
+/// Undoable switch of a part between a mirrored and a separately drawn view for a mirrored direction
+/// (Right, or a right-facing 3/4 view).
+/// </summary>
+public sealed class RightViewChange(Part part, PartView? before, PartView? after, Direction direction = Direction.Right)
+    : IUndoableAction
 {
-    public string Name => after is null ? "우측면 반전으로 되돌리기" : "우측면 따로 그리기";
+    public string Name => direction == Direction.Right
+        ? after is null ? "우측면 반전으로 되돌리기" : "우측면 따로 그리기"
+        : after is null ? $"{direction.Label()} 반전으로 되돌리기" : $"{direction.Label()} 따로 그리기";
 
-    public void Undo() => part.SetOwnRight(before);
+    public void Undo() => part.SetView(direction, before);
 
-    public void Redo() => part.SetOwnRight(after);
+    public void Redo() => part.SetView(direction, after);
 
     /// <summary>
-    /// Gives <paramref name="part"/> its own right view, starting as a copy of the Left view (same
-    /// joints, images and angle variants), or with <paramref name="separate"/> false drops it.
+    /// Gives <paramref name="part"/> its own view for the mirrored <paramref name="direction"/>, starting
+    /// as a copy of the source view (same joints, images and angle variants), or with
+    /// <paramref name="separate"/> false drops it.
     /// </summary>
-    public static void Apply(Part part, UndoHistory history, bool separate)
+    public static void Apply(Part part, UndoHistory history, bool separate, Direction direction = Direction.Right)
     {
-        if (part.HasOwnRight == separate)
+        if (!direction.IsMirrored())
+            throw new ArgumentException($"{direction} is not a mirrored direction.", nameof(direction));
+        if (part.HasOwnView(direction) == separate)
             return;
-        var before = separate ? null : part.View(Direction.Right);
-        var after = separate ? CopyOf(part.View(Direction.Left)) : null;
-        var change = new RightViewChange(part, before, after);
-        change.Redo();
-        history.Push(change);
-    }
-
-    private static PartView CopyOf(PartView view)
-    {
-        var copy = new PartView(view.Layers[0].Image.Clone(), view.RestPosition, view.RestPivot, view.DrawOrder);
-        copy.Layers.Items.Clear();
-        foreach (var layer in view.Layers.All)
-            copy.Layers.Items.Add(new PartLayer(layer.Name, layer.Image.Clone(), layer.Visible));
-        foreach (var (angle, variant) in view.Variants.All)
-            copy.Variants.Set(angle, variant with { Image = variant.Image.Clone() });
-        foreach (var (name, point) in view.Attachments.All)
-            copy.Attachments.Set(name, point);
-        return copy;
+        var before = separate ? null : part.View(direction);
+        var after = separate ? part.View(direction.Source()).Copy() : null;
+        var change = new RightViewChange(part, before, after, direction);
+        history.Do(change);
     }
 }

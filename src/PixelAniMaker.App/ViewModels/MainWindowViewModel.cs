@@ -36,9 +36,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Project.PropertyChanged += (_, _) => OnDocumentStateChanged();
         Session.PropertyChanged += (_, e) =>
         {
+            if (e.PropertyName == nameof(EditorSession.SecondaryInExport))
+                OnPropertyChanged(nameof(SecondaryInExport));
+            if (e.PropertyName == nameof(EditorSession.HasUnsavedSettings))
+                OnDocumentStateChanged();
             if (e.PropertyName is nameof(EditorSession.Zoom) or nameof(EditorSession.CurrentTool)
                 or nameof(EditorSession.PoseMode) or nameof(EditorSession.TouchupMode)
-                or nameof(EditorSession.ActivePart) or nameof(EditorSession.Direction))
+                or nameof(EditorSession.ActivePart) or nameof(EditorSession.Direction) or nameof(EditorSession.CanvasSize))
                 OnPropertyChanged(nameof(StatusText));
         };
         RefreshRecentFiles();
@@ -79,6 +83,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
             ["Direction.Left"] = (SetDirectionCommand, Direction.Left),
             ["Direction.Right"] = (SetDirectionCommand, Direction.Right),
             ["Direction.Back"] = (SetDirectionCommand, Direction.Back),
+            ["Direction.FrontLeft"] = (SetDirectionCommand, Direction.FrontLeft),
+            ["Direction.FrontRight"] = (SetDirectionCommand, Direction.FrontRight),
+            ["Direction.BackLeft"] = (SetDirectionCommand, Direction.BackLeft),
+            ["Direction.BackRight"] = (SetDirectionCommand, Direction.BackRight),
             ["ToggleGrid"] = (ToggleGridCommand, null),
             ["ToggleDim"] = (ToggleDimOtherPartsCommand, null),
             ["TogglePose"] = (TogglePoseModeCommand, null),
@@ -126,6 +134,28 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public ObservableCollection<string> RecentFiles { get; } = [];
 
+    /// <summary>Project setting: exports include secondary motion.</summary>
+    public bool SecondaryInExport
+    {
+        get => Session.SecondaryInExport;
+        set
+        {
+            Session.SecondaryInExport = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool ExportThreeQuarter
+    {
+        get => Project.Settings.ExportThreeQuarter;
+        set
+        {
+            Project.Settings.ExportThreeQuarter = value;
+            Project.Settings.Save();
+            OnPropertyChanged();
+        }
+    }
+
     public bool WriteSheetMetadata
     {
         get => Project.Settings.WriteSheetMetadata;
@@ -147,17 +177,52 @@ public sealed partial class MainWindowViewModel : ObservableObject
     // ------------------------------------------------------------------ file
 
     [RelayCommand]
-    private async Task NewDocument()
-    {
-        if (await ConfirmDiscardAsync())
-            Project.New();
-    }
+    private Task NewDocument() => NewAsync(jointDiscs: true);
 
     [RelayCommand]
-    private async Task NewPlainDocument()
+    private Task NewPlainDocument() => NewAsync(jointDiscs: false);
+
+    /// <summary>Starts a new project from the mannequin with the default clips the user ticks.</summary>
+    private async Task NewAsync(bool jointDiscs)
     {
-        if (await ConfirmDiscardAsync())
-            Project.New(jointDiscs: false);
+        if (!await ConfirmDiscardAsync())
+            return;
+        double heads = TemplateLoader.ChibiHeads;
+        if (Dialogs is not null)
+        {
+            var bodies = TemplateLoader.BodyTypes;
+            var bodyLabels = bodies.Select(BodyTypeLabel).ToList();
+            if (await Dialogs.PickOneAsync("새로 만들기", "체형을 고르세요. 파츠 구성과 기본 동작은 모두 같습니다.",
+                    bodyLabels, "다음", bodies.ToList().IndexOf(TemplateLoader.ChibiHeads)) is not { } body)
+                return;
+            heads = bodies[body];
+        }
+        var clips = TemplateLoader.LoadDefaultAnimations(threeQuarter: true, heads);
+        bool threeQuarter = false;
+        if (Dialogs is not null)
+        {
+            // the last row is an option, off by default: 3/4 views make the file format 2
+            var labels = clips.Select(c => $"{c.Name}  ({c.FrameCount}프레임 · {c.Fps} fps)").ToList();
+            labels.Add("반측면 포함 (앞·뒤 반측면 마네킹과 동작, 이전 버전에서는 열리지 않음)");
+            var ticked = clips.Select(_ => true).Append(false).ToList();
+            if (await Dialogs.PickItemsAsync("새로 만들기", "만들 동작을 고르세요.\n" +
+                    "고르지 않은 동작은 나중에 다른 프로젝트에서 가져오거나 새로 만들 수 있습니다.",
+                    labels, "만들기", ticked) is not { } picked)
+                return;
+            threeQuarter = picked.Contains(clips.Count);
+            clips = picked.Where(i => i < clips.Count).Select(i => clips[i]).ToList();
+        }
+        if (!threeQuarter)
+            foreach (var clip in clips)
+                Core.Rigging.ThreeQuarterViews.StripFrom(clip);
+        Project.New(jointDiscs, clips, threeQuarter, heads);
+    }
+
+    private static string BodyTypeLabel(double heads)
+    {
+        var p = Core.Rigging.Body.BodyProportions.For(heads);
+        string label = $"{heads}등신  (머리 {p.HeadPixels}px · 키 {Math.Round(p.BodyHeightPixels)}px)";   // translated on screen
+        return heads == TemplateLoader.ChibiHeads ? label + " · 치비, 손으로 그린 기본 마네킹" : label;
     }
 
     [RelayCommand]
@@ -190,15 +255,33 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     [RelayCommand]
     private Task ExportCurrentSheet() => ExportAsync("현재 동작 시트 내보내기", ProjectService.PngType,
-        $"{Project.DocumentName}_{Animation.CurrentClip?.Name}", path => Project.ExportSheet(path, allClips: false));
+        $"{Project.DocumentName}_{Animation.CurrentClip?.Name}", path => Project.ExportSheet(path, allClips: false), allClips: false);
 
     [RelayCommand]
     private Task ExportAllSheet() => ExportAsync("전체 동작 시트 내보내기", ProjectService.PngType,
-        $"{Project.DocumentName}_all", path => Project.ExportSheet(path, allClips: true));
+        $"{Project.DocumentName}_all", path => Project.ExportSheet(path, allClips: true), allClips: true);
+
+    [RelayCommand]
+    private Task ExportCurrentFrames() => ExportFramesAsync(allClips: false);
+
+    [RelayCommand]
+    private Task ExportAllFrames() => ExportFramesAsync(allClips: true);
+
+    /// <summary>Frame PNGs go next to the picked file name, which starts each frame's name.</summary>
+    private async Task ExportFramesAsync(bool allClips)
+    {
+        if (Dialogs is null || await Dialogs.PickSaveFileAsync("프레임별 PNG 내보내기 (이름 앞부분과 폴더 고르기)",
+                ProjectService.PngType, Project.DocumentName) is not { } path)
+            return;
+        int count = 0;
+        if (await TryAsync(() => count = Project.ExportFrames(path, allClips), "내보내지 못했습니다"))
+            await Dialogs.ShowMessageAsync($"PNG {count}개를 저장했습니다.\n{Path.GetDirectoryName(path)}"
+                + (Project.EdgeWarning(allClips) is { } warning ? "\n\n" + warning : ""));
+    }
 
     [RelayCommand]
     private Task ExportGif() => ExportAsync("GIF 내보내기", ProjectService.GifType,
-        $"{Project.DocumentName}_{Animation.CurrentClip?.Name}", Project.ExportGif);
+        $"{Project.DocumentName}_{Animation.CurrentClip?.Name}", Project.ExportGif, allClips: false);
 
     /// <summary>
     /// First thing after the window opens: offer to recover work left by a crash, otherwise open the
@@ -304,6 +387,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             Animation.AddClip(clip);
         if (result.UnknownParts.Count > 0)
             await Dialogs.ShowErrorAsync("이 캐릭터에 없는 파츠의 회전은 무시됩니다: " + string.Join(", ", result.UnknownParts));
+        if (result.DroppedThreeQuarter)
+            await Dialogs.ShowMessageAsync("이 캐릭터에는 반측면이 없어서 반측면 키와 손본 픽셀은 가져오지 않았습니다.");
     }
 
     [RelayCommand]
@@ -338,10 +423,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
             PaletteSwap.Merge(palette, character.History, colors);
     }
 
-    private async Task ExportAsync(string title, FileType type, string suggestedName, Action<string> export)
+    /// <param name="allClips">Set for sheet and GIF exports: after writing, warns when their frames touch the canvas edge.</param>
+    private async Task ExportAsync(string title, FileType type, string suggestedName, Action<string> export, bool? allClips = null)
     {
-        if (Dialogs is not null && await Dialogs.PickSaveFileAsync(title, type, suggestedName) is { } path)
-            await TryAsync(() => export(path), "내보내지 못했습니다");
+        if (Dialogs is not null && await Dialogs.PickSaveFileAsync(title, type, suggestedName) is { } path
+            && await TryAsync(() => export(path), "내보내지 못했습니다")
+            && allClips is { } all && Project.EdgeWarning(all) is { } warning)
+            await Dialogs.ShowMessageAsync(warning);
     }
 
     private async Task<bool> TryAsync(Action action, string failure)
@@ -399,7 +487,55 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private void SelectTool(ToolItem tool) => Session.SelectTool(tool);
 
     [RelayCommand]
-    private void SetDirection(Direction direction) => Session.Direction = direction;
+    private void SetDirection(Direction direction)
+    {
+        if (Session.Directions.Contains(direction))   // 3/4 shortcuts do nothing until 3/4 views are on
+            Session.Direction = direction;
+    }
+
+    [RelayCommand]
+    private void AddThreeQuarter() => Session.AddThreeQuarter();
+
+    /// <summary>Fills every clip's empty 3/4 tracks from its front/back and side keys (one undo step).</summary>
+    [RelayCommand]
+    private async Task DraftThreeQuarter()
+    {
+        if (!Core.Animation.ThreeQuarterDraft.Apply(Animation.Clips, Session.Character.History) && Dialogs is not null)
+            await Dialogs.ShowMessageAsync("채울 반측면 트랙이 없습니다. 반측면 키가 이미 있거나, 정면·측면 키가 없는 동작만 있습니다.");
+    }
+
+    /// <summary>Asks for margins and resizes the canvas (undoable); explains when the size is out of range.</summary>
+    [RelayCommand]
+    private async Task ResizeCanvas()
+    {
+        if (Dialogs is null || await Dialogs.PickCanvasMarginsAsync(Session.Character.Width, Session.Character.Height) is not { } margins)
+            return;
+        if (!Session.ResizeCanvas(margins, Animation.Clips))
+            await Dialogs.ShowErrorAsync($"캔버스는 가로·세로 {Core.Rigging.CanvasResize.MinSize}~{Core.Rigging.CanvasResize.MaxSize} px이어야 합니다.");
+    }
+
+    /// <summary>Asks how to enlarge the pixels and doubles the resolution (undoable).</summary>
+    [RelayCommand]
+    private async Task ScaleResolution()
+    {
+        if (Dialogs is null)
+            return;
+        var (w, h) = (Session.Character.Width, Session.Character.Height);
+        if (!Core.Rigging.ResolutionScale.CanApply(Session.Character))
+        {
+            await Dialogs.ShowErrorAsync($"캔버스는 가로·세로 {Core.Rigging.CanvasResize.MaxSize} px까지입니다 (지금 {w}×{h}).");
+            return;
+        }
+        if (await Dialogs.PickOneAsync("해상도 2배", $"캔버스와 모든 그림을 가로·세로 2배로 키웁니다 ({w}×{h} → {w * 2}×{h * 2}).\n" +
+                "관절·장착점·동작의 몸 이동·손본 픽셀도 함께 커지고, 되돌리기 한 번으로 돌아갑니다.",
+                ["그대로 키우기 (픽셀 하나 → 2×2, 모양 그대로)", "부드럽게 키우기 (Scale2x, 대각선 계단을 메움)"], "키우기") is not { } choice)
+            return;
+        Session.ScaleResolution(choice == 0 ? Core.Rigging.UpscaleMethod.Nearest : Core.Rigging.UpscaleMethod.Smooth, Animation.Clips);
+    }
+
+    /// <summary>Removes the 3/4 views and the clips' 3/4 keys and touch-ups (undoable).</summary>
+    [RelayCommand]
+    private void RemoveThreeQuarter() => Session.RemoveThreeQuarter(Animation.Clips);
 
     [RelayCommand] private void SaveKey() => Animation.SaveKey();
     [RelayCommand] private void DeleteKey() => Animation.DeleteKey();
@@ -425,7 +561,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private EditorDocument? SelectionDocument => Session.TouchupMode ? Touchup.Document : Session.ActiveDocument;
 
     [RelayCommand]
-    private void DeleteSelection() => SelectionDocument?.DeleteSelection();
+    private void DeleteSelection()
+    {
+        if (Session.TouchupMode || Session.CanDrawActivePart)
+            SelectionDocument?.DeleteSelection();
+    }
 
     [RelayCommand]
     private void Deselect()

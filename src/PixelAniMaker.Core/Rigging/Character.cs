@@ -11,7 +11,12 @@ namespace PixelAniMaker.Core.Rigging;
 /// </summary>
 public sealed class Character
 {
-    private readonly Dictionary<Direction, Pose> _poses = DirectionExtensions.Stored.ToDictionary(d => d, _ => new Pose());
+    private static readonly IReadOnlyList<Direction> AllStored = [.. DirectionExtensions.Stored, .. DirectionExtensions.ThreeQuarterStored];
+
+    // a pose for every stored direction, 3/4 included, so turning 3/4 views on never loses poses
+    private readonly Dictionary<Direction, Pose> _poses = AllStored.ToDictionary(d => d, _ => new Pose());
+    private readonly List<Part> _parts;
+    private bool _hasThreeQuarter;
 
     public Character(int width, int height, Palette palette, IEnumerable<Part> parts)
     {
@@ -19,21 +24,70 @@ public sealed class Character
         Height = height;
         Palette = palette;
         Colors = new ColorSelection(palette);
-        Parts = parts.ToList();
-        Root = Parts.Single(p => p.Parent is null);
+        _parts = parts.ToList();
+        Root = _parts.Single(p => p.Parent is null);
+        _hasThreeQuarter = _parts.Any(p => p.HasOwnView(Direction.FrontLeft));
     }
 
-    public int Width { get; }
-    public int Height { get; }
+    public int Width { get; private set; }
+    public int Height { get; private set; }
+
+    /// <summary>
+    /// Raised after <see cref="Width"/> or <see cref="Height"/> changed (see <see cref="CanvasResize"/>), with how
+    /// far the drawing moved on the canvas (things placed on the canvas, like reference pictures, follow it).
+    /// </summary>
+    public event EventHandler<CanvasShift>? CanvasSizeChanged;
+
+    internal void SetCanvasSize(int width, int height, CanvasShift shift)
+    {
+        Width = width;
+        Height = height;
+        CanvasSizeChanged?.Invoke(this, shift);
+    }
     public Palette Palette { get; }
     public UndoHistory History { get; } = new();
     public ColorSelection Colors { get; }
     public OutlineSettings Outline { get; } = new();
 
+    /// <summary>Whether exported sheets, GIFs and frame PNGs include secondary motion (previews always do).</summary>
+    public bool SecondaryInExport { get; set; } = true;
+
+    /// <summary>Automatic shading of composites (off unless turned on).</summary>
+    public ShadingSettings Shading { get; } = new();
+
     /// <summary>All parts in a fixed order; indices into this list identify parts in composites.</summary>
-    public IReadOnlyList<Part> Parts { get; }
+    public IReadOnlyList<Part> Parts => _parts;
+
+    /// <summary>Raised when a part is added or removed (e.g. eye parts).</summary>
+    public event EventHandler? PartsChanged;
 
     public Part Root { get; }
+
+    /// <summary>True when the character has 3/4 views (see <see cref="ThreeQuarterViews"/>).</summary>
+    public bool HasThreeQuarter
+    {
+        get => _hasThreeQuarter;
+        internal set
+        {
+            if (_hasThreeQuarter == value)
+                return;
+            _hasThreeQuarter = value;
+            DirectionsChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>Raised when 3/4 views are turned on or off.</summary>
+    public event EventHandler? DirectionsChanged;
+
+    /// <summary>Directions with their own pictures and poses: the classic three, plus the two 3/4 ones.</summary>
+    public IReadOnlyList<Direction> StoredDirections => HasThreeQuarter ? AllStored : DirectionExtensions.Stored;
+
+    /// <summary>Directions the character is shown in, in sheet order.</summary>
+    public IReadOnlyList<Direction> Directions => HasThreeQuarter ? DirectionExtensions.Every : DirectionExtensions.All;
+
+    /// <summary>Directions to export: the classic four, or all eight when asked for and the character has 3/4 views.</summary>
+    public IReadOnlyList<Direction> ExportDirections(bool includeThreeQuarter) =>
+        includeThreeQuarter && HasThreeQuarter ? DirectionExtensions.Every : DirectionExtensions.All;
 
     /// <summary>Raised when any direction's pose changes.</summary>
     public event EventHandler? PoseChanged
@@ -43,6 +97,32 @@ public sealed class Character
     }
 
     public Part? Find(string name) => Parts.FirstOrDefault(p => p.Name == name);
+
+    /// <summary>
+    /// Adds <paramref name="part"/> as the last child of <paramref name="parent"/>, at the end of <see cref="Parts"/>
+    /// or at <paramref name="index"/> (to put a removed part back where it was: the list order breaks draw-order ties).
+    /// </summary>
+    internal void AddPart(Part part, Part parent, int? index = null)
+    {
+        if (Find(part.Name) is not null)
+            throw new InvalidOperationException($"There is already a part named '{part.Name}'.");
+        part.AttachTo(parent);
+        _parts.Insert(Math.Clamp(index ?? _parts.Count, 0, _parts.Count), part);
+        PartsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Tells views that part names or the part list changed.</summary>
+    internal void NotifyPartsChanged() => PartsChanged?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>Removes a part that has no children (never the root).</summary>
+    internal void RemovePart(Part part)
+    {
+        if (part == Root || part.Children.Count > 0)
+            throw new InvalidOperationException($"Part '{part.Name}' cannot be removed.");
+        part.Detach();
+        _parts.Remove(part);
+        PartsChanged?.Invoke(this, EventArgs.Empty);
+    }
 
     public int IndexOf(Part part)
     {

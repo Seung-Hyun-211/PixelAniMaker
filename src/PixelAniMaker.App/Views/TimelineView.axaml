@@ -6,8 +6,8 @@
              x:Class="PixelAniMaker.App.Views.TimelineView"
              x:DataType="vm:TimelineViewModel">
   <DockPanel Margin="8">
-    <!-- clip row -->
-    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="0,0,0,6">
+    <!-- clip row (wraps when the panel is narrow) -->
+    <WrapPanel DockPanel.Dock="Top" ItemSpacing="6" LineSpacing="6" Margin="0,0,0,6">
       <ComboBox ItemsSource="{Binding Animation.Clips}" SelectedItem="{Binding Animation.CurrentClip}" Width="140">
         <ComboBox.ItemTemplate>
           <DataTemplate x:DataType="anim:AnimationClip">
@@ -19,15 +19,24 @@
       <Button Content="새 동작" Command="{Binding NewClipCommand}" />
       <Button Content="복제" Command="{Binding DuplicateClipCommand}" />
       <Button Content="삭제" Command="{Binding DeleteClipCommand}" />
-      <TextBlock Text="프레임" VerticalAlignment="Center" Margin="10,0,0,0" />
-      <NumericUpDown Value="{Binding Animation.CurrentClip.FrameCount, FallbackValue=1}" Minimum="1" Maximum="64" Increment="1" FormatString="0" Width="100" />
-      <TextBlock Text="fps" VerticalAlignment="Center" />
-      <NumericUpDown Value="{Binding Animation.CurrentClip.Fps, FallbackValue=10}" Minimum="1" Maximum="60" Increment="1" FormatString="0" Width="100" />
+      <StackPanel Orientation="Horizontal" Spacing="6" Margin="4,0,0,0">
+        <TextBlock Text="프레임" VerticalAlignment="Center" />
+        <NumericUpDown Value="{Binding Animation.CurrentClip.FrameCount, FallbackValue=1}" Minimum="1" Maximum="64" Increment="1" FormatString="0" Width="100" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <TextBlock Text="fps" VerticalAlignment="Center" />
+        <NumericUpDown Value="{Binding Animation.CurrentClip.Fps, FallbackValue=10}" Minimum="1" Maximum="60" Increment="1" FormatString="0" Width="100" />
+      </StackPanel>
       <CheckBox Content="반복" IsChecked="{Binding Animation.CurrentClip.Loop, FallbackValue=False}" />
-    </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasKeysPastEnd}"
+                  ToolTip.Tip="프레임 수를 줄여서 마지막 프레임 뒤에 남은 키입니다. 재생·내보내기에는 쓰이지 않고, 프레임을 다시 늘리면 돌아옵니다.">
+        <TextBlock Text="{Binding KeysPastEndText}" VerticalAlignment="Center" Foreground="#999999" />
+        <Button Content="범위 밖 키 지우기" Command="{Binding ClearKeysPastEndCommand}" />
+      </StackPanel>
+    </WrapPanel>
 
     <!-- key row -->
-    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="0,0,0,6">
+    <WrapPanel DockPanel.Dock="Top" ItemSpacing="6" LineSpacing="6" Margin="0,0,0,6">
       <Button Content="◀" Command="{Binding PreviousFrameCommand}"
               ToolTip.Tip="{Binding Shortcuts.Texts[PreviousFrame], StringFormat='이전 프레임 ({0})'}" />
       <TextBlock VerticalAlignment="Center" MinWidth="60" HorizontalAlignment="Center">
@@ -37,19 +46,26 @@
       </TextBlock>
       <Button Content="▶" Command="{Binding NextFrameCommand}"
               ToolTip.Tip="{Binding Shortcuts.Texts[NextFrame], StringFormat='다음 프레임 ({0})'}" />
+      <StackPanel Orientation="Horizontal" Spacing="6" Margin="4,0,0,0"
+                  ToolTip.Tip="지금 프레임을 몇 칸(1칸 = 1/fps초) 동안 보여줄지. 모든 방향에 같이 적용되고, 재생·GIF·시트 JSON의 durationMs에 반영됩니다.">
+        <TextBlock Text="길이 ×" VerticalAlignment="Center" />
+        <NumericUpDown Value="{Binding CurrentHold}" Minimum="1" Maximum="16" Increment="1" FormatString="0" Width="100" />
+      </StackPanel>
       <Button Command="{Binding SaveKeyCommand}" Margin="10,0,0,0">
         <TextBlock Text="{Binding Shortcuts.Texts[SaveKey], StringFormat='키 저장 ({0})'}" />
       </Button>
       <Button Content="키 삭제" Command="{Binding DeleteKeyCommand}" />
-      <TextBlock Text="보간" VerticalAlignment="Center" Margin="10,0,0,0" />
-      <ComboBox ItemsSource="{Binding EasingOptions}" SelectedItem="{Binding CurrentEasing}" Width="90"
-                IsEnabled="{Binding Animation.CurrentKey, Converter={x:Static ObjectConverters.IsNotNull}}">
-        <ComboBox.ItemTemplate>
-          <DataTemplate>
-            <TextBlock Text="{Binding Converter={x:Static conv:EasingLabelConverter.Instance}}" />
-          </DataTemplate>
-        </ComboBox.ItemTemplate>
-      </ComboBox>
+      <StackPanel Orientation="Horizontal" Spacing="6" Margin="4,0,0,0">
+        <TextBlock Text="보간" VerticalAlignment="Center" />
+        <ComboBox ItemsSource="{Binding EasingOptions}" SelectedItem="{Binding CurrentEasing}" Width="90"
+                  IsEnabled="{Binding Animation.CurrentKey, Converter={x:Static ObjectConverters.IsNotNull}}">
+          <ComboBox.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding Converter={x:Static conv:EasingLabelConverter.Instance}}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+      </StackPanel>
       <CheckBox Content="어니언 스킨" IsChecked="{Binding Animation.OnionSkin}" Margin="10,0,0,0" />
       <ToggleButton IsChecked="{Binding Session.TouchupMode}"
                     ToolTip.Tip="완성된 프레임에 직접 도트를 찍습니다. 프레임을 다시 만들어도 유지됩니다.">
@@ -59,7 +75,9 @@
               ToolTip.Tip="현재 방향·프레임의 손본 픽셀을 지웁니다 (되돌리기 가능)" />
       <ToggleButton Content="미리보기 재생" IsChecked="{Binding Animation.IsPlaying}" />
       <TextBlock Text="{Binding KeyStatus}" VerticalAlignment="Center" Foreground="#E0B060" Margin="10,0,0,0" />
-    </StackPanel>
+      <TextBlock Text="{Binding EdgeHint}" VerticalAlignment="Center" Foreground="#E08080" Margin="10,0,0,0"
+                 ToolTip.Tip="이 프레임의 그림이 캔버스 끝에 닿아 내보낼 때 잘릴 수 있습니다." />
+    </WrapPanel>
 
     <!-- frame bar -->
     <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
@@ -81,6 +99,8 @@
                     <TextBlock Text="◆" Foreground="#E0B060" FontSize="10" IsVisible="{Binding HasKey}" VerticalAlignment="Center" />
                     <TextBlock Text="✎" Foreground="#7FD0FF" FontSize="10" IsVisible="{Binding HasTouchup}" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding Label}" FontSize="11" />
+                    <TextBlock Text="{Binding HoldLabel}" Foreground="#9FE09F" FontSize="10" VerticalAlignment="Center"
+                               IsVisible="{Binding HoldLabel, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                   </StackPanel>
                 </StackPanel>
               </Border>

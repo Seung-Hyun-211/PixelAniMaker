@@ -3,6 +3,7 @@
 4등신 도트 캐릭터를 파츠와 스켈레톤으로 조립하고, 보정된 애니메이션 스프라이트 시트로 내보내는 데스크톱 프로그램.
 C# .NET 8 + Avalonia UI로 만들며 윈도우·맥·리눅스를 지원한다.
 
+- **사용 설명서**: [doc/manual.md](doc/manual.md) (작업 순서대로 스크린샷)
 - 설계 문서: [doc/design.md](doc/design.md)
 - 패치노트: [doc/patchnotes/](doc/patchnotes/README.md)
 - 진행 상황과 다음 루트: [doc/progress.md](doc/progress.md)

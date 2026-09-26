@@ -56,6 +56,40 @@
        1
       ]
      }
+    ],
+    "frontleft": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "upper_arm_l": 2,
+       "upper_arm_r": 2
+      },
+      "offset": [
+       0,
+       1
+      ]
+     }
+    ],
+    "backleft": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "upper_arm_l": 2,
+       "upper_arm_r": 2
+      },
+      "offset": [
+       0,
+       1
+      ]
+     }
     ]
    }
   },
@@ -189,6 +223,122 @@
      {
       "frame": 6,
       "rotations": {},
+      "offset": [
+       0,
+       -1
+      ]
+     }
+    ],
+    "frontleft": [
+     {
+      "frame": 0,
+      "rotations": {
+       "thigh_r": -13.5,
+       "thigh_l": 11.5,
+       "shin_l": -2.5,
+       "shin_r": -7.5,
+       "upper_arm_l": -25,
+       "forearm_l": 10,
+       "upper_arm_r": 25,
+       "forearm_r": 15
+      }
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "thigh_l": -1.5,
+       "shin_l": -2.5,
+       "thigh_r": 4,
+       "shin_r": -17.5,
+       "forearm_l": 8,
+       "forearm_r": 8
+      },
+      "offset": [
+       0,
+       -1
+      ]
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "thigh_r": 13.5,
+       "thigh_l": -11.5,
+       "shin_r": -2.5,
+       "shin_l": -7.5,
+       "upper_arm_r": -25,
+       "forearm_r": 10,
+       "upper_arm_l": 25,
+       "forearm_l": 15
+      }
+     },
+     {
+      "frame": 6,
+      "rotations": {
+       "thigh_r": -1.5,
+       "shin_r": -2.5,
+       "thigh_l": 4,
+       "shin_l": -17.5,
+       "forearm_r": 8,
+       "forearm_l": 8
+      },
+      "offset": [
+       0,
+       -1
+      ]
+     }
+    ],
+    "backleft": [
+     {
+      "frame": 0,
+      "rotations": {
+       "thigh_r": -11.5,
+       "thigh_l": 13.5,
+       "shin_l": -2.5,
+       "shin_r": -7.5,
+       "upper_arm_l": -25,
+       "forearm_l": 10,
+       "upper_arm_r": 25,
+       "forearm_r": 15
+      }
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "thigh_l": -1.5,
+       "shin_l": -2.5,
+       "thigh_r": 4,
+       "shin_r": -17.5,
+       "forearm_l": 8,
+       "forearm_r": 8
+      },
+      "offset": [
+       0,
+       -1
+      ]
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "thigh_r": 11.5,
+       "thigh_l": -13.5,
+       "shin_r": -2.5,
+       "shin_l": -7.5,
+       "upper_arm_r": -25,
+       "forearm_r": 10,
+       "upper_arm_l": 25,
+       "forearm_l": 15
+      }
+     },
+     {
+      "frame": 6,
+      "rotations": {
+       "thigh_r": -1.5,
+       "shin_r": -2.5,
+       "thigh_l": 4,
+       "shin_l": -17.5,
+       "forearm_r": 8,
+       "forearm_l": 8
+      },
       "offset": [
        0,
        -1
@@ -350,6 +500,130 @@
        "forearm_r": 35,
        "upper_arm_l": 12,
        "forearm_l": -35
+      },
+      "offset": [
+       0,
+       -2
+      ]
+     }
+    ],
+    "frontleft": [
+     {
+      "frame": 0,
+      "rotations": {
+       "waist": -4,
+       "thigh_l": 22.5,
+       "shin_l": -12.5,
+       "thigh_r": -17.5,
+       "shin_r": -30,
+       "upper_arm_l": -45,
+       "forearm_l": 70,
+       "upper_arm_r": 45,
+       "forearm_r": 80
+      }
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "waist": -4,
+       "thigh_l": 5,
+       "shin_l": -20,
+       "thigh_r": -2.5,
+       "shin_r": -40,
+       "forearm_l": 75,
+       "forearm_r": 75
+      },
+      "offset": [
+       0,
+       -2
+      ]
+     },
+     {
+      "frame": 3,
+      "rotations": {
+       "waist": -4,
+       "thigh_r": 22.5,
+       "shin_r": -12.5,
+       "thigh_l": -17.5,
+       "shin_l": -30,
+       "upper_arm_r": -45,
+       "forearm_r": 70,
+       "upper_arm_l": 45,
+       "forearm_l": 80
+      }
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "waist": -4,
+       "thigh_r": 5,
+       "shin_r": -20,
+       "thigh_l": -2.5,
+       "shin_l": -40,
+       "forearm_r": 75,
+       "forearm_l": 75
+      },
+      "offset": [
+       0,
+       -2
+      ]
+     }
+    ],
+    "backleft": [
+     {
+      "frame": 0,
+      "rotations": {
+       "waist": -4,
+       "thigh_l": 22.5,
+       "shin_l": -12.5,
+       "thigh_r": -17.5,
+       "shin_r": -30,
+       "upper_arm_l": -45,
+       "forearm_l": 70,
+       "upper_arm_r": 45,
+       "forearm_r": 80
+      }
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "waist": -4,
+       "thigh_l": 5,
+       "shin_l": -20,
+       "thigh_r": -2.5,
+       "shin_r": -40,
+       "forearm_l": 75,
+       "forearm_r": 75
+      },
+      "offset": [
+       0,
+       -2
+      ]
+     },
+     {
+      "frame": 3,
+      "rotations": {
+       "waist": -4,
+       "thigh_r": 22.5,
+       "shin_r": -12.5,
+       "thigh_l": -17.5,
+       "shin_l": -30,
+       "upper_arm_r": -45,
+       "forearm_r": 70,
+       "upper_arm_l": 45,
+       "forearm_l": 80
+      }
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "waist": -4,
+       "thigh_r": 5,
+       "shin_r": -20,
+       "thigh_l": -2.5,
+       "shin_l": -40,
+       "forearm_r": 75,
+       "forearm_l": 75
       },
       "offset": [
        0,
@@ -555,6 +829,152 @@
        3
       ]
      }
+    ],
+    "frontleft": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "thigh_r": 26.5,
+       "shin_r": -39,
+       "thigh_l": 21,
+       "shin_l": -33.5,
+       "waist": -7.5,
+       "foot_l": 12.5,
+       "foot_r": 12.5,
+       "upper_arm_l": -35,
+       "upper_arm_r": -40
+      },
+      "offset": [
+       0,
+       6
+      ]
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "waist": -2.5,
+       "thigh_l": 12.5,
+       "shin_l": -20,
+       "thigh_r": 7.5,
+       "shin_r": -15,
+       "upper_arm_l": 150,
+       "upper_arm_r": 140
+      },
+      "offset": [
+       0,
+       -14
+      ],
+      "easing": "Linear"
+     },
+     {
+      "frame": 3,
+      "rotations": {
+       "waist": -1.5,
+       "thigh_l": 10,
+       "shin_l": -15,
+       "thigh_r": 7.5,
+       "shin_r": -12.5,
+       "upper_arm_l": 60,
+       "upper_arm_r": 50
+      },
+      "offset": [
+       0,
+       -10
+      ]
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "thigh_r": 15,
+       "shin_r": -22.5,
+       "thigh_l": 12.5,
+       "shin_l": -20,
+       "waist": -5,
+       "foot_l": 7.5,
+       "foot_r": 7.5
+      },
+      "offset": [
+       0,
+       3
+      ]
+     }
+    ],
+    "backleft": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "thigh_r": 18.5,
+       "shin_r": -31,
+       "thigh_l": 29,
+       "shin_l": -41.5,
+       "waist": -7.5,
+       "foot_l": 12.5,
+       "foot_r": 12.5,
+       "upper_arm_l": -35,
+       "upper_arm_r": -40
+      },
+      "offset": [
+       0,
+       6
+      ]
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "waist": -2.5,
+       "thigh_l": 12.5,
+       "shin_l": -20,
+       "thigh_r": 7.5,
+       "shin_r": -15,
+       "upper_arm_l": 150,
+       "upper_arm_r": 140
+      },
+      "offset": [
+       0,
+       -14
+      ],
+      "easing": "Linear"
+     },
+     {
+      "frame": 3,
+      "rotations": {
+       "waist": -1.5,
+       "thigh_l": 10,
+       "shin_l": -15,
+       "thigh_r": 7.5,
+       "shin_r": -12.5,
+       "upper_arm_l": 60,
+       "upper_arm_r": 50
+      },
+      "offset": [
+       0,
+       -10
+      ]
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "thigh_r": 10,
+       "shin_r": -17.5,
+       "thigh_l": 17.5,
+       "shin_l": -25,
+       "waist": -5,
+       "foot_l": 7.5,
+       "foot_r": 7.5
+      },
+      "offset": [
+       0,
+       3
+      ]
+     }
     ]
    }
   },
@@ -674,6 +1094,84 @@
        "upper_arm_r": -5
       }
      }
+    ],
+    "frontleft": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "chest": 3.5,
+       "upper_arm_l": -70,
+       "forearm_l": -40
+      }
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "chest": 3,
+       "waist": -6,
+       "upper_arm_l": 110,
+       "forearm_l": 15
+      },
+      "easing": "Linear"
+     },
+     {
+      "frame": 3,
+      "rotations": {
+       "chest": 2,
+       "waist": -4,
+       "upper_arm_l": 80,
+       "forearm_l": 10
+      }
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "upper_arm_l": 10
+      }
+     }
+    ],
+    "backleft": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "chest": 8.5,
+       "upper_arm_l": -70,
+       "forearm_l": -40
+      }
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "chest": -3,
+       "waist": -6,
+       "upper_arm_l": 110,
+       "forearm_l": 15
+      },
+      "easing": "Linear"
+     },
+     {
+      "frame": 3,
+      "rotations": {
+       "chest": -2,
+       "waist": -4,
+       "upper_arm_l": 80,
+       "forearm_l": 10
+      }
+     },
+     {
+      "frame": 4,
+      "rotations": {
+       "upper_arm_l": 10
+      }
+     }
     ]
    }
   },
@@ -765,6 +1263,70 @@
        "upper_arm_r": -6,
        "upper_arm_l": 6
       }
+     }
+    ],
+    "frontleft": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "head": 12.5,
+       "waist": 7.5,
+       "upper_arm_l": 25,
+       "upper_arm_r": 20
+      },
+      "offset": [
+       1.5,
+       0.5
+      ]
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "head": 4,
+       "waist": 2.5,
+       "upper_arm_l": 8,
+       "upper_arm_r": 6
+      },
+      "offset": [
+       0.5,
+       0
+      ]
+     }
+    ],
+    "backleft": [
+     {
+      "frame": 0,
+      "rotations": {}
+     },
+     {
+      "frame": 1,
+      "rotations": {
+       "head": 2.5,
+       "waist": 7.5,
+       "upper_arm_l": 25,
+       "upper_arm_r": 20
+      },
+      "offset": [
+       1.5,
+       0.5
+      ]
+     },
+     {
+      "frame": 2,
+      "rotations": {
+       "head": 1,
+       "waist": 2.5,
+       "upper_arm_l": 8,
+       "upper_arm_r": 6
+      },
+      "offset": [
+       0.5,
+       0
+      ]
      }
     ]
    }

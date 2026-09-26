@@ -30,6 +30,22 @@
           "jointY": 69.0,
           "order": 0,
           "image": "back/thigh_r.png"
+        },
+        "frontleft": {
+          "x": 37,
+          "y": 63,
+          "jointX": 44.6,
+          "jointY": 69.0,
+          "order": 3,
+          "image": "frontleft/thigh_r.png"
+        },
+        "backleft": {
+          "x": 43,
+          "y": 63,
+          "jointX": 50.9,
+          "jointY": 69.0,
+          "order": 3,
+          "image": "backleft/thigh_r.png"
         }
       }
     },
@@ -61,6 +77,22 @@
           "jointY": 69.0,
           "order": 1,
           "image": "back/thigh_l.png"
+        },
+        "frontleft": {
+          "x": 45,
+          "y": 63,
+          "jointX": 52.2125,
+          "jointY": 69.0,
+          "order": 6,
+          "image": "frontleft/thigh_l.png"
+        },
+        "backleft": {
+          "x": 36,
+          "y": 63,
+          "jointX": 43.2875,
+          "jointY": 69.0,
+          "order": 6,
+          "image": "backleft/thigh_l.png"
         }
       }
     },
@@ -92,6 +124,22 @@
           "jointY": 97.5,
           "order": 2,
           "image": "back/shin_r.png"
+        },
+        "frontleft": {
+          "x": 38,
+          "y": 92,
+          "jointX": 44.9,
+          "jointY": 97.5,
+          "order": 4,
+          "image": "frontleft/shin_r.png"
+        },
+        "backleft": {
+          "x": 44,
+          "y": 92,
+          "jointX": 50.6,
+          "jointY": 97.5,
+          "order": 4,
+          "image": "backleft/shin_r.png"
         }
       }
     },
@@ -123,6 +171,22 @@
           "jointY": 97.5,
           "order": 3,
           "image": "back/shin_l.png"
+        },
+        "frontleft": {
+          "x": 45,
+          "y": 92,
+          "jointX": 51.7875,
+          "jointY": 97.5,
+          "order": 7,
+          "image": "frontleft/shin_l.png"
+        },
+        "backleft": {
+          "x": 37,
+          "y": 92,
+          "jointX": 43.7125,
+          "jointY": 97.5,
+          "order": 7,
+          "image": "backleft/shin_l.png"
         }
       }
     },
@@ -154,6 +218,22 @@
           "jointY": 119.0,
           "order": 4,
           "image": "back/foot_r.png"
+        },
+        "frontleft": {
+          "x": 38,
+          "y": 115,
+          "jointX": 43.7,
+          "jointY": 119.0,
+          "order": 5,
+          "image": "frontleft/foot_r.png"
+        },
+        "backleft": {
+          "x": 44,
+          "y": 115,
+          "jointX": 48.8,
+          "jointY": 119.0,
+          "order": 5,
+          "image": "backleft/foot_r.png"
         }
       }
     },
@@ -185,6 +265,22 @@
           "jointY": 119.0,
           "order": 5,
           "image": "back/foot_l.png"
+        },
+        "frontleft": {
+          "x": 44,
+          "y": 115,
+          "jointX": 49.8625,
+          "jointY": 119.0,
+          "order": 8,
+          "image": "frontleft/foot_l.png"
+        },
+        "backleft": {
+          "x": 35,
+          "y": 115,
+          "jointX": 42.6375,
+          "jointY": 119.0,
+          "order": 8,
+          "image": "backleft/foot_l.png"
         }
       }
     },
@@ -216,6 +312,22 @@
           "jointY": 65.0,
           "order": 6,
           "image": "back/pelvis.png"
+        },
+        "frontleft": {
+          "x": 39,
+          "y": 60,
+          "jointX": 47.75,
+          "jointY": 65.0,
+          "order": 9,
+          "image": "frontleft/pelvis.png"
+        },
+        "backleft": {
+          "x": 36,
+          "y": 60,
+          "jointX": 47.75,
+          "jointY": 65.0,
+          "order": 9,
+          "image": "backleft/pelvis.png"
         }
       }
     },
@@ -247,6 +359,22 @@
           "jointY": 62.5,
           "order": 7,
           "image": "back/waist.png"
+        },
+        "frontleft": {
+          "x": 40,
+          "y": 53,
+          "jointX": 47.75,
+          "jointY": 62.5,
+          "order": 10,
+          "image": "frontleft/waist.png"
+        },
+        "backleft": {
+          "x": 38,
+          "y": 53,
+          "jointX": 47.75,
+          "jointY": 62.5,
+          "order": 10,
+          "image": "backleft/waist.png"
         }
       }
     },
@@ -278,6 +406,22 @@
           "jointY": 55.5,
           "order": 8,
           "image": "back/chest.png"
+        },
+        "frontleft": {
+          "x": 38,
+          "y": 35,
+          "jointX": 47.75,
+          "jointY": 55.5,
+          "order": 11,
+          "image": "frontleft/chest.png"
+        },
+        "backleft": {
+          "x": 36,
+          "y": 35,
+          "jointX": 47.75,
+          "jointY": 55.5,
+          "order": 11,
+          "image": "backleft/chest.png"
         }
       }
     },
@@ -309,6 +453,22 @@
           "jointY": 37.0,
           "order": 9,
           "image": "back/head.png"
+        },
+        "frontleft": {
+          "x": 28,
+          "y": 0,
+          "jointX": 48.0,
+          "jointY": 37.0,
+          "order": 12,
+          "image": "frontleft/head.png"
+        },
+        "backleft": {
+          "x": 28,
+          "y": 0,
+          "jointX": 48.0,
+          "jointY": 37.0,
+          "order": 12,
+          "image": "backleft/head.png"
         }
       }
     },
@@ -340,6 +500,22 @@
           "jointY": 40.0,
           "order": 10,
           "image": "back/upper_arm_r.png"
+        },
+        "frontleft": {
+          "x": 35,
+          "y": 34,
+          "jointX": 41.6,
+          "jointY": 40.0,
+          "order": 0,
+          "image": "frontleft/upper_arm_r.png"
+        },
+        "backleft": {
+          "x": 48,
+          "y": 34,
+          "jointX": 53.9,
+          "jointY": 40.0,
+          "order": 0,
+          "image": "backleft/upper_arm_r.png"
         }
       }
     },
@@ -371,6 +547,22 @@
           "jointY": 61.0,
           "order": 11,
           "image": "back/forearm_r.png"
+        },
+        "frontleft": {
+          "x": 35,
+          "y": 56,
+          "jointX": 39.8,
+          "jointY": 61.0,
+          "order": 1,
+          "image": "frontleft/forearm_r.png"
+        },
+        "backleft": {
+          "x": 51,
+          "y": 56,
+          "jointX": 55.7,
+          "jointY": 61.0,
+          "order": 1,
+          "image": "backleft/forearm_r.png"
         }
       }
     },
@@ -402,6 +594,22 @@
           "jointY": 72.0,
           "order": 12,
           "image": "back/hand_r.png"
+        },
+        "frontleft": {
+          "x": 35,
+          "y": 68,
+          "jointX": 39.2,
+          "jointY": 72.0,
+          "order": 2,
+          "image": "frontleft/hand_r.png"
+        },
+        "backleft": {
+          "x": 52,
+          "y": 68,
+          "jointX": 56.3,
+          "jointY": 72.0,
+          "order": 2,
+          "image": "backleft/hand_r.png"
         }
       }
     },
@@ -433,6 +641,22 @@
           "jointY": 40.0,
           "order": 13,
           "image": "back/upper_arm_l.png"
+        },
+        "frontleft": {
+          "x": 50,
+          "y": 34,
+          "jointX": 56.4625,
+          "jointY": 40.0,
+          "order": 13,
+          "image": "frontleft/upper_arm_l.png"
+        },
+        "backleft": {
+          "x": 31,
+          "y": 34,
+          "jointX": 39.0375,
+          "jointY": 40.0,
+          "order": 13,
+          "image": "backleft/upper_arm_l.png"
         }
       }
     },
@@ -464,6 +688,22 @@
           "jointY": 61.0,
           "order": 14,
           "image": "back/forearm_l.png"
+        },
+        "frontleft": {
+          "x": 54,
+          "y": 56,
+          "jointX": 59.0125,
+          "jointY": 61.0,
+          "order": 14,
+          "image": "frontleft/forearm_l.png"
+        },
+        "backleft": {
+          "x": 31,
+          "y": 56,
+          "jointX": 36.4875,
+          "jointY": 61.0,
+          "order": 14,
+          "image": "backleft/forearm_l.png"
         }
       }
     },
@@ -495,6 +735,22 @@
           "jointY": 72.0,
           "order": 15,
           "image": "back/hand_l.png"
+        },
+        "frontleft": {
+          "x": 54,
+          "y": 68,
+          "jointX": 59.8625,
+          "jointY": 72.0,
+          "order": 15,
+          "image": "frontleft/hand_l.png"
+        },
+        "backleft": {
+          "x": 30,
+          "y": 68,
+          "jointX": 35.6375,
+          "jointY": 72.0,
+          "order": 15,
+          "image": "backleft/hand_l.png"
         }
       }
     }

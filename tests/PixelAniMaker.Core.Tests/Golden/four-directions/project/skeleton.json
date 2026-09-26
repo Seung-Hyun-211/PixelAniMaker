@@ -1,0 +1,228 @@
+{
+  "width": 32,
+  "height": 40,
+  "parts": [
+    {
+      "name": "body",
+      "label": "body",
+      "views": {
+        "front": {
+          "x": 10,
+          "y": 16,
+          "jointX": 16,
+          "jointY": 24,
+          "order": 0,
+          "image": "front/body.png",
+          "layers": [
+            {
+              "name": "기본",
+              "image": "front/body.png",
+              "visible": true
+            },
+            {
+              "name": "옷",
+              "image": "front/body.layer1.png",
+              "visible": true
+            }
+          ]
+        },
+        "left": {
+          "x": 10,
+          "y": 16,
+          "jointX": 16,
+          "jointY": 24,
+          "order": 0,
+          "image": "left/body.png"
+        },
+        "back": {
+          "x": 10,
+          "y": 16,
+          "jointX": 16,
+          "jointY": 24,
+          "order": 3,
+          "image": "back/body.png"
+        }
+      }
+    },
+    {
+      "name": "head",
+      "label": "head",
+      "parent": "body",
+      "views": {
+        "front": {
+          "x": 9,
+          "y": 3,
+          "jointX": 16,
+          "jointY": 16,
+          "order": 1,
+          "image": "front/head.png"
+        },
+        "left": {
+          "x": 9,
+          "y": 3,
+          "jointX": 16,
+          "jointY": 16,
+          "order": 1,
+          "image": "left/head.png"
+        },
+        "right": {
+          "x": 9,
+          "y": 3,
+          "jointX": 16,
+          "jointY": 16,
+          "order": 1,
+          "image": "right/head.png"
+        },
+        "back": {
+          "x": 9,
+          "y": 3,
+          "jointX": 16,
+          "jointY": 16,
+          "order": 2,
+          "image": "back/head.png"
+        }
+      }
+    },
+    {
+      "name": "arm_r",
+      "label": "arm_r",
+      "parent": "body",
+      "views": {
+        "front": {
+          "x": 6,
+          "y": 17,
+          "jointX": 8,
+          "jointY": 18,
+          "order": 2,
+          "image": "front/arm_r.png",
+          "variants": [
+            {
+              "angle": 90,
+              "pivotX": 9,
+              "pivotY": 2,
+              "image": "front/arm_r@90.png"
+            }
+          ]
+        },
+        "left": {
+          "x": 6,
+          "y": 17,
+          "jointX": 8,
+          "jointY": 18,
+          "order": 2,
+          "image": "left/arm_r.png"
+        },
+        "back": {
+          "x": 6,
+          "y": 17,
+          "jointX": 8,
+          "jointY": 18,
+          "order": 1,
+          "image": "back/arm_r.png"
+        }
+      }
+    },
+    {
+      "name": "arm_l",
+      "label": "arm_l",
+      "parent": "body",
+      "views": {
+        "front": {
+          "x": 22,
+          "y": 17,
+          "jointX": 24,
+          "jointY": 18,
+          "order": 3,
+          "image": "front/arm_l.png",
+          "attachments": [
+            {
+              "name": "grip",
+              "x": 2,
+              "y": 9
+            }
+          ]
+        },
+        "left": {
+          "x": 22,
+          "y": 17,
+          "jointX": 24,
+          "jointY": 18,
+          "order": 3,
+          "image": "left/arm_l.png"
+        },
+        "back": {
+          "x": 22,
+          "y": 17,
+          "jointX": 24,
+          "jointY": 18,
+          "order": 0,
+          "image": "back/arm_l.png"
+        }
+      }
+    },
+    {
+      "name": "eye_r",
+      "label": "눈 R",
+      "parent": "head",
+      "views": {
+        "front": {
+          "x": 11,
+          "y": 9,
+          "jointX": 12.88,
+          "jointY": 11.32,
+          "order": 1,
+          "image": "front/eye_r.png"
+        },
+        "left": {
+          "x": 11,
+          "y": 9,
+          "jointX": 13.4,
+          "jointY": 11.32,
+          "order": 1,
+          "image": "left/eye_r.png"
+        },
+        "back": {
+          "x": 17,
+          "y": 9,
+          "jointX": 19.119999,
+          "jointY": 11.32,
+          "order": 2,
+          "image": "back/eye_r.png"
+        }
+      },
+      "detail": true
+    },
+    {
+      "name": "eye_l",
+      "label": "눈 L",
+      "parent": "head",
+      "views": {
+        "front": {
+          "x": 17,
+          "y": 9,
+          "jointX": 19.119999,
+          "jointY": 11.32,
+          "order": 1,
+          "image": "front/eye_l.png"
+        },
+        "left": {
+          "x": 10,
+          "y": 9,
+          "jointX": 12.36,
+          "jointY": 11.32,
+          "order": 1,
+          "image": "left/eye_l.png"
+        },
+        "back": {
+          "x": 11,
+          "y": 9,
+          "jointX": 12.88,
+          "jointY": 11.32,
+          "order": 2,
+          "image": "back/eye_l.png"
+        }
+      },
+      "detail": true
+    }
+  ]
+}

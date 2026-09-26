@@ -68,8 +68,7 @@ public sealed class VariantChange(AngleVariants variants, int angle, PartVariant
         if (before == after)
             return;
         var change = new VariantChange(variants, angle, before, after);
-        change.Redo();
-        history.Push(change);
+        history.Do(change);
     }
 
     /// <summary>Starting point for a new variant: the base image rotated to <paramref name="angle"/> degrees.</summary>

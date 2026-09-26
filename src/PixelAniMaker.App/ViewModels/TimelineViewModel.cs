@@ -1,3 +1,4 @@
+using PixelAniMaker.Core.Export;
 using System.Collections.ObjectModel;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -17,6 +18,9 @@ public sealed partial class FrameCellViewModel(int index) : ObservableObject
     [ObservableProperty] private bool _hasKey;
     [ObservableProperty] private bool _hasTouchup;
     [ObservableProperty] private bool _isCurrent;
+
+    /// <summary>"×2" and so on for a frame held longer than one tick, else "".</summary>
+    [ObservableProperty] private string _holdLabel = "";
 }
 
 /// <summary>Clip selection and settings, the frame bar and keyframe commands for the current direction.</summary>
@@ -35,7 +39,11 @@ public sealed partial class TimelineViewModel : Tool
         Title = "타임라인";
         CanClose = false;
 
-        animation.FramesUpdated += (_, _) => UpdateCells();
+        animation.FramesUpdated += (_, _) =>
+        {
+            UpdateCells();
+            OnPropertyChanged(nameof(EdgeHint));   // follows the baked frame
+        };
         animation.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(AnimationSession.CurrentClip) or nameof(AnimationSession.CurrentFrame)
@@ -71,12 +79,30 @@ public sealed partial class TimelineViewModel : Tool
         }
     }
 
+    /// <summary>How many ticks the current frame is shown (1 = one 1/fps step); applies to all directions.</summary>
+    public decimal? CurrentHold
+    {
+        get => Animation.CurrentClip is { } clip ? clip.Hold(Animation.CurrentFrame) : null;
+        set
+        {
+            if (value is { } ticks && Animation.CurrentClip is { } clip)
+                clip.SetHold(Animation.CurrentFrame, (int)ticks);
+        }
+    }
+
     public string KeyStatus =>
         Animation.CurrentClip is null ? ""
         : Session.TouchupMode ? $"프레임 손보기 — 이 프레임 {Touchup.CurrentOverrideCount}픽셀 수정됨"
-        : Animation.IsPoseUnsaved(Session.Direction) ? "포즈가 키와 다름 — K로 저장"
-        : Animation.CurrentKey is null ? "키 없음 (보간된 포즈)"
-        : "키 프레임";
+            : Animation.IsPoseUnsaved(Session.Direction) ? "포즈가 키와 다름 — K로 저장"
+            : Animation.CurrentKey is null ? "키 없음 (보간된 포즈)"
+            : "키 프레임";
+
+    /// <summary>Warns when the current frame's drawing reaches the canvas edge (it may be cut off in exports).</summary>
+    public string EdgeHint =>
+        Animation.GeneratedFrame(Session.Direction, Animation.CurrentFrame) is { } frame
+        && EdgeCheck.Touching(frame) is var sides and not CanvasSides.None
+            ? $"⚠ 캔버스 {EdgeCheck.SideNames(sides)} 끝에 닿음 (편집 → 캔버스 크기)"
+            : "";
 
     [RelayCommand] private void SelectFrame(int index) => Animation.CurrentFrame = index;
     [RelayCommand] private void PreviousFrame() => Animation.Step(-1);
@@ -99,8 +125,22 @@ public sealed partial class TimelineViewModel : Tool
     [RelayCommand] private void DeleteClip() => Animation.RemoveCurrentClip();
 
     /// <summary>Rebuilds the frame bar when the frame count changes, otherwise updates it in place.</summary>
+    /// <summary>Keys left past the last frame after shortening the clip (kept, not played).</summary>
+    public bool HasKeysPastEnd => Animation.CurrentClip?.KeysPastEnd.Count > 0;
+
+    public string KeysPastEndText => $"범위 밖 키 {Animation.CurrentClip?.KeysPastEnd.Count ?? 0}개";
+
+    [RelayCommand]
+    private void ClearKeysPastEnd()
+    {
+        if (Animation.CurrentClip is { } clip)
+            KeysPastEndChange.Apply(clip, Session.Character.History);
+    }
+
     private void UpdateCells()
     {
+        OnPropertyChanged(nameof(HasKeysPastEnd));
+        OnPropertyChanged(nameof(KeysPastEndText));
         int count = Animation.CurrentClip?.FrameCount ?? 0;
         while (Frames.Count > count)
             Frames.RemoveAt(Frames.Count - 1);
@@ -114,9 +154,12 @@ public sealed partial class TimelineViewModel : Tool
             cell.HasKey = clip?.KeyAt(Session.Direction, cell.Index) is not null;
             cell.HasTouchup = clip?.Touchups.Has(Session.Direction, cell.Index) ?? false;
             cell.IsCurrent = cell.Index == Animation.CurrentFrame;
+            cell.HoldLabel = clip?.Hold(cell.Index) is > 1 and var ticks ? $"×{ticks}" : "";
         }
         OnPropertyChanged(nameof(CurrentEasing));
+        OnPropertyChanged(nameof(CurrentHold));
         OnPropertyChanged(nameof(KeyStatus));
+        OnPropertyChanged(nameof(EdgeHint));
     }
 }
 

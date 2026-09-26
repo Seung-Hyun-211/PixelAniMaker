@@ -34,6 +34,10 @@ public static class ShortcutCatalog
         new("Direction.Left", "방향", "좌측면", "D2"),
         new("Direction.Right", "방향", "우측면", "D3"),
         new("Direction.Back", "방향", "후면", "D4"),
+        new("Direction.FrontLeft", "방향", "앞 반측면 (좌)", "D5"),
+        new("Direction.FrontRight", "방향", "앞 반측면 (우)", "D6"),
+        new("Direction.BackLeft", "방향", "뒤 반측면 (좌)", "D7"),
+        new("Direction.BackRight", "방향", "뒤 반측면 (우)", "D8"),
         new("ToggleGrid", "보기", "픽셀 격자", "Ctrl+OemQuotes"),
         new("ToggleDim", "보기", "다른 파츠 흐리게", "H"),
         new("TogglePose", "보기", "포즈 모드", "P"),
@@ -103,7 +107,8 @@ public sealed partial class ShortcutMap : ObservableObject
     public static string Display(KeyGesture? gesture) => gesture is null ? "" : gesture.ToString()
         .Replace("OemQuotes", "'").Replace("OemPlus", "=").Replace("OemMinus", "-")
         .Replace("OemComma", ",").Replace("OemPeriod", ".")
-        .Replace("D1", "1").Replace("D2", "2").Replace("D3", "3").Replace("D4", "4");
+        .Replace("D1", "1").Replace("D2", "2").Replace("D3", "3").Replace("D4", "4")
+        .Replace("D5", "5").Replace("D6", "6").Replace("D7", "7").Replace("D8", "8");
 
     private static KeyGesture? Parse(string text)
     {

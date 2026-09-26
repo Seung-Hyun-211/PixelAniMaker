@@ -6,11 +6,27 @@
   <Grid Margin="8" RowDefinitions="*,6,*">
     <ScrollViewer Grid.Row="2">
     <StackPanel Spacing="6" Margin="0,4,0,0">
-      <StackPanel Orientation="Horizontal" Spacing="6">
+      <TextBlock Text="{Binding Session.ActivePartBlockedReason}" FontSize="11" Foreground="#E0B060" TextWrapping="Wrap"
+                 IsVisible="{Binding Session.ActivePartBlockedReason, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <StackPanel Orientation="Horizontal" Spacing="6" IsEnabled="{Binding !Session.IsActivePartLocked}">
         <TextBlock Text="회전" VerticalAlignment="Center" />
         <NumericUpDown Value="{Binding Rotation}" Minimum="-180" Maximum="180" Increment="5"
                        FormatString="0.#" Width="120" />
         <TextBlock Text="°" VerticalAlignment="Center" />
+      </StackPanel>
+      <StackPanel Spacing="4" IsEnabled="{Binding !Session.IsActivePartLocked}"
+                  ToolTip.Tip="이 파츠가 돌아갈 수 있는 각도 (모든 방향 공통). 캔버스에서 돌리거나 회전 칸에 넣을 때 이 범위 끝에서 멈춥니다. 이미 저장한 키는 바뀌지 않습니다. 되돌리기가 되고, 프로젝트에 저장됩니다.">
+        <CheckBox Content="회전 범위 제한" IsChecked="{Binding HasLimit}" />
+        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasLimit}">
+          <TextBlock Text="최소" VerticalAlignment="Center" Width="32" />
+          <NumericUpDown Value="{Binding LimitMin}" Minimum="-180" Maximum="180" Increment="5" FormatString="0.#" Width="130" />
+          <TextBlock Text="°" VerticalAlignment="Center" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasLimit}">
+          <TextBlock Text="최대" VerticalAlignment="Center" Width="32" />
+          <NumericUpDown Value="{Binding LimitMax}" Minimum="-180" Maximum="180" Increment="5" FormatString="0.#" Width="130" />
+          <TextBlock Text="°" VerticalAlignment="Center" />
+        </StackPanel>
       </StackPanel>
       <StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="몸 전체 위치 (px). 점프·숨쉬기 등에 사용">
         <TextBlock Text="몸 X" VerticalAlignment="Center" />
@@ -18,8 +34,79 @@
         <TextBlock Text="Y" VerticalAlignment="Center" />
         <NumericUpDown Value="{Binding OffsetY}" Minimum="-64" Maximum="64" Increment="1" FormatString="0" Width="95" />
       </StackPanel>
-      <CheckBox Content="우측면 따로 그리기" IsChecked="{Binding OwnRight}" IsVisible="{Binding IsRightView}"
-                ToolTip.Tip="끄면 이 파츠의 우측면은 좌측면을 좌우 반전해 씁니다. 켜면 좌측면을 복사한 별도 이미지에 그립니다 (비대칭 디자인용). 다시 끄면 따로 그린 이미지는 버려집니다 (되돌리기 가능)." />
+      <StackPanel Spacing="4" IsEnabled="{Binding !Session.IsActivePartLocked}">
+        <TextBlock Text="그리는 순서 (이 방향)" FontSize="11" Foreground="#999999"
+                   ToolTip.Tip="겹치는 파츠 중 이 파츠를 앞이나 뒤에 그립니다. 이 방향 전체에 적용되고(동작의 모든 프레임), 세부 파츠(눈·가슴 볼륨)는 함께 옮겨집니다. 우측면처럼 반전되는 방향은 원래 방향의 순서를 바꿉니다. 되돌리기가 되고, 프로젝트에 저장됩니다." />
+        <CheckBox Content="아래 파츠도 함께 (상완 → 전완·손)" IsChecked="{Binding OrderWithChildren}" IsEnabled="{Binding CanReorder}"
+                  ToolTip.Tip="켜면 이 파츠에 달린 아래 파츠(뼈대의 자식)도 한 덩어리로 옮깁니다. 팔·다리 전체를 몸 앞뒤로 보낼 때. 이 방향 순서와 이 포즈 순서 모두에 적용됩니다." />
+        <StackPanel Orientation="Horizontal" Spacing="4" IsEnabled="{Binding CanReorder}">
+          <Button Content="맨 뒤" Command="{Binding MoveDrawOrderCommand}" CommandParameter="ToBack" IsEnabled="{Binding CanOrderBackward}" />
+          <Button Content="뒤로" Command="{Binding MoveDrawOrderCommand}" CommandParameter="Backward" IsEnabled="{Binding CanOrderBackward}" />
+          <Button Content="앞으로" Command="{Binding MoveDrawOrderCommand}" CommandParameter="Forward" IsEnabled="{Binding CanOrderForward}" />
+          <Button Content="맨 앞" Command="{Binding MoveDrawOrderCommand}" CommandParameter="ToFront" IsEnabled="{Binding CanOrderForward}" />
+        </StackPanel>
+        <TextBlock Text="{Binding DrawOrderText}" FontSize="11" TextWrapping="Wrap" />
+        <Expander Header="이 방향 순서 전체 (위가 앞)" Padding="4">
+          <ItemsControl ItemsSource="{Binding DrawOrderItems}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding}" FontSize="11" xml:space="preserve" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </Expander>
+        <TextBlock Text="이 포즈에서만 (K로 키에 저장)" FontSize="11" Foreground="#999999" Margin="0,4,0,0"
+                   ToolTip.Tip="지금 포즈에서만 이 파츠를 고른 파츠의 앞이나 뒤에 그립니다. 회전처럼 포즈의 일부라서 키(K)로 저장하고, 그 키부터 다음 키 전까지 적용됩니다 (순서는 섞이지 않고 바로 바뀜). 팔이 몸 앞뒤로 넘어가는 동작용." />
+        <StackPanel Orientation="Horizontal" Spacing="4" IsEnabled="{Binding CanReorder}">
+          <ComboBox ItemsSource="{Binding OrderAnchors}" SelectedIndex="{Binding OrderAnchorIndex}" Width="100" />
+          <Button Content="그 앞" Command="{Binding SetPoseOrderCommand}" CommandParameter="Front" />
+          <Button Content="그 뒤" Command="{Binding SetPoseOrderCommand}" CommandParameter="Behind" />
+          <Button Content="해제" Command="{Binding ClearPoseOrderCommand}" />
+        </StackPanel>
+        <TextBlock Text="{Binding PoseOrderText}" FontSize="11" TextWrapping="Wrap" />
+      </StackPanel>
+      <StackPanel Spacing="4" IsEnabled="{Binding !Session.IsActivePartLocked}"
+                  ToolTip.Tip="몸이 움직일 때 반 박자 늦게 따라오는 흔들림. 키는 바뀌지 않고, 애니메이션 미리보기와 내보내기에서 프레임을 만들 때 더해집니다. 변형형은 윗부분을 고정하고 아래가 출렁이며(가슴 볼륨), 회전형은 관절을 중심으로 늦게 기웁니다(머리카락·꼬리). 되돌리기가 되고, 프로젝트에 저장됩니다.">
+        <CheckBox Content="흔들림 (2차 모션)" IsChecked="{Binding HasSecondary}" />
+        <StackPanel Spacing="4" IsVisible="{Binding HasSecondary}" Margin="20,0,0,0">
+          <ComboBox ItemsSource="{Binding SecondaryModes}" SelectedIndex="{Binding SecondaryModeIndex}" Width="190" />
+          <WrapPanel ItemSpacing="4" LineSpacing="4">
+            <TextBlock Text="프리셋" VerticalAlignment="Center" />
+            <Button Content="가슴 볼륨" Command="{Binding ApplySecondaryPresetCommand}" CommandParameter="Bust" />
+            <Button Content="머리카락" Command="{Binding ApplySecondaryPresetCommand}" CommandParameter="Hair" />
+            <Button Content="천·꼬리" Command="{Binding ApplySecondaryPresetCommand}" CommandParameter="Cloth" />
+          </WrapPanel>
+          <StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="한 번 출렁이는 데 걸리는 프레임 수 (작을수록 탱탱)">
+            <TextBlock Text="주기" VerticalAlignment="Center" Width="48" />
+            <NumericUpDown Value="{Binding SecondaryPeriod}" Minimum="2" Maximum="12" Increment="1" FormatString="0.#" Width="130" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="흔들림이 잦아드는 빠르기 (0.1 = 오래 흔들림, 1 = 바로 멈춤)">
+            <TextBlock Text="감쇠" VerticalAlignment="Center" Width="48" />
+            <NumericUpDown Value="{Binding SecondaryDamping}" Minimum="0.1" Maximum="1" Increment="0.05" FormatString="0.##" Width="130" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="늦게 따라오는 정도에 곱하는 배율 (0 = 없음)">
+            <TextBlock Text="세기" VerticalAlignment="Center" Width="48" />
+            <NumericUpDown Value="{Binding SecondaryStrength}" Minimum="0" Maximum="2" Increment="0.1" FormatString="0.##" Width="130" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="변형형은 세로 px(가로는 절반), 회전형은 각도(°)">
+            <TextBlock Text="최대" VerticalAlignment="Center" Width="48" />
+            <NumericUpDown Value="{Binding SecondaryMax}" Minimum="0" Maximum="45" Increment="1" FormatString="0.#" Width="130" />
+          </StackPanel>
+        </StackPanel>
+      </StackPanel>
+      <StackPanel Spacing="4" IsVisible="{Binding IsMovablePart}" IsEnabled="{Binding !Session.IsActivePartLocked}"
+                  ToolTip.Tip="이 방향에서 세부 파츠(눈·가슴 볼륨)나 추가한 파츠의 위치 (관절, 캔버스 px). 방향마다 따로 정하고, 되돌리기가 됩니다. 추가한 파츠는 아래 마디가 함께 옮겨집니다.">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <TextBlock Text="위치 X" VerticalAlignment="Center" Width="48" />
+          <NumericUpDown Value="{Binding PositionX}" Increment="1" FormatString="0" Minimum="-512" Maximum="512" Width="130" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <TextBlock Text="위치 Y" VerticalAlignment="Center" Width="48" />
+          <NumericUpDown Value="{Binding PositionY}" Increment="1" FormatString="0" Minimum="-512" Maximum="512" Width="130" />
+        </StackPanel>
+      </StackPanel>
+      <CheckBox Content="반전 끊고 따로 그리기" IsChecked="{Binding OwnRight}" IsVisible="{Binding IsRightView}"
+                ToolTip.Tip="끄면 이 파츠는 반대 방향(우측면은 좌측면, 반측면 (우)는 반측면 (좌))을 좌우 반전해 씁니다. 켜면 그 그림을 복사한 별도 이미지에 그립니다 (비대칭 디자인용). 다시 끄면 따로 그린 이미지는 버려집니다 (되돌리기 가능)." />
       <TextBlock Text="{Binding VariantStatus}" FontSize="11" Foreground="#999999" TextWrapping="Wrap" />
       <StackPanel Orientation="Horizontal" Spacing="6">
         <Button Content="이 각도 이미지 만들기" Command="{Binding AddVariantCommand}"
@@ -73,8 +160,50 @@
       <Button Content="장착점 추가" Command="{Binding AddAttachmentCommand}"
               ToolTip.Tip="무기·이펙트 위치 등. 파츠를 따라 움직이고, 시트 JSON에 프레임마다 위치와 각도로 기록됩니다." />
       <StackPanel Orientation="Horizontal" Spacing="6">
-        <Button Content="이 파츠 0°" Command="{Binding ResetPartCommand}" />
+        <Button Content="이 파츠 0°" Command="{Binding ResetPartCommand}" IsEnabled="{Binding !Session.IsActivePartLocked}" />
         <Button Content="포즈 초기화" Command="{Binding ResetPoseCommand}" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <Button Content="눈 파츠 추가" Command="{Binding AddEyesCommand}" IsVisible="{Binding Session.CanAddEyes}"
+                ToolTip.Tip="머리에 붙는 눈 파츠(눈 R·눈 L)를 따로 만듭니다. 얼굴과 따로 그리고 바꿀 수 있고, 머리와 만나는 곳에는 선이 생기지 않습니다." />
+        <Button Content="눈 파츠 삭제" Command="{Binding RemoveEyesCommand}" IsVisible="{Binding Session.HasEyes}" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding Session.CanAddBust}"
+                  ToolTip.Tip="가슴에 붙는 가슴 볼륨 파츠를 만듭니다 (여성 캐릭터용). 쇄골부터 갈비뼈까지의 물방울 모양 시작 그림이 방향마다 생기고, 가슴과 만나는 곳에는 선이 생기지 않습니다. 크기를 고르세요.">
+        <TextBlock Text="가슴 볼륨 추가" VerticalAlignment="Center" />
+        <Button Content="소" Command="{Binding AddBustCommand}" CommandParameter="Small" />
+        <Button Content="중" Command="{Binding AddBustCommand}" CommandParameter="Medium" />
+        <Button Content="대" Command="{Binding AddBustCommand}" CommandParameter="Large" />
+      </StackPanel>
+      <Button Content="가슴 볼륨 삭제" Command="{Binding RemoveBustCommand}" IsVisible="{Binding Session.HasBust}" />
+      <TextBlock Text="파츠 추가 (고른 파츠에 붙음)" FontSize="11" Foreground="#999999" TextWrapping="Wrap" Margin="0,6,0,0"
+                 ToolTip.Tip="머리카락 가닥·꼬리·망토 자락·장신구를 지금 고른 파츠의 자식으로 추가합니다. 방향마다 부모의 주 색으로 간단한 시작 그림이 생기고, 그 위에 다시 그립니다. 마디가 여럿이면 마디마다 파츠가 생기고 흔들림(회전형)이 마디마다 늦게 따라갑니다. 되돌리기가 되고, 프로젝트에 저장됩니다." />
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <TextBlock Text="종류" VerticalAlignment="Center" Width="48" />
+        <ComboBox ItemsSource="{Binding CustomKinds}" SelectedIndex="{Binding CustomKindIndex}" Width="130" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6"
+                  ToolTip.Tip="부모 앞·뒤: 모든 방향에서 부모 바로 앞이나 뒤에 그립니다. 등 쪽: 정면·측면에서는 맨 뒤, 후면에서는 맨 앞 (망토, 꼬리, 뒷머리).">
+        <TextBlock Text="놓는 곳" VerticalAlignment="Center" Width="48" />
+        <ComboBox ItemsSource="{Binding CustomPlacements}" SelectedIndex="{Binding CustomPlacementIndex}" Width="130" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6" IsEnabled="{Binding CustomHasSegments}">
+        <TextBlock Text="마디" VerticalAlignment="Center" Width="48" />
+        <NumericUpDown Value="{Binding CustomSegments}" Minimum="1" Maximum="4" Increment="1" FormatString="0" Width="130" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="모든 마디를 합친 길이 (px). 장신구는 지름">
+        <TextBlock Text="길이" VerticalAlignment="Center" Width="48" />
+        <NumericUpDown Value="{Binding CustomLength}" Minimum="4" Maximum="512" Increment="1" FormatString="0" Width="130" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsCustomPart}"
+                  ToolTip.Tip="추가한 파츠의 표시 이름 (파일 이름은 그대로). 되돌리기가 되고, 프로젝트에 저장됩니다.">
+        <TextBox Text="{Binding CustomLabel}" Width="140" MaxLength="40" />
+        <Button Content="이름 바꾸기" Command="{Binding RenameCustomPartCommand}" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <Button Content="파츠 추가" Command="{Binding AddCustomPartCommand}" />
+        <Button Content="이 파츠 삭제" Command="{Binding RemoveCustomPartCommand}" IsVisible="{Binding IsCustomPart}"
+                ToolTip.Tip="추가한 파츠와 그 아래 마디를 지웁니다 (템플릿 파츠는 지울 수 없음). 되돌리기가 됩니다." />
       </StackPanel>
     </StackPanel>
     </ScrollViewer>
@@ -82,12 +211,19 @@
     <ListBox Grid.Row="0" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}">
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="vm:PartItem">
-          <TextBlock Text="{Binding Display}" xml:space="preserve" />
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <CheckBox IsChecked="{Binding Visible}" MinWidth="0" MinHeight="0" Height="22" Padding="0"
+                      ToolTip.Tip="캔버스에 보이기 (끄면 편집 캔버스에서만 숨김 — 미리보기·애니메이션·내보내기에는 그대로 나옵니다)" />
+            <ToggleButton IsChecked="{Binding Locked}" Content="잠금" FontSize="10" Padding="4,0" MinHeight="0" Height="18"
+                          VerticalAlignment="Center"
+                          ToolTip.Tip="잠그면 이 파츠에 그리기·회전·위치 옮기기가 막힙니다 (고르기는 됨). 저장되지 않는 편집 보조 기능입니다." />
+            <TextBlock Text="{Binding Display}" xml:space="preserve" VerticalAlignment="Center" />
+          </StackPanel>
         </DataTemplate>
       </ListBox.ItemTemplate>
       <ListBox.Styles>
         <Style Selector="ListBoxItem">
-          <Setter Property="Padding" Value="8,3" />
+          <Setter Property="Padding" Value="6,1" />
         </Style>
       </ListBox.Styles>
     </ListBox>

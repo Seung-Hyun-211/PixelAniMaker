@@ -36,7 +36,7 @@ public sealed class DockFactory(EditorSession session, AnimationSession animatio
         var right = Column("RightColumn", 0.26,
             Panel("RightTopDock", 0.36, Alignment.Right, new PreviewViewModel(session)),
             Panel("RightMiddleDock", 0.36, Alignment.Right, new AnimationPreviewViewModel(animation)),
-            Panel("RightBottomDock", 0.28, Alignment.Right, new PaletteViewModel(session)));
+            Panel("RightBottomDock", 0.28, Alignment.Right, new PaletteViewModel(session), new HistoryViewModel(session)));
 
         var main = Split("MainLayout", Orientation.Horizontal, left, center, right);
 
@@ -58,13 +58,14 @@ public sealed class DockFactory(EditorSession session, AnimationSession animatio
         base.InitLayout(layout);
     }
 
-    private ToolDock Panel(string id, double proportion, Alignment alignment, Tool tool) => new()
+    /// <summary>A tool area; several tools become tabs, the first one shown.</summary>
+    private ToolDock Panel(string id, double proportion, Alignment alignment, params Tool[] tools) => new()
     {
         Id = id,
         Proportion = proportion,
         Alignment = alignment,
-        VisibleDockables = CreateList<IDockable>(tool),
-        ActiveDockable = tool,
+        VisibleDockables = CreateList<IDockable>(tools),
+        ActiveDockable = tools[0],
     };
 
     private ProportionalDock Column(string id, double proportion, params IDockable[] children)

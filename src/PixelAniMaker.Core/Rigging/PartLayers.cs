@@ -21,7 +21,7 @@ public sealed class PartLayers
     public const string BaseName = "기본";
 
     private readonly List<PartLayer> _layers;
-    private readonly IndexedImage _flat;
+    private IndexedImage _flat;
     private (IndexedImage, int, bool)[] _flatSource = [];
 
     public PartLayers(IndexedImage baseImage)
@@ -43,17 +43,18 @@ public sealed class PartLayers
             if (_layers is [{ Visible: true } only])
                 return only.Image;
             var source = _layers.Select(l => (l.Image, l.Image.Version, l.Visible)).ToArray();
-            if (!source.SequenceEqual(_flatSource))
-            {
-                Flatten();
-                _flatSource = source;
-            }
+            if (_flat.Width != _layers[0].Image.Width || _flat.Height != _layers[0].Image.Height)
+                _flat = new IndexedImage(_layers[0].Image.Width, _layers[0].Image.Height);   // the layers were resized
+            else if (source.SequenceEqual(_flatSource))
+                return _flat;
+            Flatten();
+            _flatSource = source;
             return _flat;
         }
     }
 
     /// <summary>A blank layer the size of the others.</summary>
-    public PartLayer CreateLayer(string name) => new(name, new IndexedImage(_flat.Width, _flat.Height));
+    public PartLayer CreateLayer(string name) => new(name, new IndexedImage(_layers[0].Image.Width, _layers[0].Image.Height));
 
     /// <summary>"name", "name 2", "name 3" … not used by another layer.</summary>
     public string FreeName(string stem)

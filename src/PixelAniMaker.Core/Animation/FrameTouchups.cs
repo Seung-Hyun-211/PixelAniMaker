@@ -83,7 +83,6 @@ public sealed class TouchupChange(FrameTouchups touchups, Direction direction, i
         if (before.SameAs(after))
             return;
         var change = new TouchupChange(touchups, direction, frame, before, after);
-        change.Redo();
-        history.Push(change);
+        history.Do(change);
     }
 }

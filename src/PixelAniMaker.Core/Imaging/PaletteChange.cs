@@ -17,7 +17,6 @@ public sealed class PaletteChange(Palette palette, int index, Rgba before, Rgba 
         if (before == color)
             return;
         var change = new PaletteChange(palette, index, before, color);
-        change.Redo();
-        history.Push(change);
+        history.Do(change);
     }
 }

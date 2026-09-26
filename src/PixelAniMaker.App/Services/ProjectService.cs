@@ -34,16 +34,25 @@ public sealed partial class ProjectService : ObservableObject
 
     public string DocumentName => CurrentPath is null ? "제목 없음" : Path.GetFileNameWithoutExtension(CurrentPath);
 
-    public bool IsDirty => IsRecovered || _editor.Character.History.IsDirty || _animation.HasUnsavedClipChanges;
+    public bool IsDirty => IsRecovered || _editor.Character.History.IsDirty || _animation.HasUnsavedClipChanges
+                           || _editor.HasUnsavedSettings;
 
     /// <summary>Raised when the document is replaced (new, open) or saved — autosave copies are then obsolete.</summary>
     public event EventHandler? DocumentReset;
 
     /// <param name="jointDiscs">False starts from the plain mannequin without ball-joint circles.</param>
-    public void New(bool jointDiscs = true)
+    /// <param name="clips">
+    /// The clips to start with (default: every default clip). An empty list gives one blank clip,
+    /// since the timeline always keeps at least one.
+    /// </param>
+    /// <param name="threeQuarter">Start with the template's 3/4 views (saved as format 2).</param>
+    /// <param name="heads">Body type: the mannequin's head count (see <see cref="TemplateLoader.BodyTypes"/>).</param>
+    public void New(bool jointDiscs = true, IReadOnlyList<AnimationClip>? clips = null, bool threeQuarter = false,
+        double heads = TemplateLoader.ChibiHeads)
     {
-        _editor.LoadCharacter(TemplateLoader.LoadChibi96(jointDiscs));
-        _animation.SetClips(TemplateLoader.LoadDefaultAnimations());
+        _editor.LoadCharacter(TemplateLoader.LoadMannequin(heads, jointDiscs, threeQuarter));
+        clips ??= TemplateLoader.LoadDefaultAnimations(threeQuarter, heads);
+        _animation.SetClips(clips.Count > 0 ? clips : [new AnimationClip(Localizer.T("새 동작"), 8)]);
         CurrentPath = null;
         IsRecovered = false;
         DocumentReset?.Invoke(this, EventArgs.Empty);
@@ -72,6 +81,7 @@ public sealed partial class ProjectService : ObservableObject
     {
         WriteCopy(path);
         _editor.Character.History.MarkSaved();
+        _editor.MarkSettingsSaved();
         _animation.MarkSaved();
         CurrentPath = path;
         IsRecovered = false;
@@ -103,13 +113,32 @@ public sealed partial class ProjectService : ObservableObject
     /// <summary>Sheet PNG of the current clip or of all clips, plus a .json description when enabled.</summary>
     public void ExportSheet(string path, bool allClips)
     {
-        var clips = allClips ? _animation.Clips.ToList() : _animation.CurrentClip is { } c ? [c] : [];
-        if (clips.Count == 0)
-            throw new InvalidOperationException("내보낼 동작이 없습니다.");
-        var sheet = SpriteSheet.Build(_editor.Character, clips, _editor.Compositor);
+        var sheet = SpriteSheet.Build(_editor.Character, ClipsToExport(allClips), _editor.Compositor, ExportDirections);
         File.WriteAllBytes(path, AvaloniaImageCodec.Instance.EncodePng(sheet.Image));
         if (Settings.WriteSheetMetadata)
             File.WriteAllText(Path.ChangeExtension(path, ".json"), sheet.MetadataJson());
+    }
+
+    /// <summary>
+    /// One PNG per frame of the current clip or of all clips, next to <paramref name="path"/>; its file name
+    /// (without extension) starts every frame's name. Returns the number of files written.
+    /// </summary>
+    public int ExportFrames(string path, bool allClips)
+    {
+        var files = FrameFiles.Build(_editor.Character, ClipsToExport(allClips), _editor.Compositor,
+            Path.GetFileNameWithoutExtension(path), ExportDirections);
+        string folder = Path.GetDirectoryName(Path.GetFullPath(path))!;
+        foreach (var file in files)
+            File.WriteAllBytes(Path.Combine(folder, file.FileName), AvaloniaImageCodec.Instance.EncodePng(file.Image));
+        return files.Count;
+    }
+
+    private List<AnimationClip> ClipsToExport(bool allClips)
+    {
+        var clips = allClips ? _animation.Clips.ToList() : _animation.CurrentClip is { } c ? [c] : [];
+        if (clips.Count == 0)
+            throw new InvalidOperationException("내보낼 동작이 없습니다.");
+        return clips;
     }
 
     /// <summary>The animation clips of another project file.</summary>
@@ -137,8 +166,15 @@ public sealed partial class ProjectService : ObservableObject
         if (_animation.CurrentClip is not { } clip)
             throw new InvalidOperationException("내보낼 동작이 없습니다.");
         using var stream = File.Create(path);
-        AnimationGif.Write(stream, _editor.Character, clip, _editor.Compositor, Settings.GifScale);
+        AnimationGif.Write(stream, _editor.Character, clip, _editor.Compositor, Settings.GifScale, ExportDirections);
     }
+
+    /// <summary>A warning when exported frames of the current clip or all clips touch the canvas edge (null when none).</summary>
+    public string? EdgeWarning(bool allClips) =>
+        EdgeCheck.Summary(EdgeCheck.Find(_editor.Character, ClipsToExport(allClips), _editor.Compositor, ExportDirections));
+
+    /// <summary>Rows of exported sheets and GIFs: the classic four, or eight with 3/4 views when the setting is on.</summary>
+    private IReadOnlyList<Core.Rigging.Direction> ExportDirections => _editor.Character.ExportDirections(Settings.ExportThreeQuarter);
 
     partial void OnCurrentPathChanged(string? value) => OnPropertyChanged(nameof(DocumentName));
 

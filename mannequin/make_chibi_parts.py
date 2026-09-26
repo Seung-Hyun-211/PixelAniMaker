@@ -104,6 +104,89 @@ def side_limbs(dx):
     }
 
 
+# ---------------------------------------------------------------- 3/4 (facing screen-left)
+# The body turns about its centre line: x positions on the near side move in to K_NEAR of their front
+# distance, on the far side to K_FAR; limb radii stay. Front-left: the far side is screen-left (_r);
+# back-left is seen from behind, so the far side is screen-right (_r there too).
+K_NEAR, K_FAR = 0.85, 0.6
+C3 = CX - 0.5                          # design centre line (mirror x -> 2*CX-1-x)
+
+
+def turn(x, far_left):
+    k = (K_FAR if x < C3 else K_NEAR) if far_left else (K_NEAR if x < C3 else K_FAR)
+    return C3 + (x - C3) * k
+
+
+def head_three_quarter(f, cx, back=False):
+    """3/4 head: each row halfway between the front head (no ears) and the side head, so the chin and
+    cheek move towards the face side and the skull stays round; one ear, drawn over it like the side."""
+    def spans(draw):
+        g = Figure(2 * CX, 256, 1.0)
+        draw(g)
+        img = g.render()
+        rows = {}
+        for y in range(img.height):
+            xs = [x for x in range(img.width) if img.getpixel((x, y))[3]]
+            if xs:
+                rows[y] = (min(xs), max(xs) + 1)
+        return rows
+    front = spans(lambda g: head_front(g, cx, ears=False))
+    side = spans(lambda g: head_side(g, cx + 0.5))
+    bottom = max(front)
+    ys = [y for y in sorted(set(front) | set(side)) if y <= bottom]
+    blend = {y: tuple((a + b) / 2 for a, b in zip(front.get(y, side.get(y)), side.get(y, front.get(y)))) for y in ys}
+    smooth = {}
+    for y in ys:       # 3-row average keeps the outline smooth
+        near = [blend[k] for k in (y - 1, y, y + 1) if k in blend]
+        smooth[y] = (sum(v[0] for v in near) / len(near), sum(v[1] for v in near) / len(near))
+    left = [(smooth[y][0], y) for y in ys]
+    right = [(smooth[y][1], y) for y in reversed(ys)]
+    f.smooth_poly(left + right)
+    # the near ear: from the front it sits behind the cheek (halfway between the front and side ear),
+    # from behind it is the left ear, halfway between its back-view and side-view places
+    ear = cx - 10.75 if back else cx + 18.25
+    f.ellipse((ear - 4.5, 36, ear + 4.5, 50))
+
+
+def view_three_quarter(back):
+    far_left = not back
+    t = lambda x: turn(x, far_left)
+    base = shift(ident, CX - 64)
+    left_side = lambda x: t(base(x))
+    right_side = lambda x: t(mirror(x + CX - 64))
+    toe = -3                           # feet point a little towards screen-left
+    limbs = {}
+    for side, s in ((("r", left_side), ("l", right_side)) if not back else (("l", left_side), ("r", right_side))):
+        for name, (joint, draw) in front_limbs(s).items():
+            if name == "foot":
+                joint = (joint[0] + toe, joint[1])
+                draw = (lambda s: lambda f: (f.poly([(s(47) + toe, 236), (s(62) + toe, 236), (s(64) + toe, 246), (s(62) + toe, 249),
+                                                      (s(46) + toe, 249), (s(44) + toe, 246)]),
+                                             disc(f, (s(55) + toe, 238), 4)))(s)
+            limbs[f"{name}_{side}"] = (joint, draw)
+    o = CX - 64
+    torso = {
+        "pelvis": ((C3, 130), lambda f: f.poly([(t(x + o), y) for x, y in [(45, 124), (82, 124), (85, 140), (75, 150), (64, 153), (52, 150), (42, 140)]])),
+        "waist": ((C3, 125), lambda f: f.poly([(t(x + o), y) for x, y in [(47, 110), (80, 110), (81, 126), (46, 126)]])),
+        "chest": ((C3, 111), lambda f: f.poly([(t(x + o) - (2 if x < 64 and not back else 0), y)
+                                                for x, y in [(44, 74), (83, 74), (85, 86), (81, 112), (46, 112), (42, 86)]])),
+        "head": ((64 + o, 74), lambda f: (f.capsule((64 + o, 62), 6, (64 + o, 76), 6), head_three_quarter(f, 63.5 + o, back=back))),
+    }
+    parts = {**torso, **limbs}
+    # back to front: far arm and leg behind the torso, the near arm in front
+    order = ([f"{p}_r" for p in ARMS] + [f"{p}_r" for p in LEGS] + [f"{p}_l" for p in LEGS] + TORSO
+             + [f"{p}_l" for p in ARMS])
+    return parts, order
+
+
+def view_front_left():
+    return view_three_quarter(back=False)
+
+
+def view_back_left():
+    return view_three_quarter(back=True)
+
+
 def with_side(limbs, side):
     return {f"{name}_{side}": v for name, v in limbs.items()}
 
@@ -134,7 +217,8 @@ def view_left():
     return parts, order
 
 
-VIEWS = {"front": view_front, "left": view_left, "back": view_back}
+VIEWS = {"front": view_front, "left": view_left, "back": view_back,
+         "frontleft": view_front_left, "backleft": view_back_left}
 
 
 # ---------------------------------------------------------------- output

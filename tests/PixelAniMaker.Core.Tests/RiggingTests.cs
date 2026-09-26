@@ -320,3 +320,25 @@ public class OutlineTests
         Assert.DoesNotContain(r.Indices, i => i == c.Palette.IndexOf(Ink));
     }
 }
+
+public class HiddenPartsTests
+{
+    [Fact]
+    public void Hidden_parts_are_left_out_and_everything_else_is_drawn_as_before()
+    {
+        var c = GoldenTests.Build().Character;
+        var compositor = new Compositor();
+        var arm = c.Find("arm_r")!;
+        short armOwner = (short)c.IndexOf(arm);
+
+        var all = compositor.Compose(c, Direction.Front);
+        Assert.Contains(armOwner, all.Owners);
+        Assert.Equal(all.Indices, compositor.Compose(c, Direction.Front, hidden: new HashSet<Part>()).Indices);
+
+        var without = compositor.Compose(c, Direction.Front, hidden: new HashSet<Part> { arm });
+        Assert.DoesNotContain(armOwner, without.Owners);
+        // pixels no hidden part covered keep their owner (the outline may change only next to the arm)
+        int kept = Enumerable.Range(0, all.Owners.Length).Count(i => all.Owners[i] != armOwner && all.Owners[i] == without.Owners[i]);
+        Assert.Equal(all.Owners.Count(o => o != armOwner), kept);
+    }
+}

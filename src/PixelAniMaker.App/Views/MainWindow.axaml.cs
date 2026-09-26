@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using PixelAniMaker.App.Services;
 using PixelAniMaker.App.ViewModels;
+using PixelAniMaker.Core.Rigging;
 
 namespace PixelAniMaker.App.Views;
 
@@ -171,14 +172,62 @@ public partial class MainWindow : Window, IFileDialogs
         };
     }
 
-    public async Task<IReadOnlyList<int>?> PickItemsAsync(string title, string message, IReadOnlyList<string> items, string okLabel)
+    public async Task<IReadOnlyList<int>?> PickItemsAsync(string title, string message, IReadOnlyList<string> items, string okLabel,
+        IReadOnlyList<bool>? ticked = null)
     {
-        var boxes = items.Select(i => new CheckBox { Content = i, IsChecked = true }).ToList();
+        var boxes = items.Select((item, i) => new CheckBox { Content = item, IsChecked = ticked?[i] ?? true }).ToList();
         var list = new ScrollViewer { MaxHeight = 360, Content = new StackPanel { Spacing = 2, Children = { } } };
         ((StackPanel)list.Content).Children.AddRange(boxes);
         if (await MessageDialog.ShowAsync(this, title, message, list, okLabel, "취소") != 0)
             return null;
         return Enumerable.Range(0, boxes.Count).Where(i => boxes[i].IsChecked == true).ToList();
+    }
+
+    public async Task<int?> PickOneAsync(string title, string message, IReadOnlyList<string> items, string okLabel, int selected = 0)
+    {
+        var buttons = items.Select((item, i) => new RadioButton { Content = item, GroupName = "pick", IsChecked = i == selected }).ToList();
+        var list = new StackPanel { Spacing = 2 };
+        list.Children.AddRange(buttons);
+        if (await MessageDialog.ShowAsync(this, title, message, list, okLabel, "취소") != 0)
+            return null;
+        return buttons.FindIndex(b => b.IsChecked == true) is var i and >= 0 ? i : null;
+    }
+
+    public async Task<CanvasMargins?> PickCanvasMarginsAsync(int width, int height)
+    {
+        NumericUpDown Field() => new() { Value = 0, Minimum = -512, Maximum = 512, Increment = 1, FormatString = "0", Width = 130 };
+        var (top, bottom, left, right) = (Field(), Field(), Field(), Field());
+        var size = new TextBlock { FontWeight = FontWeight.Bold };
+        CanvasMargins Margins() => new((int)(left.Value ?? 0), (int)(top.Value ?? 0), (int)(right.Value ?? 0), (int)(bottom.Value ?? 0));
+        void Show()
+        {
+            var m = Margins();
+            size.Text = $"{width}×{height}  →  {width + m.Left + m.Right}×{height + m.Top + m.Bottom}";
+        }
+        var grid = new Grid { ColumnDefinitions = new("Auto,Auto"), RowDefinitions = new("Auto,Auto,Auto,Auto"), RowSpacing = 6, ColumnSpacing = 10 };
+        foreach (var (row, label, field) in new[] { (0, "위", top), (1, "아래", bottom), (2, "왼쪽", left), (3, "오른쪽", right) })
+        {
+            var text = new TextBlock { Text = label, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center };
+            Grid.SetRow(text, row);
+            Grid.SetRow(field, row);
+            Grid.SetColumn(field, 1);
+            grid.Children.Add(text);
+            grid.Children.Add(field);
+            field.ValueChanged += (_, _) => Show();
+        }
+        var preset = new Button { Content = "기본 여백 (좌우 16 · 위 24 · 아래 8)" };
+        preset.Click += (_, _) =>
+        {
+            var d = CanvasMargins.Default;
+            (top.Value, bottom.Value, left.Value, right.Value) = (d.Top, d.Bottom, d.Left, d.Right);
+        };
+        Show();
+        var panel = new StackPanel { Spacing = 10, Children = { grid, preset, size } };
+        return await MessageDialog.ShowAsync(this, "캔버스 크기",
+                "캔버스 둘레에 더할 픽셀 수 (음수는 줄임). 캐릭터 그림은 그대로이고 캔버스 위 자리만 옮겨집니다. 잘리는 그림도 파츠 이미지에는 남습니다.",
+                panel, "바꾸기", "취소") == 0 && !Margins().IsZero
+            ? Margins()
+            : null;
     }
 
     public async Task<bool> ConfirmRecoveryAsync(string message) =>
