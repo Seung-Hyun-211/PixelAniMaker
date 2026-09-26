@@ -438,5 +438,13 @@
   "체형을 고르세요. 파츠 구성과 기본 동작은 모두 같습니다.": "Pick a body type. All of them have the same parts and default animations.",
   "다음": "Next",
   "{0}등신  (머리 {1}px · 키 {2}px)": "{0} heads tall  (head {1}px · height {2}px)",
-  "{0}등신  (머리 {1}px · 키 {2}px) · 치비, 손으로 그린 기본 마네킹": "{0} heads tall  (head {1}px · height {2}px) · chibi, the hand-drawn default mannequin"
+  "{0}등신  (머리 {1}px · 키 {2}px) · 치비, 손으로 그린 기본 마네킹": "{0} heads tall  (head {1}px · height {2}px) · chibi, the hand-drawn default mannequin",
+  "해상도 2배...": "Double resolution...",
+  "캔버스와 모든 그림을 가로·세로 2배로 키웁니다 (더 세밀하게 다시 그릴 때). 되돌리기가 됩니다.": "Doubles the canvas and every drawing in width and height (to redraw in more detail). Can be undone.",
+  "해상도 2배": "Double resolution",
+  "캔버스는 가로·세로 {0} px까지입니다 (지금 {1}×{2}).": "The canvas can be at most {0} px wide and high (now {1}×{2}).",
+  "캔버스와 모든 그림을 가로·세로 2배로 키웁니다 ({0}×{1} → {2}×{3}).\n관절·장착점·동작의 몸 이동·손본 픽셀도 함께 커지고, 되돌리기 한 번으로 돌아갑니다.": "Doubles the canvas and every drawing in width and height ({0}×{1} → {2}×{3}).\nJoints, attachment points, body moves in animations and touched-up pixels grow with them; one undo brings it all back.",
+  "그대로 키우기 (픽셀 하나 → 2×2, 모양 그대로)": "Plain (each pixel → 2×2, same shapes)",
+  "부드럽게 키우기 (Scale2x, 대각선 계단을 메움)": "Smooth (Scale2x, fills diagonal steps)",
+  "키우기": "Enlarge"
 }

@@ -5,14 +5,16 @@ using PixelAniMaker.Core.History;
 namespace PixelAniMaker.Core.Rigging;
 
 /// <summary>
-/// How far the drawing moved on the canvas after a resize: <paramref name="X"/> in normal directions,
-/// <paramref name="MirroredX"/> in mirrored ones (they flip the whole frame), <paramref name="Y"/> in all.
+/// How the drawing moved on the canvas after a resize: <paramref name="X"/> in normal directions,
+/// <paramref name="MirroredX"/> in mirrored ones (they flip the whole frame), <paramref name="Y"/> in all;
+/// with a <paramref name="scale"/> other than 1 (a resolution change) canvas positions are first multiplied by it.
 /// </summary>
-public sealed class CanvasShift(int x, int mirroredX, int y) : EventArgs
+public sealed class CanvasShift(int x, int mirroredX, int y, float scale = 1) : EventArgs
 {
     public int X { get; } = x;
     public int MirroredX { get; } = mirroredX;
     public int Y { get; } = y;
+    public float Scale { get; } = scale;
 
     public int XFor(Direction direction) => direction.IsMirrored() ? MirroredX : X;
 }

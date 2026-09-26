@@ -214,6 +214,10 @@ public sealed partial class EditorSession : ObservableObject
     public bool ResizeCanvas(CanvasMargins margins, IEnumerable<Core.Animation.AnimationClip> clips) =>
         CanvasResize.Apply(Character, clips, margins, Character.History);
 
+    /// <summary>Doubles the resolution of everything drawn (one undo step); false when the canvas would be too large.</summary>
+    public bool ScaleResolution(UpscaleMethod method, IEnumerable<Core.Animation.AnimationClip> clips) =>
+        ResolutionScale.Apply(Character, clips, method, Character.History);
+
     private void OnCanvasSizeChanged(object? sender, CanvasShift shift)
     {
         Reference.Shift(shift);

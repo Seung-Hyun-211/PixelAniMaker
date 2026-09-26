@@ -66,13 +66,15 @@ public sealed partial class ReferenceLayer : ObservableObject
         NotifyCurrentChanged();
     }
 
-    /// <summary>Moves every direction's picture with the drawing after a canvas resize.</summary>
+    /// <summary>Moves (and after a resolution change, scales) every direction's picture with the drawing.</summary>
     public void Shift(CanvasShift shift)
     {
+        var scale = (decimal)shift.Scale;
         foreach (var (direction, image) in _images)
         {
-            image.X += shift.XFor(direction);
-            image.Y += shift.Y;
+            image.X = image.X * scale + shift.XFor(direction);
+            image.Y = image.Y * scale + shift.Y;
+            image.Scale *= scale;
         }
     }
 

@@ -514,6 +514,25 @@ public sealed partial class MainWindowViewModel : ObservableObject
             await Dialogs.ShowErrorAsync($"캔버스는 가로·세로 {Core.Rigging.CanvasResize.MinSize}~{Core.Rigging.CanvasResize.MaxSize} px이어야 합니다.");
     }
 
+    /// <summary>Asks how to enlarge the pixels and doubles the resolution (undoable).</summary>
+    [RelayCommand]
+    private async Task ScaleResolution()
+    {
+        if (Dialogs is null)
+            return;
+        var (w, h) = (Session.Character.Width, Session.Character.Height);
+        if (!Core.Rigging.ResolutionScale.CanApply(Session.Character))
+        {
+            await Dialogs.ShowErrorAsync($"캔버스는 가로·세로 {Core.Rigging.CanvasResize.MaxSize} px까지입니다 (지금 {w}×{h}).");
+            return;
+        }
+        if (await Dialogs.PickOneAsync("해상도 2배", $"캔버스와 모든 그림을 가로·세로 2배로 키웁니다 ({w}×{h} → {w * 2}×{h * 2}).\n" +
+                "관절·장착점·동작의 몸 이동·손본 픽셀도 함께 커지고, 되돌리기 한 번으로 돌아갑니다.",
+                ["그대로 키우기 (픽셀 하나 → 2×2, 모양 그대로)", "부드럽게 키우기 (Scale2x, 대각선 계단을 메움)"], "키우기") is not { } choice)
+            return;
+        Session.ScaleResolution(choice == 0 ? Core.Rigging.UpscaleMethod.Nearest : Core.Rigging.UpscaleMethod.Smooth, Animation.Clips);
+    }
+
     /// <summary>Removes the 3/4 views and the clips' 3/4 keys and touch-ups (undoable).</summary>
     [RelayCommand]
     private void RemoveThreeQuarter() => Session.RemoveThreeQuarter(Animation.Clips);

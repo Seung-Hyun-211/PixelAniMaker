@@ -28,6 +28,13 @@ public sealed class PartView(IndexedImage image, Vector2 restPosition, Vector2 r
         RestPivot += delta;
     }
 
+    /// <summary>Places the image and its joint (see <see cref="ResolutionScale"/>).</summary>
+    internal void SetRest(Vector2 position, Vector2 pivot)
+    {
+        RestPosition = position;
+        RestPivot = pivot;
+    }
+
     /// <summary>Joint position inside the image.</summary>
     public Vector2 LocalPivot => RestPivot - RestPosition;
 
