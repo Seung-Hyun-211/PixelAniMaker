@@ -56,6 +56,7 @@ internal sealed class DrawInteraction(EditorSession session) : ICanvasInteractio
         _drawing = session.CanDrawActivePart;
         if (!_drawing)
             return;
+        session.BeginStroke();                      // may grow the part: map the point afterwards
         var (x, y) = ToLocal(input.Point);
         session.ActiveDocument.BeginStroke(session.ActiveTool, x, y, input.Secondary);
     }
@@ -71,7 +72,10 @@ internal sealed class DrawInteraction(EditorSession session) : ICanvasInteractio
     public void End()
     {
         if (_drawing)
+        {
             session.ActiveDocument.EndStroke();
+            session.EndStroke();
+        }
         _drawing = false;
     }
 
