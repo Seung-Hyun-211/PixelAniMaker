@@ -417,8 +417,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
 
         var result = Core.Animation.ClipImport.Import(picked.Select(i => clips[i]), Animation.Clips.Select(c => c.Name), Session.Character);
-        if (Core.Rigging.GunPart.Has(Session.Character))
-            Core.Rigging.GunHold.FitUnrecorded(Session.Character, result.Clips);   // gun poses: hands on this body's gun
+        Core.Rigging.WeaponHold.FitUnrecorded(Session.Character, result.Clips);   // weapon poses: hands on this body's gun or sword
         foreach (var clip in result.Clips)
             Animation.AddClip(clip);
         if (result.UnknownParts.Count > 0)

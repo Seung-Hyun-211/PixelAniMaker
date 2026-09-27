@@ -604,8 +604,27 @@ public sealed partial class EditorSession : ObservableObject
 
     public void RemoveGun() => GunPart.Remove(Character);
 
-    /// <summary>Refits every gun pose of the project's clips to this body (stock, grip, handguard), undoable; false when nothing changed.</summary>
-    public bool FitGunHold() => GunHold.Apply(Character, ClipsProvider?.Invoke() ?? [], Character.History);
+    public bool HasSword => SwordPart.Has(Character);
+
+    public bool CanAddSword => SwordPart.CanAdd(Character);
+
+    /// <summary>Puts a sword in the right hand and makes room on the canvas for swings (one undo step), and selects it.</summary>
+    public void AddSword(SwordKind kind)
+    {
+        SwordPart.Add(Character, kind, ClipsProvider?.Invoke());
+        if (Character.Find(SwordPart.Name) is { } sword)
+            ActivePart = sword;
+    }
+
+    public void RemoveSword() => SwordPart.Remove(Character);
+
+    public bool HasWeapon => HasGun || HasSword;
+
+    /// <summary>
+    /// Refits every weapon pose of the project's clips to this body (a gun's stock, grip and handguard; a two-handed
+    /// sword's second hand), undoable; false when nothing changed.
+    /// </summary>
+    public bool FitWeaponHold() => WeaponHold.Apply(Character, ClipsProvider?.Invoke() ?? [], Character.History);
 
     /// <summary>Adds a part (all its links) under the active part (undoable) and selects its first link to draw on.</summary>
     public void AddCustomPart(CustomPartOptions options)
@@ -647,6 +666,9 @@ public sealed partial class EditorSession : ObservableObject
         OnPropertyChanged(nameof(CanAddBust));
         OnPropertyChanged(nameof(HasGun));
         OnPropertyChanged(nameof(CanAddGun));
+        OnPropertyChanged(nameof(HasSword));
+        OnPropertyChanged(nameof(CanAddSword));
+        OnPropertyChanged(nameof(HasWeapon));
     }
 
     private void OnPartsChanged(object? sender, EventArgs e)
