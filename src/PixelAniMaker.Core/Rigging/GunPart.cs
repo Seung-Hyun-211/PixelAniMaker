@@ -27,7 +27,8 @@ public static class GunPart
 
     /// <summary>
     /// Adds the gun and widens the canvas on both sides by <see cref="Room"/> (an aimed gun reaches well past the arms),
-    /// as one undo step. <paramref name="clips"/> are the project's clips, whose frame touch-ups move with the canvas.
+    /// then fits the gun poses of <paramref name="clips"/> (the project's clips) to the body and grows the canvas further
+    /// where one of their frames still reaches an edge — all one undo step.
     /// </summary>
     public static void Add(Character character, GunKind kind, IEnumerable<Animation.AnimationClip>? clips = null)
     {
@@ -36,9 +37,12 @@ public static class GunPart
         var hand = character.Find(HandName)!;
         int room = Room(character, kind);
         var history = character.History;
+        var list = clips?.ToList() ?? [];
         history.BeginGroup("총 추가");
-        CanvasResize.Apply(character, clips ?? [], new CanvasMargins(room, 0, room, 0), history);
+        CanvasResize.Apply(character, list, new CanvasMargins(room, 0, room, 0), history);
         OptionalParts.Add(character, "총 추가", [(Create(character, hand, kind), hand)]);
+        WeaponHold.Apply(character, list, history);                      // clips that already aim a gun
+        Export.CanvasFit.GrowToFit(character, list, history);            // every clip, the gun included, stays on the canvas
         history.EndGroup();
     }
 
@@ -49,11 +53,7 @@ public static class GunPart
     public static void Remove(Character character) => OptionalParts.Remove(character, "총 삭제", Name);
 
     /// <summary>The body's height at rest (front view), which sets the gun's size.</summary>
-    public static int BodyHeight(Character character)
-    {
-        var ys = character.Parts.SelectMany(p => p.View(Direction.Front).DrawnPixels()).Select(p => p.Y).ToList();
-        return ys.Count == 0 ? character.Height : ys.Max() - ys.Min() + 1;
-    }
+    public static int BodyHeight(Character character) => HeldItem.BodyHeight(character);
 
     private static Part Create(Character character, Part hand, GunKind kind)
     {
@@ -61,41 +61,9 @@ public static class GunPart
         int dark = palette.GetOrAdd(new Rgba(46, 48, 56)), mid = palette.GetOrAdd(new Rgba(82, 86, 96)),
             light = palette.GetOrAdd(new Rgba(132, 138, 150)), furniture = palette.GetOrAdd(new Rgba(62, 58, 52));
         var (profile, points) = Profile(kind, BodyHeight(character), dark, mid, light, furniture);
-        var down = TurnMuzzleDown(profile);
-        Vector2 Down(Vector2 p) => new(p.Y, profile.Width - p.X);   // a point of the profile after turning
-        var gripDown = Down(points[0]);
-
-        var views = new Dictionary<Direction, PartView>();
-        foreach (var direction in character.StoredDirections)
-        {
-            var handView = hand.View(direction);
-            var pixels = handView.DrawnPixels().ToList();
-            // grip point: middle of the hand across, a little below its middle along it
-            var pivot = pixels.Count == 0 ? handView.RestPivot
-                : new Vector2((float)pixels.Average(p => p.X + 0.5), pixels.Min(p => p.Y) + 0.55f * (pixels.Max(p => p.Y) - pixels.Min(p => p.Y) + 1));
-            bool behind = direction is Direction.Back or Direction.BackLeft;
-            var image = behind ? Mirror(down) : down;
-            var local = behind ? new Vector2(image.Width - gripDown.X, gripDown.Y) : gripDown;
-            var position = new Vector2(MathF.Round(pivot.X - local.X), MathF.Round(pivot.Y - local.Y));
-            var view = new PartView(image, position, position + local, Order(character, direction));
-            // where the gun meets the body (see GunHold): the stock's butt, the support hand, the magazine
-            foreach (var (name, point) in new[] { (GunHold.Butt, points[1]), (GunHold.Guard, points[2]), (GunHold.Magazine, points[3]) })
-            {
-                var p = Down(point);
-                view.Attachments.Set(name, behind ? new Vector2(image.Width - p.X, p.Y) : p);
-            }
-            views[direction] = view;
-        }
-        return new Part(Name, kind == GunKind.Rifle ? "소총" : "권총", views) { IsCustom = true };
-    }
-
-    /// <summary>Over the chest (and the right forearm) in front and side views, behind everything from the back.</summary>
-    private static int Order(Character character, Direction direction)
-    {
-        int Of(string part) => character.Find(part)?.View(direction).DrawOrder ?? 0;
-        return direction is Direction.Back or Direction.BackLeft
-            ? character.Parts.Min(p => p.View(direction).DrawOrder) - 1
-            : Math.Max(Of("chest"), Of("forearm_r"));
+        // where the gun meets the body (see GunHold): the stock's butt, the support hand, the magazine
+        return HeldItem.Create(character, hand, Name, kind == GunKind.Rifle ? "소총" : "권총", profile, points[0],
+            [(GunHold.Butt, points[1]), (GunHold.Guard, points[2]), (GunHold.Magazine, points[3])]);
     }
 
     /// <summary>
@@ -159,24 +127,5 @@ public static class GunPart
             new Vector2((barrelEnd + guardEnd) / 2f + 0.5f, top + body + 0.5f),                   // under the handguard
             new Vector2(magX + drop / 3f + body / 2f + 0.5f, top + body + 0.6f * drop + 0.5f),    // magazine
         ]);
-    }
-
-    /// <summary>A quarter turn anticlockwise on screen: the muzzle (left) ends up at the bottom, the top of the gun forward.</summary>
-    private static IndexedImage TurnMuzzleDown(IndexedImage src)
-    {
-        var dst = new IndexedImage(src.Height, src.Width);
-        for (int y = 0; y < src.Height; y++)
-            for (int x = 0; x < src.Width; x++)
-                dst.Set(y, src.Width - 1 - x, src[x, y]);
-        return dst;
-    }
-
-    private static IndexedImage Mirror(IndexedImage src)
-    {
-        var dst = new IndexedImage(src.Width, src.Height);
-        for (int y = 0; y < src.Height; y++)
-            for (int x = 0; x < src.Width; x++)
-                dst.Set(src.Width - 1 - x, y, src[x, y]);
-        return dst;
     }
 }

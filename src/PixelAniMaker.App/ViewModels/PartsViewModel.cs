@@ -257,8 +257,15 @@ public sealed partial class PartsViewModel : Tool
     [RelayCommand]
     private void RemoveGun() => Session.RemoveGun();
 
+    /// <summary>Parameter: "Sword", "Greatsword", "Katana" or "Dagger".</summary>
     [RelayCommand]
-    private void FitGunHold() => Session.FitGunHold();
+    private void AddSword(string kind) => Session.AddSword(Enum.Parse<SwordKind>(kind));
+
+    [RelayCommand]
+    private void RemoveSword() => Session.RemoveSword();
+
+    [RelayCommand]
+    private void FitWeaponHold() => Session.FitWeaponHold();
 
     /// <summary>Choices for <see cref="CustomKindIndex"/>, in <see cref="CustomPartKind"/> order.</summary>
     public IReadOnlyList<string> CustomKinds { get; } = ["머리카락 가닥", "꼬리", "망토 자락", "장신구"];

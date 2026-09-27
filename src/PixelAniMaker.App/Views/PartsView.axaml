@@ -182,11 +182,18 @@
         <Button Content="소총" Command="{Binding AddGunCommand}" CommandParameter="Rifle" />
         <Button Content="권총" Command="{Binding AddGunCommand}" CommandParameter="Pistol" />
       </StackPanel>
-      <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding Session.HasGun}">
-        <Button Content="총 잡는 자세 맞추기" Command="{Binding FitGunHoldCommand}"
-                ToolTip.Tip="총을 돌리는 모든 동작 키에서, 총이 겨누는 방향은 그대로 두고 팔을 이 캐릭터의 몸에 맞춥니다: 개머리판은 오른쪽 어깨(총구를 높이 든 자세는 오른쪽 허리), 오른손은 손잡이, 왼손은 총열 덮개(탄창 쪽으로 가던 손은 탄창). 권총은 두 손으로 손잡이를 쥡니다. 기본 동작을 가져올 때는 저절로 맞춥니다. 팔 길이를 바꾼 뒤에 다시 누르세요. 되돌리기가 됩니다." />
-        <Button Content="총 삭제" Command="{Binding RemoveGunCommand}" />
+      <Button Content="총 삭제" Command="{Binding RemoveGunCommand}" IsVisible="{Binding Session.HasGun}" />
+      <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding Session.CanAddSword}"
+                  ToolTip.Tip="오른손에 검을 쥐여 줍니다 (손 R의 자식, 추가 파츠라 다시 그리거나 옮기거나 지울 수 있음). 가만히 있으면 칼끝이 아래를 향하고, 파일 → 기본 동작 가져오기의 검 동작(한손: 검 · …, 양손: 양손검 · …)이 휘두르게 합니다. 양손검과 도는 왼손이 손잡이 끝을 쥡니다. 휘두른 칼이 들어가도록 캔버스 좌우와 위를 넓힙니다.">
+        <TextBlock Text="검 추가" VerticalAlignment="Center" />
+        <Button Content="한손검" Command="{Binding AddSwordCommand}" CommandParameter="Sword" />
+        <Button Content="양손검" Command="{Binding AddSwordCommand}" CommandParameter="Greatsword" />
+        <Button Content="도" Command="{Binding AddSwordCommand}" CommandParameter="Katana" />
+        <Button Content="단검" Command="{Binding AddSwordCommand}" CommandParameter="Dagger" />
       </StackPanel>
+      <Button Content="검 삭제" Command="{Binding RemoveSwordCommand}" IsVisible="{Binding Session.HasSword}" />
+      <Button Content="무기 잡는 자세 맞추기" Command="{Binding FitWeaponHoldCommand}" IsVisible="{Binding Session.HasWeapon}"
+              ToolTip.Tip="무기를 돌리는 모든 동작 키에서, 무기가 향하는 방향은 그대로 두고 팔을 이 캐릭터의 몸에 맞춥니다. 총: 개머리판은 오른쪽 어깨(총구를 높이 든 자세는 오른쪽 허리), 오른손은 손잡이, 왼손은 총열 덮개(탄창 쪽으로 가던 손은 탄창), 권총은 두 손으로 손잡이. 양손검·도: 왼손을 손잡이 끝에. 기본 동작을 가져올 때는 저절로 맞춥니다. 팔 길이를 바꾼 뒤에 다시 누르세요. 되돌리기가 됩니다." />
       <TextBlock Text="파츠 추가 (고른 파츠에 붙음)" FontSize="11" Foreground="#999999" TextWrapping="Wrap" Margin="0,6,0,0"
                  ToolTip.Tip="머리카락 가닥·꼬리·망토 자락·장신구를 지금 고른 파츠의 자식으로 추가합니다. 방향마다 부모의 주 색으로 간단한 시작 그림이 생기고, 그 위에 다시 그립니다. 마디가 여럿이면 마디마다 파츠가 생기고 흔들림(회전형)이 마디마다 늦게 따라갑니다. 되돌리기가 되고, 프로젝트에 저장됩니다." />
       <StackPanel Orientation="Horizontal" Spacing="6">
