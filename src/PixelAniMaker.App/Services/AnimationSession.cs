@@ -44,6 +44,7 @@ public sealed partial class AnimationSession : ObservableObject
             CurrentClip is { } clip && SecondaryMotion.HasAny(editor.Character)
                 ? SecondaryMotion.Solve(editor.Character, clip, d)[Math.Clamp(CurrentFrame, 0, clip.FrameCount - 1)]
                 : null;
+        editor.ClipsProvider = () => Clips;
         editor.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(EditorSession.Direction))

@@ -41,6 +41,7 @@ public static class ShortcutCatalog
         new("ToggleGrid", "보기", "픽셀 격자", "Ctrl+OemQuotes"),
         new("ToggleDim", "보기", "다른 파츠 흐리게", "H"),
         new("TogglePose", "보기", "포즈 모드", "P"),
+        new("ToggleSkeleton", "보기", "뼈대 편집", "J"),
         new("ZoomIn", "보기", "확대", "Ctrl+OemPlus"),
         new("ZoomOut", "보기", "축소", "Ctrl+OemMinus"),
         new("SaveKey", "애니메이션", "키 저장", "K"),

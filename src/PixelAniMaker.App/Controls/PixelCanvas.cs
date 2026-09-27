@@ -35,6 +35,7 @@ public sealed class PixelCanvas : SessionControl
     private static readonly IPen BonePen = new Pen(new SolidColorBrush(Color.FromArgb(160, 255, 200, 60)), 2);
     private static readonly IBrush JointBrush = new SolidColorBrush(Color.FromRgb(255, 200, 60));
     private static readonly IBrush ActiveJointBrush = new SolidColorBrush(Color.FromRgb(77, 163, 255));
+    private static readonly IPen JointHandlePen = new Pen(Brushes.White, 1.5);
 
     private Point _origin;          // screen position of the canvas's top-left corner
     private bool _placed;
@@ -105,6 +106,8 @@ public sealed class PixelCanvas : SessionControl
             ZoomAround(_zoomAnchor ?? new Point(Bounds.Width / 2, Bounds.Height / 2), _lastZoom);
             _lastZoom = s.Zoom;
         }
+        else if (propertyName == nameof(EditorSession.SkeletonEdit))
+            InvalidateVisual();   // joints are drawn as handles while editing the skeleton
     }
 
     // ------------------------------------------------------------------ layout
@@ -300,7 +303,10 @@ public sealed class PixelCanvas : SessionControl
         foreach (var (part, t) in s.Transforms)
         {
             var brush = part == s.ActivePart ? ActiveJointBrush : JointBrush;
-            context.DrawEllipse(brush, null, SourceToScreen(t.Pivot), 4, 4);
+            if (s.SkeletonEdit)
+                context.DrawEllipse(brush, JointHandlePen, SourceToScreen(t.Pivot), 5, 5);   // grab to move the joint
+            else
+                context.DrawEllipse(brush, null, SourceToScreen(t.Pivot), 4, 4);
         }
     }
 
@@ -323,7 +329,7 @@ public sealed class PixelCanvas : SessionControl
         }
         else if (props.IsLeftButtonPressed || props.IsRightButtonPressed)
         {
-            _interaction = s.PoseMode ? new PoseInteraction(s)
+            _interaction = s.PoseMode ? s.SkeletonEdit ? new SkeletonInteraction(s) : new PoseInteraction(s)
                 : s.TouchupMode && Touchup is { } touchup ? new TouchupInteraction(s, touchup)
                 : new DrawInteraction(s);
             _interaction.Begin(Input(point.Position, e, props.IsRightButtonPressed));

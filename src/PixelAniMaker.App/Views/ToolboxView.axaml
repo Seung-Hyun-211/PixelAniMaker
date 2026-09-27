@@ -68,9 +68,23 @@
         <NumericUpDown Value="{Binding Session.ShadingWidth}" Minimum="1" Maximum="3" Increment="1" FormatString="0" Width="110" />
       </StackPanel>
     </StackPanel>
+    <CheckBox Content="관절 부드럽게" IsChecked="{Binding Session.SmoothJoints}"
+              ToolTip.Tip="관절을 굽히면 파츠가 통째로 꺾이는 대신 관절 둘레(반경)에 걸쳐 휘어집니다. 부모와 자식이 관절에서 중간 각도로 만나, 굽힌 바깥쪽 틈과 이음새 선이 사라집니다. 남는 틈은 가까운 파츠 색으로 채웁니다. 색은 섞지 않습니다(팔레트 색만). 미리보기·애니메이션·내보내기에 반영되고 프로젝트에 저장됩니다." />
+    <StackPanel Orientation="Horizontal" Spacing="8" Margin="24,0,0,0" IsVisible="{Binding Session.SmoothJoints}">
+      <TextBlock Text="반경" VerticalAlignment="Center" />
+      <NumericUpDown Value="{Binding Session.JointRadius}" Minimum="1" Maximum="24" Increment="1" FormatString="0" Width="110"
+                     ToolTip.Tip="관절에서 몇 px까지 휘어짐이 퍼지는지. 팔다리 굵기 정도가 알맞습니다." />
+    </StackPanel>
     <ToggleButton IsChecked="{Binding Session.PoseMode}" HorizontalAlignment="Stretch">
       <TextBlock Text="{Binding Shortcuts.Texts[TogglePose], StringFormat='포즈 모드 ({0})'}" />
     </ToggleButton>
+    <CheckBox IsChecked="{Binding Session.SkeletonEdit}"
+              ToolTip.Tip="포즈 모드에서 파츠를 끌면 돌리는 대신 옮깁니다 (아래 파츠도 함께: 상완 → 전완·손). 관절 점을 끌면 그림은 두고 회전 중심만 옮깁니다. Alt = 고른 파츠, Shift = 가로·세로로만. 방향마다 따로 정하고, 끌기 한 번이 되돌리기 한 번입니다.">
+      <TextBlock Text="{Binding Shortcuts.Texts[ToggleSkeleton], StringFormat='뼈대 편집 ({0})'}" />
+    </CheckBox>
+    <CheckBox Content="좌우 짝도 함께 (L·R)" IsChecked="{Binding Session.SkeletonMirror}" Margin="24,0,0,0"
+              IsVisible="{Binding Session.SkeletonEdit}"
+              ToolTip.Tip="L·R 짝 파츠를 같이 옮깁니다. 정면·후면에서는 몸 중심선에 대해 반대로(어깨를 좁히면 양쪽이 함께 안으로), 옆·반측면에서는 같은 방향으로 옮깁니다." />
     <TextBlock Text="참고 이미지" FontSize="11" Foreground="#999999" />
     <TextBlock Text="보기 → 참고 이미지 불러오기 (방향마다 따로)" FontSize="12" Foreground="#999999" TextWrapping="Wrap"
                IsVisible="{Binding !Session.Reference.HasImage}" />

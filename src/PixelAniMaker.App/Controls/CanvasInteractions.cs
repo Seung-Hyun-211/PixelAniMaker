@@ -84,6 +84,75 @@ internal sealed class DrawInteraction(EditorSession session) : ICanvasInteractio
 }
 
 /// <summary>
+/// Skeleton editing (pose mode + 뼈대 편집): a drag that starts on a joint dot moves only that joint; one that
+/// starts on a part moves the part with the parts under it (Alt: the selected part). Shift keeps the move
+/// horizontal or vertical. The move follows the mouse in whatever pose is shown and lands on whole pixels; the
+/// whole drag is one undo step. Locked and hidden parts are left alone.
+/// </summary>
+internal sealed class SkeletonInteraction(EditorSession session) : ICanvasInteraction
+{
+    private Part? _part;
+    private SkeletonHandle _handle;
+    private Vector2 _start, _applied;
+    private PoseData _pose = PoseData.Rest;
+
+    public void Begin(CanvasInput input)
+    {
+        var (part, handle) = Pick(input);
+        if (part is null)
+            return;
+        session.ActivePart = part;
+        if (session.IsLocked(part))
+            return;
+        _part = part;
+        _handle = handle;
+        _start = input.Point;
+        _applied = Vector2.Zero;
+        _pose = session.CurrentPose.Snapshot();
+        session.Character.History.BeginGroup(handle == SkeletonHandle.Joint ? "관절 옮기기" : "뼈대 옮기기");
+    }
+
+    public void Move(CanvasInput input)
+    {
+        if (_part is null)
+            return;
+        var drag = input.Point - _start;
+        if (input.Snap)
+            drag = MathF.Abs(drag.X) >= MathF.Abs(drag.Y) ? new Vector2(drag.X, 0) : new Vector2(0, drag.Y);
+        var rest = SkeletonEdit.ToRest(session.Character, _part, session.Direction, _pose, drag);
+        var target = new Vector2(MathF.Round(rest.X), MathF.Round(rest.Y));
+        if (target == _applied)
+            return;
+        SkeletonEdit.Apply(session.Character, _part, session.Direction, target - _applied, _handle, session.SkeletonMirror);
+        _applied = target;
+    }
+
+    public void End()
+    {
+        if (_part is not null)
+            session.Character.History.EndGroup();
+        _part = null;
+    }
+
+    /// <summary>The nearest joint dot within reach of the cursor, else the part under it (or the selected one).</summary>
+    private (Part?, SkeletonHandle) Pick(CanvasInput input)
+    {
+        float reach = 5f / Math.Max(1, session.Zoom) + 0.5f;   // the dots are drawn 4 screen pixels wide
+        var joint = session.Transforms
+            .Where(kv => !session.IsHidden(kv.Key))
+            .Select(kv => (Part: kv.Key, Distance: Vector2.Distance(kv.Value.Pivot, input.Point)))
+            .Where(j => j.Distance <= reach)
+            .OrderBy(j => j.Part == session.ActivePart ? 0 : 1).ThenBy(j => j.Distance)
+            .FirstOrDefault();
+        if (!input.UseActivePart && joint.Part is not null)
+            return (joint.Part, SkeletonHandle.Joint);
+        short owner = session.SourceComposite.OwnerAt((int)MathF.Floor(input.Point.X), (int)MathF.Floor(input.Point.Y));
+        var part = input.UseActivePart || owner == CompositeResult.NoPart ? session.ActivePart : session.Character.Parts[owner];
+        return (part, SkeletonHandle.Part);
+    }
+}
+
+/// <summary>
 /// Picks the part under the cursor and rotates it around its joint while dragging. With Alt, or when
 /// nothing is under the cursor, rotates the selected part (for parts hidden behind others).
 /// Shift snaps to 15°. The whole drag is one undo step. A locked part is selected but not rotated, and

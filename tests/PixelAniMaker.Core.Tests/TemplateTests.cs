@@ -41,7 +41,10 @@ public class TemplateTests
     public void Default_animations_have_3_4_tracks_that_new_projects_can_leave_out()
     {
         var clips = AnimationJson.Parse(File.ReadAllText(Path.Combine(Templates(), "chibi96", "animations.json")));
-        Assert.Equal(6, clips.Count);
+        // the six base clips first, then the added ones named "category · variant"
+        Assert.Equal(["대기", "걷기", "달리기", "점프", "공격", "피격"], clips.Take(6).Select(c => c.Name));
+        Assert.All(clips.Skip(6), c => Assert.Contains(" · ", c.Name));
+        Assert.Equal(clips.Count, clips.Select(c => c.Name).Distinct().Count());
         Assert.All(clips, c =>
         {
             Assert.NotEmpty(c.Keys(Direction.FrontLeft));
