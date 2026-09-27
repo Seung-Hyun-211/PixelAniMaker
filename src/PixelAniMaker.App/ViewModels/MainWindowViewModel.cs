@@ -420,6 +420,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Core.Rigging.WeaponHold.FitUnrecorded(Session.Character, result.Clips);   // weapon poses: hands on this body's gun or sword
         foreach (var clip in result.Clips)
             Animation.AddClip(clip);
+        // a gun or sword swung by the new clips may reach past the canvas: grow it there (undoable)
+        if (Core.Rigging.GunPart.Has(Session.Character) || Core.Rigging.SwordPart.Has(Session.Character))
+            Core.Export.CanvasFit.GrowToFit(Session.Character, result.Clips, Session.Character.History);
         if (result.UnknownParts.Count > 0)
             await Dialogs.ShowErrorAsync("이 캐릭터에 없는 파츠의 회전은 무시됩니다: " + string.Join(", ", result.UnknownParts));
         if (result.DroppedThreeQuarter)
