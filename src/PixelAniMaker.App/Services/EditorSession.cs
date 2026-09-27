@@ -32,6 +32,12 @@ public sealed partial class EditorSession : ObservableObject
     [ObservableProperty] private ToolItem _currentTool = ToolCatalog.Pencil;
     [ObservableProperty] private bool _poseMode;
 
+    /// <summary>A pose-mode variant: drags move parts and joints (the skeleton itself) instead of turning them.</summary>
+    [ObservableProperty] private bool _skeletonEdit;
+
+    /// <summary>Skeleton edits also move the left/right counterpart (mirrored in the front and back views).</summary>
+    [ObservableProperty] private bool _skeletonMirror = true;
+
     /// <summary>Front/back views: strokes are mirrored across the body's centre line (onto the _l/_r counterpart).</summary>
     [ObservableProperty] private bool _symmetric;
 
@@ -142,6 +148,27 @@ public sealed partial class EditorSession : ObservableObject
         }
     }
 
+    /// <summary>Smooth joints on composites: bent joints bend over a radius instead of breaking (no gap, no seam line).</summary>
+    public bool SmoothJoints
+    {
+        get => Character.JointBlend.Enabled;
+        set
+        {
+            Character.JointBlend.Enabled = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public decimal JointRadius
+    {
+        get => Character.JointBlend.Radius;
+        set
+        {
+            Character.JointBlend.Radius = (int)value;
+            OnPropertyChanged();
+        }
+    }
+
     public WriteableBitmap PreviewBitmap(Direction direction) => _previewBitmaps[direction];
 
     /// <summary>Shared compositor (keeps the rotation caches warm for the canvas and animation frames).</summary>
@@ -168,6 +195,7 @@ public sealed partial class EditorSession : ObservableObject
             Character.Palette.Changed -= OnContentChanged;
             Character.Outline.Changed -= OnSettingsChanged;
             Character.Shading.Changed -= OnSettingsChanged;
+            Character.JointBlend.Changed -= OnSettingsChanged;
             Character.PoseChanged -= OnPoseChanged;
             Character.PartsChanged -= OnPartsChanged;
             Character.DirectionsChanged -= OnDirectionsChanged;
@@ -178,6 +206,7 @@ public sealed partial class EditorSession : ObservableObject
         character.Palette.Changed += OnContentChanged;
         character.Outline.Changed += OnSettingsChanged;
         character.Shading.Changed += OnSettingsChanged;
+        character.JointBlend.Changed += OnSettingsChanged;
         HasUnsavedSettings = false;
         character.PoseChanged += OnPoseChanged;
         character.PartsChanged += OnPartsChanged;
@@ -194,6 +223,8 @@ public sealed partial class EditorSession : ObservableObject
         OnPropertyChanged(nameof(SecondaryInExport));
         OnPropertyChanged(nameof(ShadingFromRight));
         OnPropertyChanged(nameof(ShadingWidth));
+        OnPropertyChanged(nameof(SmoothJoints));
+        OnPropertyChanged(nameof(JointRadius));
         RaiseOptionalPartsChanged();
         ActivePart = character.Find("chest") ?? character.Root;
         OnDirectionsChanged(this, EventArgs.Empty);   // the new character may not have the current (3/4) direction
@@ -470,7 +501,15 @@ public sealed partial class EditorSession : ObservableObject
     {
         if (value)
             TouchupMode = false;
+        else
+            SkeletonEdit = false;
         Refresh();
+    }
+
+    partial void OnSkeletonEditChanged(bool value)
+    {
+        if (value)
+            PoseMode = true;   // the skeleton is drawn and picked in pose mode
     }
 
     partial void OnTouchupModeChanged(bool value)
@@ -548,6 +587,26 @@ public sealed partial class EditorSession : ObservableObject
 
     public void RemoveBust() => BustPart.Remove(Character);
 
+    public bool HasGun => GunPart.Has(Character);
+
+    public bool CanAddGun => GunPart.CanAdd(Character);
+
+    /// <summary>The project's clips, whose touch-ups move when adding a gun widens the canvas (set by the app).</summary>
+    public Func<IEnumerable<Core.Animation.AnimationClip>>? ClipsProvider { get; set; }
+
+    /// <summary>Puts a gun in the right hand and widens the canvas for it (one undo step), and selects it.</summary>
+    public void AddGun(GunKind kind)
+    {
+        GunPart.Add(Character, kind, ClipsProvider?.Invoke());
+        if (Character.Find(GunPart.Name) is { } gun)
+            ActivePart = gun;
+    }
+
+    public void RemoveGun() => GunPart.Remove(Character);
+
+    /// <summary>Refits every gun pose of the project's clips to this body (stock, grip, handguard), undoable; false when nothing changed.</summary>
+    public bool FitGunHold() => GunHold.Apply(Character, ClipsProvider?.Invoke() ?? [], Character.History);
+
     /// <summary>Adds a part (all its links) under the active part (undoable) and selects its first link to draw on.</summary>
     public void AddCustomPart(CustomPartOptions options)
     {
@@ -586,6 +645,8 @@ public sealed partial class EditorSession : ObservableObject
         OnPropertyChanged(nameof(CanAddEyes));
         OnPropertyChanged(nameof(HasBust));
         OnPropertyChanged(nameof(CanAddBust));
+        OnPropertyChanged(nameof(HasGun));
+        OnPropertyChanged(nameof(CanAddGun));
     }
 
     private void OnPartsChanged(object? sender, EventArgs e)

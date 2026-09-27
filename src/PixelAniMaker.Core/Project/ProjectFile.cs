@@ -41,11 +41,16 @@ public static class ProjectFile
     /// <summary>Automatic shading; written only while it is on (older versions ignore it).</summary>
     private sealed record ShadingSpec(bool Enabled, string Light, int Width);
 
+    /// <summary>Smooth joints; written only while they are on (older versions ignore it).</summary>
+    private sealed record JointBlendSpec(bool Enabled, int Radius);
+
     private sealed record ProjectSpec(int FormatVersion, List<string> Palette, OutlineSpec Outline,
         [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         ShadingSpec? Shading = null,
         [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
-        bool? SecondaryInExport = null);
+        bool? SecondaryInExport = null,
+        [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+        JointBlendSpec? JointBlend = null);
 
     private static readonly JsonSerializerOptions Json = new()
     {
@@ -64,7 +69,8 @@ public static class ProjectFile
         Write(zip, ProjectEntry, JsonSerializer.Serialize(new ProjectSpec(VersionFor(project), palette,
             new OutlineSpec(c.Outline.Enabled, c.Outline.OutlineIndex, c.Outline.InnerIndex),
             c.Shading.Enabled ? new ShadingSpec(true, c.Shading.Light.ToString(), c.Shading.Width) : null,
-            c.SecondaryInExport ? null : false), Json));
+            c.SecondaryInExport ? null : false,
+            c.JointBlend.Enabled ? new JointBlendSpec(true, c.JointBlend.Radius) : null), Json));
         Write(zip, SkeletonEntry, CharacterSpec.From(c).ToJson());
         Write(zip, AnimationsEntry, AnimationJson.Serialize(project.Clips));
 
@@ -102,6 +108,11 @@ public static class ProjectFile
             character.Shading.Light = Enum.TryParse<LightFrom>(shading.Light, ignoreCase: true, out var light) ? light : LightFrom.TopLeft;
             character.Shading.Width = shading.Width;
             character.Shading.Enabled = shading.Enabled;
+        }
+        if (project.JointBlend is { } blend)
+        {
+            character.JointBlend.Radius = blend.Radius;
+            character.JointBlend.Enabled = blend.Enabled;
         }
 
         var clips = zip.GetEntry(AnimationsEntry) is null ? [] : AnimationJson.Parse(Read(zip, AnimationsEntry));

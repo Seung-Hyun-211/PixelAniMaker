@@ -27,17 +27,24 @@ public sealed record BodyProportions
     public static double MinHeads => Table[0].Heads;
     public static double MaxHeads => Table[^1].Heads;
 
-    private BodyProportions(double heads, int headPixels, ProportionRow row)
+    private BodyProportions(double heads, int headPixels, ProportionRow row, BodyShape shape, BodyShapeFactors factors)
     {
         Heads = heads;
         HeadPixels = headPixels;
         Neck = row.Neck;
         Torso = row.Torso;
         Legs = row.Legs;
+        Shape = shape;
+        _f = factors;
     }
 
+    private readonly BodyShapeFactors _f;
+
     /// <param name="headPixels">Head height in pixels; null uses the table's size for that head count.</param>
-    public static BodyProportions For(double heads, int? headPixels = null)
+    /// <param name="shape">Build: scales widths and thicknesses only, so lengths (and the default clips) stay put.</param>
+    /// <param name="factors">Factors of your own instead of the <paramref name="shape"/>'s (a custom build).</param>
+    public static BodyProportions For(double heads, int? headPixels = null, BodyShape shape = BodyShape.Standard,
+        BodyShapeFactors? factors = null)
     {
         if (heads < MinHeads || heads > MaxHeads)
             throw new ArgumentOutOfRangeException(nameof(heads), heads, $"Supported: {MinHeads}–{MaxHeads} heads.");
@@ -45,8 +52,10 @@ public sealed record BodyProportions
         int px = headPixels ?? row.HeadPixels;
         if (px < 8)
             throw new ArgumentOutOfRangeException(nameof(headPixels), px, "A head needs at least 8 pixels.");
-        return new BodyProportions(heads, px, row);
+        return new BodyProportions(heads, px, row, shape, factors ?? BodyShapeFactors.For(shape));
     }
+
+    public BodyShape Shape { get; }
 
     private static ProportionRow Interpolate(double heads)
     {
@@ -87,15 +96,15 @@ public sealed record BodyProportions
     public double FootWidth => 0.34;
 
     // across (half widths from the centre line) and depth
-    public double HeadHalfWidth => 0.54 - 0.02 * Heads;
+    public double HeadHalfWidth => (0.54 - 0.02 * Heads) * _f.Head;
     public double HeadDepthScale => 1 - 0.015 * (Heads - 4);
-    public double ShoulderHalf => 0.2 + 0.08 * Heads;
-    public double WaistHalf => 0.55 * ShoulderHalf + 0.05;
-    public double HipHalf => 0.3 + 0.055 * Heads;
-    public double ChestDepth => 0.3 + 0.025 * Heads;
+    public double ShoulderHalf => (0.2 + 0.08 * Heads) * _f.Shoulder;
+    public double WaistHalf => (0.55 * (0.2 + 0.08 * Heads) + 0.05) * _f.Waist;
+    public double HipHalf => (0.3 + 0.055 * Heads) * _f.Hip;
+    public double ChestDepth => (0.3 + 0.025 * Heads) * _f.Depth;
 
     // thicknesses (radii)
-    public double NeckRadius => 0.07 + 0.016 * Heads;
-    public double ThighRadius => 0.12 + 0.028 * Heads;
-    public double UpperArmRadius => 0.08 + 0.018 * Heads;
+    public double NeckRadius => (0.07 + 0.016 * Heads) * _f.Neck;
+    public double ThighRadius => (0.12 + 0.028 * Heads) * _f.Leg;
+    public double UpperArmRadius => (0.08 + 0.018 * Heads) * _f.Arm;
 }

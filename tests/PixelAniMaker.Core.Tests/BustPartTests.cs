@@ -71,7 +71,7 @@ public class BustPartTests
     }
 
     [Fact]
-    public void The_side_view_is_a_teardrop_from_the_collarbone_to_the_ribs_that_grows_with_the_size()
+    public void The_side_view_runs_straight_down_then_drops_like_a_teardrop_that_grows_with_the_size()
     {
         int Max(BustSize size)
         {
@@ -84,15 +84,17 @@ public class BustPartTests
         var body = Body();
         BustPart.Add(body, BustSize.Medium);
         var depth = SideDepth(body);
-        int top = depth.Keys.Min(), bottom = depth.Keys.Max(), span = bottom - top;
-        Assert.InRange(top, 40 + 0.10 * 44 - 1, 40 + 0.10 * 44 + 2);                   // collarbone
-        Assert.InRange(bottom, 40 + 0.86 * 44 - 2, 40 + 0.86 * 44 + 1);                // lower ribs
+        double collarbone = 40 + 0.10 * 44, ribs = 40 + 0.86 * 44, length = ribs - collarbone;
+        int top = depth.Keys.Min(), bottom = depth.Keys.Max();
+        // straight down from the collarbone first: nothing stands out until the drop starts
+        Assert.InRange(top, collarbone + BustPart.SideFlat * length - 1, collarbone + BustPart.SideFlat * length + 2);
+        Assert.InRange(bottom, ribs - 2, ribs + 1);                                     // lower ribs
         int fullest = depth.MaxBy(kv => kv.Value).Key;
-        Assert.InRange((fullest - top) / (double)span, 0.55, 0.8);
-        int upper = depth.Where(kv => kv.Key < top + span / 2).Sum(kv => kv.Value);
-        int lower = depth.Where(kv => kv.Key >= top + span / 2).Sum(kv => kv.Value);
-        Assert.True(upper < lower, $"upper {upper} lower {lower}");
-        Assert.True(depth[top] <= 2 && depth[bottom] <= 3);                            // thin at both ends
+        Assert.InRange((fullest - collarbone) / length, 0.62, 0.86);                     // fullest low
+        // it eases out: no step of more than 2 px between rows on the way down to the fullest point
+        for (int y = top + 1; y <= fullest; y++)
+            Assert.True(depth.GetValueOrDefault(y) - depth.GetValueOrDefault(y - 1) <= 2, $"step at {y}");
+        Assert.True(depth[top] <= 1 && depth[bottom] <= 3);                             // thin at both ends
     }
 
     [Fact]

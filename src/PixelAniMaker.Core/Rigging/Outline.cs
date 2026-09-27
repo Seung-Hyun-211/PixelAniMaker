@@ -48,7 +48,8 @@ public sealed class OutlineSettings
 internal static class OutlinePass
 {
     /// <param name="rank">Draw rank per owner (index into Character.Parts); higher is in front.</param>
-    public static void Apply(CompositeResult c, int[] rank, OutlineSettings settings)
+    /// <param name="joined">Owners (a, b) meeting at pixel (x, y) where no inner line is drawn (smooth joints).</param>
+    public static void Apply(CompositeResult c, int[] rank, OutlineSettings settings, Func<short, short, int, int, bool>? joined = null)
     {
         var owners = c.Owners;
         var result = (ushort[])c.Indices.Clone();
@@ -65,7 +66,7 @@ internal static class OutlinePass
                     short n = c.OwnerAt(nx, ny);
                     if (n == CompositeResult.NoPart)
                         silhouette = true;
-                    else if (rank[n] < rank[o])
+                    else if (rank[n] < rank[o] && !(joined?.Invoke(o, n, x, y) ?? false))
                         overlap = true;
                 }
                 if (silhouette)

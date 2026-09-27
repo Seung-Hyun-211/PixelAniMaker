@@ -56,18 +56,40 @@ public sealed class Compositor
         var transforms = character.ComputeTransforms(direction, pose);
         var order = DrawOrderEdit.WithOverrides(character, character.DrawOrder(direction).ToList(),
             pose ?? character.PoseFor(direction).Snapshot()).ToList();
-        foreach (var part in order.Where(p => hidden is null || !hidden.Contains(p)))
+        var drawn = order.Where(p => hidden is null || !hidden.Contains(p)).ToList();
+        // smooth joints: every drawn part bends at its joint; a parent with no other child bends half of it
+        var joints = new List<JointBend>();
+        var bendOf = new Dictionary<Part, JointBend>();
+        var tipOf = new Dictionary<Part, JointBend>();
+        if (character.JointBlend.Enabled)
+            foreach (var part in drawn.Where(p => p is { Parent: not null, IsDetail: false } && drawn.Contains(p.Parent!)))
+            {
+                var parent = part.Parent!;
+                bool shared = parent.Children.Count(c => !c.IsDetail) == 1;
+                float relative = (float)(Pose.Normalize((transforms[part].Angle - transforms[parent].Angle) * 180 / Math.PI) * Math.PI / 180);
+                var bend = new JointBend((short)character.IndexOf(part), (short)character.IndexOf(parent), transforms[part].Pivot,
+                    relative, character.JointBlend.Radius, shared);
+                joints.Add(bend);
+                bendOf[part] = bend;
+                if (shared)
+                    tipOf[parent] = bend;
+            }
+        foreach (var part in drawn)
         {
             var t = transforms[part];
             var image = secondary is not null && secondary.Offsets.TryGetValue(part, out var off) ? Warp(t, off) : t.Image;
-            Draw(result, t, image, (short)character.IndexOf(part));
+            Draw(result, t, image, (short)character.IndexOf(part),
+                bendOf.TryGetValue(part, out var own) ? own : null, tipOf.TryGetValue(part, out var tip) ? tip : null);
         }
+        if (joints.Count > 0)
+            JointBlendPass.FillGaps(result, joints);
         var rank = RankByOwner(character, order);
         if (character.Shading.Enabled)
             ShadingPass.Apply(result, rank, character.Palette, character.Shading, character.Outline.Enabled,
                 character.Outline.Enabled ? new HashSet<int> { character.Outline.OutlineIndex, character.Outline.InnerIndex } : []);
         if (character.Outline.Enabled)
-            OutlinePass.Apply(result, rank, character.Outline);
+            OutlinePass.Apply(result, rank, character.Outline,
+                joints.Count > 0 ? (a, b, x, y) => JointBlendPass.Joined(joints, a, b, x, y) : null);
         if (direction.IsMirrored())
             result.MirrorHorizontally();
         return result;
@@ -105,18 +127,48 @@ public sealed class Compositor
         return dst;
     }
 
-    private void Draw(CompositeResult target, PartTransform t, IndexedImage image, short owner)
+    /// <param name="bend">
+    /// A smooth joint: around the joint the image turns less, as much as the parent at the joint itself (see
+    /// <see cref="JointBend.Remaining"/>). Turning about the joint keeps the distance to it, so this inverts exactly.
+    /// </param>
+    /// <param name="tip">The shared bend of this part's only child: pixels around that joint turn towards the child.</param>
+    private void Draw(CompositeResult target, PartTransform t, IndexedImage image, short owner, JointBend? bend = null, JointBend? tip = null)
     {
-        var (x0, y0, x1, y1) = CanvasBounds(t, image, target.Width, target.Height);
+        bool bent = bend is { } b && MathF.Abs(b.Bend) > 0.01f;
+        bool tipped = tip is { } tb && MathF.Abs(tb.Bend) > 0.01f;
+        var (x0, y0, x1, y1) = CanvasBounds(t, image, target.Width, target.Height, bent ? bend!.Value.Bend * (bend.Value.Shared ? 0.5f : 1) : 0);
+        if (tipped)
+        {
+            // pixels around the child's joint stay within the radius of it
+            var j = tip!.Value.Joint;
+            int r = (int)MathF.Ceiling(tip.Value.Radius) + 1;
+            (x0, y0) = (Math.Max(0, Math.Min(x0, (int)j.X - r)), Math.Max(0, Math.Min(y0, (int)j.Y - r)));
+            (x1, y1) = (Math.Min(target.Width, Math.Max(x1, (int)j.X + r + 1)), Math.Min(target.Height, Math.Max(y1, (int)j.Y + r + 1)));
+        }
         // warped images are made per frame: sample them without filling the cache
-        Func<Vector2, int> sample = t.IsGridAligned ? p => SampleNearest(image, p)
+        Func<Vector2, int> sample = t.IsGridAligned && !bent && !tipped ? p => SampleNearest(image, p)
             : (image == t.Image ? Sampler(image) : new RotSprite(image)).Sample;
 
         for (int y = y0; y < y1; y++)
         {
             for (int x = x0; x < x1; x++)
             {
-                int index = sample(t.ToLocal(new Vector2(x + 0.5f, y + 0.5f)));
+                var canvas = new Vector2(x + 0.5f, y + 0.5f);
+                if (tipped)
+                {
+                    // undo the turn towards the child around its joint first
+                    var dj = canvas - tip!.Value.Joint;
+                    canvas = tip.Value.Joint + PartTransform.Rotate(dj, -tip.Value.ParentTurn(dj.Length()));
+                }
+                Vector2 local;
+                if (bent)
+                {
+                    var d = canvas - t.Pivot;
+                    local = t.ImagePivot + PartTransform.Rotate(d, -(t.ImageAngle - bend!.Value.Remaining(d.Length())));
+                }
+                else
+                    local = t.ToLocal(canvas);
+                int index = sample(local);
                 if (index == Palette.TransparentIndex)
                     continue;
                 int i = y * target.Width + x;
@@ -138,10 +190,13 @@ public sealed class Compositor
         return rank;
     }
 
-    private static (int X0, int Y0, int X1, int Y1) CanvasBounds(PartTransform t, IndexedImage img, int width, int height)
+    /// <param name="bend">Also cover the image turned back by this much (a smooth joint lies between the two).</param>
+    private static (int X0, int Y0, int X1, int Y1) CanvasBounds(PartTransform t, IndexedImage img, int width, int height, float bend = 0)
     {
         Vector2[] corners = [new(0, 0), new(img.Width, 0), new(0, img.Height), new(img.Width, img.Height)];
-        var pts = corners.Select(t.ToCanvas).ToArray();
+        var pts = corners.Select(t.ToCanvas)
+            .Concat(bend == 0 ? [] : corners.Select(c => t.Pivot + PartTransform.Rotate(c - t.ImagePivot, t.ImageAngle - bend)))
+            .ToArray();
         return (
             Math.Max(0, (int)MathF.Floor(pts.Min(p => p.X))),
             Math.Max(0, (int)MathF.Floor(pts.Min(p => p.Y))),

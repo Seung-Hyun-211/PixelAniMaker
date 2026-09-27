@@ -6,6 +6,7 @@ using PixelAniMaker.App.Services;
 using PixelAniMaker.Core.Editing;
 using PixelAniMaker.Core.Imaging;
 using PixelAniMaker.Core.Rigging;
+using PixelAniMaker.Core.Rigging.Body;
 
 namespace PixelAniMaker.App.ViewModels;
 
@@ -90,6 +91,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             ["ToggleGrid"] = (ToggleGridCommand, null),
             ["ToggleDim"] = (ToggleDimOtherPartsCommand, null),
             ["TogglePose"] = (TogglePoseModeCommand, null),
+            ["ToggleSkeleton"] = (ToggleSkeletonEditCommand, null),
             ["ZoomIn"] = (ZoomInCommand, null),
             ["ZoomOut"] = (ZoomOutCommand, null),
             ["SaveKey"] = (SaveKeyCommand, null),
@@ -188,25 +190,32 @@ public sealed partial class MainWindowViewModel : ObservableObject
         if (!await ConfirmDiscardAsync())
             return;
         double heads = TemplateLoader.ChibiHeads;
+        var shape = BodyShape.Standard;
         if (Dialogs is not null)
         {
             var bodies = TemplateLoader.BodyTypes;
             var bodyLabels = bodies.Select(BodyTypeLabel).ToList();
-            if (await Dialogs.PickOneAsync("새로 만들기", "체형을 고르세요. 파츠 구성과 기본 동작은 모두 같습니다.",
+            if (await Dialogs.PickOneAsync("새로 만들기", "키 비율(등신)을 고르세요. 파츠 구성과 기본 동작은 모두 같습니다.",
                     bodyLabels, "다음", bodies.ToList().IndexOf(TemplateLoader.ChibiHeads)) is not { } body)
                 return;
             heads = bodies[body];
+
+            var shapes = TemplateLoader.BodyShapes;
+            if (await Dialogs.PickOneAsync("새로 만들기", "체형을 고르세요. 어깨·허리·골반과 팔다리 굵기가 달라지고, 키와 기본 동작은 같습니다.",
+                    shapes.Select(BodyShapeLabel).ToList(), "다음", 0) is not { } picked)
+                return;
+            shape = shapes[picked];
         }
-        var clips = TemplateLoader.LoadDefaultAnimations(threeQuarter: true, heads);
+        var clips = TemplateLoader.LoadDefaultAnimations(threeQuarter: true, heads, library: true);
         bool threeQuarter = false;
         if (Dialogs is not null)
         {
             // the last row is an option, off by default: 3/4 views make the file format 2
             var labels = clips.Select(c => $"{c.Name}  ({c.FrameCount}프레임 · {c.Fps} fps)").ToList();
             labels.Add("반측면 포함 (앞·뒤 반측면 마네킹과 동작, 이전 버전에서는 열리지 않음)");
-            var ticked = clips.Select(_ => true).Append(false).ToList();
-            if (await Dialogs.PickItemsAsync("새로 만들기", "만들 동작을 고르세요.\n" +
-                    "고르지 않은 동작은 나중에 다른 프로젝트에서 가져오거나 새로 만들 수 있습니다.",
+            var ticked = clips.Select(TemplateLoader.IsBaseClip).Append(false).ToList();
+            if (await Dialogs.PickItemsAsync("새로 만들기", "만들 동작을 고르세요. 기본 동작 6개가 골라져 있습니다.\n" +
+                    "고르지 않은 동작은 나중에 파일 → 기본 동작 가져오기로 추가하거나 새로 만들 수 있습니다.",
                     labels, "만들기", ticked) is not { } picked)
                 return;
             threeQuarter = picked.Contains(clips.Count);
@@ -215,8 +224,18 @@ public sealed partial class MainWindowViewModel : ObservableObject
         if (!threeQuarter)
             foreach (var clip in clips)
                 Core.Rigging.ThreeQuarterViews.StripFrom(clip);
-        Project.New(jointDiscs, clips, threeQuarter, heads);
+        Project.New(jointDiscs, clips, threeQuarter, heads, shape);
     }
+
+    private static string BodyShapeLabel(BodyShape shape) => shape switch   // translated on screen
+    {
+        BodyShape.Feminine => "여성형  (좁은 어깨 · 가는 허리 · 넓은 골반)",
+        BodyShape.Masculine => "남성형  (넓은 어깨 · 곧은 허리 · 좁은 골반)",
+        BodyShape.Slim => "마른형  (전체적으로 가늘게)",
+        BodyShape.Chubby => "통통형  (둥근 배 · 굵은 팔다리)",
+        BodyShape.Muscular => "근육형  (넓은 어깨 · 두꺼운 가슴 · 굵은 팔다리)",
+        _ => "기본  (지금까지의 마네킹)",
+    };
 
     private static string BodyTypeLabel(double heads)
     {
@@ -376,13 +395,30 @@ public sealed partial class MainWindowViewModel : ObservableObject
             await Dialogs.ShowErrorAsync("가져올 동작이 없습니다.");
             return;
         }
+        await PickAndImportAsync(clips, $"'{Path.GetFileName(path)}'에서 가져올 동작을 고르세요.\n" +
+            "키프레임만 가져오며, 손본 픽셀은 그 캐릭터 전용이라 가져오지 않습니다. 같은 이름은 뒤에 번호가 붙습니다.");
+    }
+
+    /// <summary>Adds chosen clips of the built-in library (variants, actions, poses), fitted to this character's height.</summary>
+    [RelayCommand]
+    private async Task ImportLibraryClips()
+    {
+        if (Dialogs is null)
+            return;
+        var clips = TemplateLoader.LibraryClipsFor(Session.Character, Session.Compositor);
+        await PickAndImportAsync(clips, "추가할 기본 동작을 고르세요. 같은 동작의 여러 버전(대기·걷기·달리기·점프·공격·피격), " +
+            "그 밖의 동작, 한 프레임짜리 자세가 있습니다. 이동 거리는 이 캐릭터의 키에 맞춥니다. 같은 이름은 뒤에 번호가 붙습니다.");
+    }
+
+    private async Task PickAndImportAsync(IReadOnlyList<Core.Animation.AnimationClip> clips, string message)
+    {
         var labels = clips.Select(c => $"{c.Name}  ({c.FrameCount}프레임 · {c.Fps} fps)").ToList();
-        if (await Dialogs.PickItemsAsync("동작 가져오기", $"'{Path.GetFileName(path)}'에서 가져올 동작을 고르세요.\n" +
-                "키프레임만 가져오며, 손본 픽셀은 그 캐릭터 전용이라 가져오지 않습니다. 같은 이름은 뒤에 번호가 붙습니다.",
-                labels, "가져오기") is not { Count: > 0 } picked)
+        if (await Dialogs!.PickItemsAsync("동작 가져오기", message, labels, "가져오기") is not { Count: > 0 } picked)
             return;
 
         var result = Core.Animation.ClipImport.Import(picked.Select(i => clips[i]), Animation.Clips.Select(c => c.Name), Session.Character);
+        if (Core.Rigging.GunPart.Has(Session.Character))
+            Core.Rigging.GunHold.FitUnrecorded(Session.Character, result.Clips);   // gun poses: hands on this body's gun
         foreach (var clip in result.Clips)
             Animation.AddClip(clip);
         if (result.UnknownParts.Count > 0)
@@ -550,6 +586,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     [RelayCommand]
     private void TogglePoseMode() => Session.PoseMode = !Session.PoseMode;
+
+    [RelayCommand]
+    private void ToggleSkeletonEdit() => Session.SkeletonEdit = !Session.SkeletonEdit;
 
     [RelayCommand]
     private void ToggleDimOtherParts() => Session.DimOtherParts = !Session.DimOtherParts;

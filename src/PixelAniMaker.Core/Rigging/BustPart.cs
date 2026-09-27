@@ -14,7 +14,8 @@ public enum BustSize
 /// Optional bust part for female characters: <c>bust</c>, a detail child of the chest, so it shares the
 /// chest's outline and shading and moves with it. The starting drawing is a teardrop from the collarbone
 /// (0.10 H of the front chest image) to the lower ribs (0.86 H): flat at the top, fullest at 68%, round at
-/// the bottom — the front width and the side protrusion follow the same curve (doc/plan-bust-part.md).
+/// the bottom (doc/plan-bust-part.md). In side views the chest wall first runs straight down and the drop
+/// starts lower (<see cref="SideProfile"/>).
 /// </summary>
 public static class BustPart
 {
@@ -43,6 +44,25 @@ public static class BustPart
         t <= 0 || t >= 1 ? 0
         : t < Fullest ? MathF.Pow(t / Fullest, 1.5f)
         : MathF.Sqrt(1 - Square((t - Fullest) / (1 - Fullest)));
+
+    /// <summary>Where the side profile leaves the chest wall, and where it is fullest (fractions of collarbone → ribs).</summary>
+    public const float SideFlat = 0.28f, SideFullest = 0.74f;
+
+    /// <summary>
+    /// How far the bust stands out in side views: the chest wall first runs straight down from the collarbone, then
+    /// the drop eases out (no corner where it starts), is fullest low and turns under in a round bottom.
+    /// </summary>
+    public static float SideProfile(float t)
+    {
+        if (t <= SideFlat || t >= 1)
+            return 0;
+        if (t < SideFullest)
+        {
+            float s = (t - SideFlat) / (SideFullest - SideFlat);
+            return s * s * (3 - 2 * s);
+        }
+        return MathF.Sqrt(1 - Square((t - SideFullest) / (1 - SideFullest)));
+    }
 
     private static float Scale(BustSize size) => size switch
     {
@@ -100,8 +120,8 @@ public static class BustPart
             var pixels = new Dictionary<(int X, int Y), bool>();   // value: inside the chest
             for (int y = (int)MathF.Floor(y0); y <= (int)MathF.Ceiling(y1) + 1; y++)
             {
-                float t = (y + 0.5f - y0) / (y1 - y0), p = Profile(t);
-                if (p <= 0)
+                float t = (y + 0.5f - y0) / (y1 - y0), p = Profile(t), ps = SideProfile(t);
+                if (p <= 0 && ps <= 0)
                     continue;
                 foreach (var (x0, outward) in drops)
                 {
@@ -109,10 +129,10 @@ public static class BustPart
                     for (int x = (int)MathF.Floor(c - half); x < (int)MathF.Ceiling(c + half); x++)
                         pixels[(x, y)] = mask.ContainsKey((x, y));
                 }
-                if (side > 0)
+                if (side > 0 && ps > 0)
                 {
                     int edge = Edge(y).L;
-                    for (int x = (int)MathF.Floor(edge - depth * side * p); x <= edge + 2; x++)
+                    for (int x = (int)MathF.Floor(edge - depth * side * ps); x <= edge + 2; x++)
                         if (!outsideOnly || !mask.ContainsKey((x, y)))
                             pixels[(x, y)] = mask.ContainsKey((x, y));
                 }

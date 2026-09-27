@@ -3,6 +3,7 @@ using PixelAniMaker.Core.Animation;
 using PixelAniMaker.Core.Export;
 using PixelAniMaker.Core.Imaging;
 using PixelAniMaker.Core.Project;
+using PixelAniMaker.Core.Rigging.Body;
 
 namespace PixelAniMaker.App.Services;
 
@@ -47,10 +48,11 @@ public sealed partial class ProjectService : ObservableObject
     /// </param>
     /// <param name="threeQuarter">Start with the template's 3/4 views (saved as format 2).</param>
     /// <param name="heads">Body type: the mannequin's head count (see <see cref="TemplateLoader.BodyTypes"/>).</param>
+    /// <param name="shape">Build of the mannequin (see <see cref="TemplateLoader.BodyShapes"/>).</param>
     public void New(bool jointDiscs = true, IReadOnlyList<AnimationClip>? clips = null, bool threeQuarter = false,
-        double heads = TemplateLoader.ChibiHeads)
+        double heads = TemplateLoader.ChibiHeads, BodyShape shape = BodyShape.Standard)
     {
-        _editor.LoadCharacter(TemplateLoader.LoadMannequin(heads, jointDiscs, threeQuarter));
+        _editor.LoadCharacter(TemplateLoader.LoadMannequin(heads, jointDiscs, threeQuarter, shape));
         clips ??= TemplateLoader.LoadDefaultAnimations(threeQuarter, heads);
         _animation.SetClips(clips.Count > 0 ? clips : [new AnimationClip(Localizer.T("새 동작"), 8)]);
         CurrentPath = null;
